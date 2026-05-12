@@ -1,0 +1,20 @@
+node_modules
+dist
+.next
+out/
+cache/
+broadcast/
+manifest.json
+.deployed-address
+.env
+.env.local
+.env.*.local
+web/.env.local
+
+# Build orchestration state and per-session notes — not part of the product.
+.forge/
+.forge-v1/
+.remember/
+
+# macOS / editor noise
+.DS_Store
