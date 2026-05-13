@@ -3,11 +3,11 @@
 //
 // This route signs Sui transactions with a wallet loaded from SUI_PRIVATE_KEY
 // and spends the operator's WAL on every successful request. There is NO
-// authentication, NO rate-limiting, and NO shared-secret guard — exposing this
-// endpoint on a public host is an open invitation to drain the wallet.
+// authentication, NO rate-limiting, and NO shared-secret guard.
 //
-// Run only against a local dev server with a testnet keypair you control.
-// See README.md → "Local-only operator mode" for setup.
+// Do NOT deploy this route to a public host — anyone reaching it can drain
+// the wallet. Run only against a local dev server with a testnet keypair you
+// control. See README.md → "Local-only operator mode" for setup.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'server-only';
