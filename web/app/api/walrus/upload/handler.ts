@@ -12,7 +12,10 @@ export interface WalrusUploadResult {
 
 export class UploadTooLargeError extends Error {
   readonly status = 413;
-  constructor(public readonly limit: number, public readonly actual: number) {
+  constructor(
+    public readonly limit: number,
+    public readonly actual: number,
+  ) {
     super(`Upload size ${actual} exceeds limit of ${limit} bytes`);
     this.name = 'UploadTooLargeError';
   }

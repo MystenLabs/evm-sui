@@ -35,9 +35,9 @@ export function getWalrusServer(): WalrusServer {
     const rawKey = process.env.SUI_PRIVATE_KEY;
     if (!rawKey) {
       throw new Error(
-        "SUI_PRIVATE_KEY is required for backend Walrus uploads. " +
+        'SUI_PRIVATE_KEY is required for backend Walrus uploads. ' +
           "Set it in web/.env.local (bech32 'suiprivkey...' format), or switch " +
-          "NEXT_PUBLIC_WALRUS_UPLOAD_MODE=publisher to use the public publisher.",
+          'NEXT_PUBLIC_WALRUS_UPLOAD_MODE=publisher to use the public publisher.',
       );
     }
     const parsed = decodeSuiPrivateKey(rawKey);
