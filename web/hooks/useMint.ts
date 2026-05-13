@@ -6,9 +6,18 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagm
 import { decodeEventLog } from 'viem';
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from '@/lib/contract';
 import { uploadWalrusBlob } from '@/lib/walrus-upload';
+import { uploadWalrusBlobViaBackend } from '@/lib/walrus-upload-backend';
 import { aggregatorUrl } from '@/lib/walrus';
 import { buildMetadata, type Category } from '@/lib/metadata';
 import { anvil } from '@/lib/chains';
+
+// Pick the Walrus write path once at module load. NEXT_PUBLIC_* env vars are
+// inlined at build time, so this becomes a static reference. Unset / unknown
+// values fall through to the backend path — that's the default architecture.
+const uploadBlob =
+  process.env.NEXT_PUBLIC_WALRUS_UPLOAD_MODE === 'publisher'
+    ? uploadWalrusBlob
+    : uploadWalrusBlobViaBackend;
 
 export type MintStatus =
   | 'idle'
@@ -93,7 +102,7 @@ export function useMint(): MintHandle {
         setError(null);
         setStatus('uploading-image');
         const bytes = new Uint8Array(await input.file.arrayBuffer());
-        const imageRes = await uploadWalrusBlob(bytes, input.file.type);
+        const imageRes = await uploadBlob(bytes, input.file.type);
         setBlobIdImage(imageRes.blobId);
 
         setStatus('uploading-metadata');
@@ -105,7 +114,7 @@ export function useMint(): MintHandle {
           vibe: input.vibe,
           createdAt: Math.floor(Date.now() / 1000),
         });
-        const metaRes = await uploadWalrusBlob(JSON.stringify(metaJson), 'application/json');
+        const metaRes = await uploadBlob(JSON.stringify(metaJson), 'application/json');
         setBlobIdMetadata(metaRes.blobId);
 
         const tokenURI = aggregatorUrl(metaRes.blobId);
