@@ -43,6 +43,11 @@ export interface MintHandle {
   mintedTokenId: bigint | null;
   blobIdImage: string | null;
   blobIdMetadata: string | null;
+  // On-Sui Blob object ids, populated only when the operator-backend write
+  // path is in use. Null when the public-publisher path was taken (the
+  // publisher owns the Blob object in that case, not the operator).
+  suiObjectIdImage: string | null;
+  suiObjectIdMetadata: string | null;
   submit: (input: MintInput) => Promise<void>;
   reset: () => void;
 }
@@ -54,6 +59,8 @@ export function useMint(): MintHandle {
   const [mintedTokenId, setMintedTokenId] = useState<bigint | null>(null);
   const [blobIdImage, setBlobIdImage] = useState<string | null>(null);
   const [blobIdMetadata, setBlobIdMetadata] = useState<string | null>(null);
+  const [suiObjectIdImage, setSuiObjectIdImage] = useState<string | null>(null);
+  const [suiObjectIdMetadata, setSuiObjectIdMetadata] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const { chain } = useAccount();
@@ -91,6 +98,8 @@ export function useMint(): MintHandle {
     setMintedTokenId(null);
     setBlobIdImage(null);
     setBlobIdMetadata(null);
+    setSuiObjectIdImage(null);
+    setSuiObjectIdMetadata(null);
   }, []);
 
   const submit = useCallback(
@@ -104,6 +113,7 @@ export function useMint(): MintHandle {
         const bytes = new Uint8Array(await input.file.arrayBuffer());
         const imageRes = await uploadBlob(bytes, input.file.type);
         setBlobIdImage(imageRes.blobId);
+        setSuiObjectIdImage(imageRes.suiObjectId ?? null);
 
         setStatus('uploading-metadata');
         const metaJson = buildMetadata({
@@ -116,6 +126,7 @@ export function useMint(): MintHandle {
         });
         const metaRes = await uploadBlob(JSON.stringify(metaJson), 'application/json');
         setBlobIdMetadata(metaRes.blobId);
+        setSuiObjectIdMetadata(metaRes.suiObjectId ?? null);
 
         const tokenURI = aggregatorUrl(metaRes.blobId);
 
@@ -138,5 +149,16 @@ export function useMint(): MintHandle {
     [chain, writeContractAsync],
   );
 
-  return { status, error, txHash, mintedTokenId, blobIdImage, blobIdMetadata, submit, reset };
+  return {
+    status,
+    error,
+    txHash,
+    mintedTokenId,
+    blobIdImage,
+    blobIdMetadata,
+    suiObjectIdImage,
+    suiObjectIdMetadata,
+    submit,
+    reset,
+  };
 }
