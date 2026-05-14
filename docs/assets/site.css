@@ -6,7 +6,8 @@
  * HTML carries over unchanged.
  * ─────────────────────────────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Inter is loaded via <link> in each page's <head> so the font request
+ * doesn't sit behind the CSS-fetch round-trip. See efficiency review. */
 
 :root {
   /* ── Sui brand palette ───────────────────────────────────── */
@@ -170,8 +171,6 @@ h1 em { font-style: normal; color: var(--accent); }
 
 /* ── sections ─────────────────────────────────────────────────────── */
 section { padding: 88px 0; border-bottom: 1px solid var(--border); background: var(--bg); }
-section.tight { padding: 64px 0; }
-section.elevated { background: var(--bg-elevated); }
 .section-head {
   display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap;
   margin-bottom: 40px;
@@ -200,8 +199,12 @@ p strong { color: var(--sui-black); font-weight: 600; }
   color: var(--fg-muted);
   max-width: 72ch;
   font-size: 18px;
-  margin: 16px 0 0;
+  margin: 16px 0 32px;
 }
+/* Pattern absorbed from inline overrides on every "shape" subsection.
+ * The h4 sits above a flow diagram; the trailing <p> annotates it. */
+.two-col h4 { margin-bottom: 14px; }
+.flow + p { margin-top: 14px; font-size: 13.5px; }
 
 /* ── pills ────────────────────────────────────────────────────────── */
 .pill {
@@ -215,7 +218,6 @@ p strong { color: var(--sui-black); font-weight: 600; }
 .pill.good { color: #15692f; border-color: rgba(31,138,60,0.30); background: var(--good-soft); }
 .pill.accent { color: var(--accent); border-color: rgba(76,162,255,0.35); background: var(--sui-baby-blue); }
 .pill.warn { color: #8a5602; border-color: rgba(182,113,3,0.30); background: var(--warn-soft); }
-.pill.bad { color: #98262d; border-color: rgba(201,58,58,0.30); background: var(--bad-soft); }
 
 /* ── inline code ──────────────────────────────────────────────────── */
 code, pre { font-family: var(--font-mono); }
@@ -248,7 +250,6 @@ pre.code .n { color: #82AAFF; }    /* number / ident   */
 pre.code .c { color: var(--sui-blue-500); font-style: italic; }
 pre.code .f { color: #FFCB6B; }    /* function         */
 pre.code .t { color: #89DDFF; }    /* type             */
-pre.code .p { color: var(--sui-blue-300); }
 
 .code-caption {
   font-size: 12px; color: var(--fg-muted); font-weight: 600;
@@ -273,7 +274,6 @@ pre.code .p { color: var(--sui-blue-300); }
 }
 .callout em { color: var(--accent); font-style: normal; font-weight: 600; }
 .callout.warn { border-color: #b67103; background: var(--warn-soft); color: #5a3801; }
-.callout.bad { border-color: #c93a3a; background: var(--bad-soft); color: #6b1f23; }
 .callout.good { border-color: #1f8a3c; background: var(--good-soft); color: #143d1f; }
 
 .pain-quote {
@@ -305,7 +305,7 @@ pre.code .p { color: var(--sui-blue-300); }
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; align-items: center;
   font-family: var(--font-mono); font-size: 11.5px;
 }
-.flow-row + .flow-row { margin-top: 8px; }
+.flow-row + .flow-row { margin-top: 6px; }
 .flow-row .box {
   padding: 10px 8px;
   border: 1px solid var(--border);
@@ -469,7 +469,7 @@ table.matrix code { color: var(--sui-dark-blue); background: var(--sui-baby-blue
   align-self: center;
   letter-spacing: -0.02em;
 }
-.try-item h5 { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--sui-black); letter-spacing: -0.01em; }
+.try-item h4 { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--sui-black); letter-spacing: -0.01em; }
 .try-item p { margin: 0; font-size: 14px; color: var(--sui-black-700); line-height: 1.6; font-weight: 500; }
 
 /* ── footer ───────────────────────────────────────────────────────── */
@@ -482,7 +482,7 @@ footer {
 }
 footer .foot-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 56px; }
 @media (max-width: 720px) { footer .foot-grid { grid-template-columns: 1fr; gap: 28px; } }
-footer h5 {
+footer h3 {
   margin: 0 0 14px;
   color: var(--sui-white);
   font-size: 12.5px;

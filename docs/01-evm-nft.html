@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>01 · EvmWal NFT — evm-nft-wal learning site</title>
 <meta name="description" content="Showcase 01: a vanilla OpenZeppelin ERC-721 whose tokenURI points at Walrus instead of IPFS. Two write paths, one read path, ~200 LOC end-to-end." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="./assets/site.css" />
 </head>
 <body>
@@ -13,10 +16,10 @@
   <div class="shell rail-inner">
     <span class="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
-        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+        <circle cx="12" cy="12" r="9.5" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" />
       </svg>
-      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+      <strong>evm-nft-wal · learning site</strong>
     </span>
     <span class="crumbs">
       <a href="./index.html">index</a>
@@ -80,7 +83,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom:14px;">Backend (default) write path</h4>
+        <h4>Backend (default) write path</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">browser</div>
@@ -89,7 +92,7 @@
             <div class="arrow">→</div>
             <div class="box">@mysten/walrus<br/>writeBlob</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">browser</div>
             <div class="arrow">→</div>
             <div class="box accent">mint(tokenURI)</div>
@@ -97,14 +100,14 @@
             <div class="box good">Minted event</div>
           </div>
         </div>
-        <p style="margin-top:14px; font-size:13.5px;">
+        <p>
           Operator pays WAL from <code class="inline">SUI_PRIVATE_KEY</code>; the on-Sui Blob object id is
           returned so the UI can deep-link to Suiscan. The route is local-only and unauthenticated — do not
           deploy it.
         </p>
       </div>
       <div>
-        <h4 style="margin-bottom:14px;">Publisher (fallback) write path</h4>
+        <h4>Publisher (fallback) write path</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">browser</div>
@@ -113,7 +116,7 @@
             <div class="arrow">→</div>
             <div class="box">{ blobId }</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">browser</div>
             <div class="arrow">→</div>
             <div class="box accent">mint(tokenURI)</div>
@@ -121,7 +124,7 @@
             <div class="box good">Minted event</div>
           </div>
         </div>
-        <p style="margin-top:14px; font-size:13.5px;">
+        <p>
           Public publisher pays WAL on the user's behalf. Zero Sui-side infra, no API route. The publisher
           owns the on-Sui Blob object — opaque to the dApp.
         </p>
@@ -130,7 +133,7 @@
 
     <hr class="hr-dot" />
 
-    <h4 style="margin: 0 0 14px;">Read path — identical either way</h4>
+    <h4>Read path — identical either way</h4>
     <div class="flow">
       <div class="flow-row">
         <div class="box">anyone</div>
@@ -139,7 +142,7 @@
         <div class="arrow">→</div>
         <div class="box accent">aggregator GET</div>
       </div>
-      <div class="flow-row" style="margin-top: 6px;">
+      <div class="flow-row">
         <div class="box">anyone</div>
         <div class="arrow">→</div>
         <div class="box accent">parse .image</div>
@@ -333,7 +336,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Zero-Sui-setup path</h4>
+        <h4>Zero-Sui-setup path</h4>
         <p>
           The fastest way to see a mint complete end-to-end. Uses the public publisher — no Sui keypair,
           no faucet, no API route. Just clone, install, set one env var, and run.
@@ -357,7 +360,7 @@
 <span class="f">pnpm</span> dev:web</pre>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Operator (backend) path</h4>
+        <h4>Operator (backend) path</h4>
         <p>
           Mirrors the production write shape: <code class="inline">@mysten/walrus</code> in a server-side
           route, operator-funded WAL, an on-Sui Blob object you own and can extend. Needs a Sui testnet
@@ -399,7 +402,7 @@
     <div class="try">
       <div class="try-item">
         <div>
-          <h5>Flip between publisher and backend mode without redeploying</h5>
+          <h4>Flip between publisher and backend mode without redeploying</h4>
           <p>
             Toggle <code class="inline">NEXT_PUBLIC_WALRUS_UPLOAD_MODE</code> in
             <code class="inline">web/.env.local</code> and reload. The minted NFTs render identically — the
@@ -409,7 +412,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Open a minted token's blob on Walruscan</h5>
+          <h4>Open a minted token's blob on Walruscan</h4>
           <p>
             Click any card in the gallery. <a href="https://walruscan.com/testnet">walruscan.com/testnet</a>
             shows the blob, its on-Sui Blob object, and its remaining epoch retention. In backend mode the
@@ -420,7 +423,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Inspect the metadata JSON the dApp built</h5>
+          <h4>Inspect the metadata JSON the dApp built</h4>
           <p>
             <code class="inline">tokenURI(id)</code> returns the aggregator URL of the metadata blob. GET it
             with <code class="inline">curl</code> and you'll see the ERC-721 metadata schema with
@@ -431,7 +434,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Read <code class="inline">contracts/test/EvmWalNFT.t.sol</code></h5>
+          <h4>Read <code class="inline">contracts/test/EvmWalNFT.t.sol</code></h4>
           <p>
             Seven Foundry tests, 100% line coverage on the contract. Notice how none of them mention
             Walrus — they assert ERC-721 behaviour over arbitrary strings, which is exactly what makes the
@@ -441,7 +444,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Try the handler tests with a fake <code class="inline">WalrusServer</code></h5>
+          <h4>Try the handler tests with a fake <code class="inline">WalrusServer</code></h4>
           <p>
             The dependency-injected handler in <code class="inline">handler.ts</code> exists specifically so
             the upload-route tests can stub <code class="inline">writeBlob</code> without hitting the live
@@ -469,7 +472,7 @@
   <div class="shell">
     <div class="foot-grid">
       <div>
-        <h5>This page is</h5>
+        <h3>This page is</h3>
         <p>
           A guided tour of showcase 01 of the
           <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. Code excerpts
@@ -478,7 +481,7 @@
         </p>
       </div>
       <div>
-        <h5>Cross-links</h5>
+        <h3>Cross-links</h3>
         <ul>
           <li><a href="./index.html">← landing index</a></li>
           <li><a href="../README.md">repo README</a></li>

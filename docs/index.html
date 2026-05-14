@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>evm-nft-wal · learning site</title>
 <meta name="description" content="Companion learning material for MystenLabs/evm-nft-wal — six small EVM dApps that use Walrus as decentralized storage. Read along, understand the migration shape, then go look at the source." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="./assets/site.css" />
 </head>
 <body>
@@ -14,10 +17,10 @@
   <div class="shell rail-inner">
     <span class="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
-        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+        <circle cx="12" cy="12" r="9.5" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" />
       </svg>
-      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+      <strong>evm-nft-wal · learning site</strong>
     </span>
     <span class="crumbs">
       <a href="https://github.com/MystenLabs/evm-nft-wal">github.com/MystenLabs/evm-nft-wal</a>
@@ -71,7 +74,7 @@
         </p>
       </div>
       <div>
-        <h4 style="margin-bottom:14px;">The shared shape</h4>
+        <h4>The shared shape</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">browser</div>
@@ -80,14 +83,14 @@
             <div class="arrow">→</div>
             <div class="box">blob id</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">browser</div>
             <div class="arrow">→</div>
             <div class="box accent">EVM contract<br/>store URL/blobId</div>
             <div class="arrow">→</div>
             <div class="box good">tx ✓</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">anyone</div>
             <div class="arrow">→</div>
             <div class="box accent">aggregator GET<br/>blob id → bytes</div>
@@ -95,7 +98,7 @@
             <div class="box good">image / JSON</div>
           </div>
         </div>
-        <p style="margin-top:14px; font-size:13.5px;">
+        <p>
           Three steps. Two cross the EVM↔Walrus boundary. The third is a plain anonymous HTTPS GET — the same
           pattern an IPFS gateway serves, with deterministic node assignment underneath instead of a DHT
           random walk.
@@ -112,7 +115,7 @@
       <span class="section-num">02 · how to read this site</span>
       <h2>Three reading paths, depending on how much time you have</h2>
     </div>
-    <p class="section-sub" style="margin-bottom: 32px;">
+    <p class="section-sub">
       Pick one. Each path lands you at the same place — the moment where the EVM contract stays the same
       shape but the storage layer underneath flips.
     </p>
@@ -157,7 +160,7 @@
       <span class="section-num">03 · the six showcases</span>
       <h2>One page per showcase, with the IPFS pain it answers</h2>
     </div>
-    <p class="section-sub" style="margin-bottom: 32px;">
+    <p class="section-sub">
       Each tile links to a deep-dive page: verbatim pain quote → architecture diagram → annotated walk
       through the key Solidity + TypeScript → exact local-run commands → "what to try next."
     </p>
@@ -271,7 +274,7 @@
       <span class="section-num">04 · primitives glossary</span>
       <h2>The six Walrus and Sui pieces every showcase uses</h2>
     </div>
-    <p class="section-sub" style="margin-bottom: 28px;">
+    <p class="section-sub">
       If you've built on IPFS before, the cognitive mapping is small. Each primitive below replaces a
       specific IPFS concept — or fills a gap IPFS never had a clean answer for.
     </p>
@@ -341,7 +344,7 @@
       <span class="section-num">05 · repo map</span>
       <h2>Where each showcase lives in the source tree</h2>
     </div>
-    <p class="section-sub" style="margin-bottom: 28px;">
+    <p class="section-sub">
       Every page on this site is a guided tour of files in the repo — these links go straight to the source
       on GitHub so you can read along.
     </p>
@@ -410,7 +413,7 @@
   <div class="shell">
     <div class="foot-grid">
       <div>
-        <h5>Methodology</h5>
+        <h3>Methodology</h3>
         <p>
           The six showcases share one template — the EvmWal NFT dApp — so the migration shape stays
           legible across them. Every page on this site quotes a verbatim builder grievance from
@@ -425,7 +428,7 @@
         </p>
       </div>
       <div>
-        <h5>This site</h5>
+        <h3>This site</h3>
         <ul>
           <li><a href="./01-evm-nft.html">01 · EvmWal NFT</a></li>
           <li><a href="./02-walrus-sites.html">02 · Walrus Sites</a></li>
@@ -434,7 +437,7 @@
           <li><a href="./05-verifiable-manifest.html">05 · Verifiable manifest</a></li>
           <li><a href="./06-quilted-collection.html">06 · QuiltedCollection</a></li>
         </ul>
-        <h5 style="margin-top: 22px;">External anchors</h5>
+        <h5 style="margin-top: 22px;">External anchors</h3>
         <ul>
           <li><a href="https://github.com/MystenLabs/evm-nft-wal">github · the repo</a></li>
           <li><a href="https://docs.wal.app/">docs.wal.app</a></li>

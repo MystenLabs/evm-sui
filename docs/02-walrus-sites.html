@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>02 · Walrus Sites — evm-nft-wal learning site</title>
 <meta name="description" content="Showcase 02: host the dApp's frontend on Walrus. site-builder publish + SuiNS + wal.app portal. Optional ENS bridge via DNSLink or CNAME." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="./assets/site.css" />
 </head>
 <body>
@@ -13,10 +16,10 @@
   <div class="shell rail-inner">
     <span class="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
-        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+        <circle cx="12" cy="12" r="9.5" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" />
       </svg>
-      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+      <strong>evm-nft-wal · learning site</strong>
     </span>
     <span class="crumbs">
       <a href="./index.html">index</a>
@@ -77,7 +80,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Publish + resolve</h4>
+        <h4>Publish + resolve</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">pnpm build</div>
@@ -86,7 +89,7 @@
             <div class="arrow">→</div>
             <div class="box">site object id</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">SuiNS app</div>
             <div class="arrow">→</div>
             <div class="box accent">link name<br/>→ site object id</div>
@@ -94,13 +97,13 @@
             <div class="box good">name.wal.app</div>
           </div>
         </div>
-        <p style="margin-top:14px; font-size:13.5px;">
+        <p>
           The site is content-addressed and Sui-backed: anyone can verify the bytes; only the SuiNS owner
           can update what name resolves to.
         </p>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Optional ENS bridge</h4>
+        <h4>Optional ENS bridge</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">yourdapp.eth</div>
@@ -110,7 +113,7 @@
             <div class="box good">name.wal.app</div>
           </div>
         </div>
-        <p style="margin-top:14px; font-size:13.5px;">
+        <p>
           One DNS record. The <code class="inline">.eth</code> name keeps working as your public identity;
           the bytes underneath are Walrus instead of an IPFS-pinned blob behind an eth.limo or
           cf-ipfs gateway.
@@ -126,7 +129,7 @@
       <span class="section-num">03 · read along</span>
       <h2>The whole showcase is one bash script</h2>
     </div>
-    <p class="section-sub" style="margin-bottom: 32px;">
+    <p class="section-sub">
       <code class="inline">publish.sh</code> is the entire surface area — it just wraps
       <code class="inline">site-builder publish</code> with the conventions you'll want (sane defaults,
       input validation, and a printed next-steps block for the SuiNS + ENS hookup).
@@ -240,7 +243,7 @@ NETWORK=${NETWORK:-testnet}
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Publish</h4>
+        <h4>Publish</h4>
         <div class="code-caption">terminal</div>
 <pre class="code"><span class="c"># install the Walrus site-builder CLI
 # https://docs.wal.app/sites/getting-started/installing-the-site-builder/</span>
@@ -256,7 +259,7 @@ NETWORK=${NETWORK:-testnet}
 # → resolves at &lt;base36-of-id&gt;.wal.app immediately</span></pre>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Hook it up</h4>
+        <h4>Hook it up</h4>
         <div class="code-caption">SuiNS + ENS</div>
 <pre class="code"><span class="c"># 1. Link a SuiNS name → site object id (one Sui tx).
 #    https://suins.io → your name → "Set walrus site"
@@ -284,7 +287,7 @@ NETWORK=${NETWORK:-testnet}
     <div class="try">
       <div class="try-item">
         <div>
-          <h5>Publish a real Next.js build, not the placeholder</h5>
+          <h4>Publish a real Next.js build, not the placeholder</h4>
           <p>
             <code class="inline">cd web &amp;&amp; pnpm build &amp;&amp; pnpm export</code> (or your framework's
             equivalent) and pass the output dir to <code class="inline">publish.sh</code>. Confirm wallet
@@ -295,7 +298,7 @@ NETWORK=${NETWORK:-testnet}
       </div>
       <div class="try-item">
         <div>
-          <h5>Measure first-byte latency vs an IPFS gateway</h5>
+          <h4>Measure first-byte latency vs an IPFS gateway</h4>
           <p>
             <code class="inline">curl -w '%{time_starttransfer}\n' -o /dev/null -s</code> against your
             <code class="inline">wal.app</code> URL and against any public IPFS gateway hosting equivalent
@@ -306,7 +309,7 @@ NETWORK=${NETWORK:-testnet}
       </div>
       <div class="try-item">
         <div>
-          <h5>Push an update and re-publish</h5>
+          <h4>Push an update and re-publish</h4>
           <p>
             Change <code class="inline">example-site/index.html</code> and re-run the script. Note the new
             <code class="inline">site_object_id</code> — that's how Walrus Sites handle "mutability":
@@ -317,7 +320,7 @@ NETWORK=${NETWORK:-testnet}
       </div>
       <div class="try-item">
         <div>
-          <h5>Read the Walrus Sites docs end-to-end</h5>
+          <h4>Read the Walrus Sites docs end-to-end</h4>
           <p>
             <a href="https://docs.wal.app/sites/">docs.wal.app/sites</a> covers things this showcase
             doesn't: site-builder config schema, redirect/headers files, and per-network portals. Useful
@@ -344,7 +347,7 @@ NETWORK=${NETWORK:-testnet}
   <div class="shell">
     <div class="foot-grid">
       <div>
-        <h5>This page is</h5>
+        <h3>This page is</h3>
         <p>
           A guided tour of showcase 02 of the
           <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. The showcase
@@ -354,7 +357,7 @@ NETWORK=${NETWORK:-testnet}
         </p>
       </div>
       <div>
-        <h5>Cross-links</h5>
+        <h3>Cross-links</h3>
         <ul>
           <li><a href="./index.html">← landing index</a></li>
           <li><a href="../showcases/02-walrus-sites/publish.sh">publish.sh source</a></li>

@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>03 · WalrusResolver — evm-nft-wal learning site</title>
 <meta name="description" content="Showcase 03: a 35-line ENS-gated Solidity contract that points an ENS name at a Walrus blob, plus a permissionless TypeScript keeper that keeps the underlying blob alive forever." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="./assets/site.css" />
 </head>
 <body>
@@ -13,10 +16,10 @@
   <div class="shell rail-inner">
     <span class="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
-        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+        <circle cx="12" cy="12" r="9.5" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" />
       </svg>
-      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+      <strong>evm-nft-wal · learning site</strong>
     </span>
     <span class="crumbs">
       <a href="./index.html">index</a>
@@ -77,7 +80,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Set + read</h4>
+        <h4>Set + read</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">ENS owner</div>
@@ -86,7 +89,7 @@
             <div class="arrow">→</div>
             <div class="box good">event log</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">reader</div>
             <div class="arrow">→</div>
             <div class="box accent">walrusBlob(node)<br/>EVM read</div>
@@ -94,14 +97,14 @@
             <div class="box">aggregator GET</div>
           </div>
         </div>
-        <p style="margin-top:14px; font-size:13.5px;">
+        <p>
           One SSTORE per update. Authorization piggybacks on ENS's
           <code class="inline">owner(node)</code> and <code class="inline">isApprovedForAll</code> — no
           separate ownership table, ENSIP-1 operator approvals work out of the box.
         </p>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Permissionless keeper</h4>
+        <h4>Permissionless keeper</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">cron</div>
@@ -110,7 +113,7 @@
             <div class="arrow">→</div>
             <div class="box">epochsLeft</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">if &lt; threshold</div>
             <div class="arrow">→</div>
             <div class="box accent">extendBlob<br/>(+50 epochs)</div>
@@ -118,7 +121,7 @@
             <div class="box good">blob alive</div>
           </div>
         </div>
-        <p style="margin-top:14px; font-size:13.5px;">
+        <p>
           Anyone can run a keeper for any name, as long as they're willing to pay the WAL extension cost.
           The EVM pointer is never touched — only the underlying Walrus blob's lifetime.
         </p>
@@ -359,7 +362,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Tests</h4>
+        <h4>Tests</h4>
         <div class="code-caption">terminal</div>
 <pre class="code"><span class="k">cd</span> showcases/contracts
 <span class="f">forge</span> install --no-git \
@@ -373,7 +376,7 @@
         </p>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Keeper</h4>
+        <h4>Keeper</h4>
         <div class="code-caption">terminal</div>
 <pre class="code"><span class="k">cd</span> showcases/03-walrus-resolver/keeper
 <span class="f">pnpm</span> install
@@ -403,7 +406,7 @@
     <div class="try">
       <div class="try-item">
         <div>
-          <h5>Compute <code class="inline">namehash("blog.vitalik.eth")</code> by hand</h5>
+          <h4>Compute <code class="inline">namehash("blog.vitalik.eth")</code> by hand</h4>
           <p>
             The contract takes <code class="inline">bytes32 node</code>, not a string. Use
             <code class="inline">viem</code>'s <code class="inline">namehash()</code> (the keeper does)
@@ -413,7 +416,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Stand up a fake ENS for testing without mainnet</h5>
+          <h4>Stand up a fake ENS for testing without mainnet</h4>
           <p>
             <code class="inline">MockENS</code> in the test file is the smallest viable ENS surface:
             <code class="inline">owner()</code> + <code class="inline">isApprovedForAll()</code>. Deploy
@@ -424,7 +427,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Set up an operator approval and have the keeper drive everything</h5>
+          <h4>Set up an operator approval and have the keeper drive everything</h4>
           <p>
             Call <code class="inline">ens.setApprovalForAll(operator, true)</code> and let the operator
             address handle <code class="inline">setWalrusBlob</code> for you. Pattern matches how teams
@@ -434,7 +437,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Read the <code class="inline">contentType</code> bytes8 carefully</h5>
+          <h4>Read the <code class="inline">contentType</code> bytes8 carefully</h4>
           <p>
             It's intentionally <em>not</em> a full MIME. Showcase 05's
             <code class="inline">asciiTrim</code> + <code class="inline">startsWith("app/json")</code>
@@ -444,7 +447,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Reconstruct full history from the event log</h5>
+          <h4>Reconstruct full history from the event log</h4>
           <p>
             Subscribe to <code class="inline">WalrusBlobChanged(indexed node, ...)</code> with viem's
             <code class="inline">getLogs</code> and you have a full mutable-pointer history without ever
@@ -471,7 +474,7 @@
   <div class="shell">
     <div class="foot-grid">
       <div>
-        <h5>This page is</h5>
+        <h3>This page is</h3>
         <p>
           A guided tour of showcase 03 of the
           <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. The
@@ -480,7 +483,7 @@
         </p>
       </div>
       <div>
-        <h5>Cross-links</h5>
+        <h3>Cross-links</h3>
         <ul>
           <li><a href="./index.html">← landing index</a></li>
           <li><a href="./05-verifiable-manifest.html">showcase 05 — reuses this contract</a></li>

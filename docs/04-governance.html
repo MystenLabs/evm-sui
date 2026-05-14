@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>04 · Governance — evm-nft-wal learning site</title>
 <meta name="description" content="Showcase 04: a Snapshot-style proposal contract whose proposal body lives on Walrus. Proposer pays WAL via the public publisher; the contract only stores the 32-byte blobId, deadline, and tallies." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="./assets/site.css" />
 </head>
 <body>
@@ -13,10 +16,10 @@
   <div class="shell rail-inner">
     <span class="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
-        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+        <circle cx="12" cy="12" r="9.5" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" />
       </svg>
-      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+      <strong>evm-nft-wal · learning site</strong>
     </span>
     <span class="crumbs">
       <a href="./index.html">index</a>
@@ -75,7 +78,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Propose</h4>
+        <h4>Propose</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">proposer</div>
@@ -84,7 +87,7 @@
             <div class="arrow">→</div>
             <div class="box">{ blobId }</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">proposer</div>
             <div class="arrow">→</div>
             <div class="box accent">propose(blobId,<br/>deadline)</div>
@@ -94,7 +97,7 @@
         </div>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Vote + read</h4>
+        <h4>Vote + read</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">voter</div>
@@ -103,7 +106,7 @@
             <div class="arrow">→</div>
             <div class="box good">Voted event</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">anyone</div>
             <div class="arrow">→</div>
             <div class="box accent">aggregator GET<br/>/v1/blobs/&lt;blobId&gt;</div>
@@ -330,7 +333,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Tests</h4>
+        <h4>Tests</h4>
         <div class="code-caption">terminal</div>
 <pre class="code"><span class="k">cd</span> showcases/contracts
 <span class="f">forge</span> install --no-git \
@@ -343,7 +346,7 @@
         </p>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Upload a proposal body</h4>
+        <h4>Upload a proposal body</h4>
         <div class="code-caption">browser-side · publisher mode</div>
 <pre class="code"><span class="c">// in your DAO frontend (any framework)</span>
 <span class="k">const</span> bytes = <span class="k">new</span> <span class="t">TextEncoder</span>().<span class="f">encode</span>(markdown);
@@ -371,7 +374,7 @@
     <div class="try">
       <div class="try-item">
         <div>
-          <h5>Replace <code class="inline">balanceOf</code> with <code class="inline">getPastVotes</code></h5>
+          <h4>Replace <code class="inline">balanceOf</code> with <code class="inline">getPastVotes</code></h4>
           <p>
             Add OpenZeppelin's <code class="inline">ERC20Votes</code> to the test setup, store
             <code class="inline">startBlock</code> on the Proposal struct, and switch
@@ -382,7 +385,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Add a quorum threshold</h5>
+          <h4>Add a quorum threshold</h4>
           <p>
             Pass a quorum parameter to the constructor (or per-proposal); change
             <code class="inline">passed</code> in <code class="inline">tally()</code> to require
@@ -392,7 +395,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Build a viewer that fetches and renders the proposal body</h5>
+          <h4>Build a viewer that fetches and renders the proposal body</h4>
           <p>
             <code class="inline">const blobId = proposals(id).blobId</code> then
             <code class="inline">fetch(`${AGGREGATOR}/v1/blobs/${base64url(blobId)}`)</code> → render
@@ -402,7 +405,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Index <code class="inline">Proposed</code> and <code class="inline">Voted</code> with viem</h5>
+          <h4>Index <code class="inline">Proposed</code> and <code class="inline">Voted</code> with viem</h4>
           <p>
             Both events have indexed topics for cheap filtering. A 20-line indexer is enough to power a
             full DAO dashboard — useful as a comparison point against running a Subgraph.
@@ -411,7 +414,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Read the NatSpec at the top of the file in full</h5>
+          <h4>Read the NatSpec at the top of the file in full</h4>
           <p>
             The flash-loan warning, the fix recipe, and the scope disclaimer all live in the contract
             header. That's the part you'd want to read aloud during a security review — it tells you what
@@ -438,7 +441,7 @@
   <div class="shell">
     <div class="foot-grid">
       <div>
-        <h5>This page is</h5>
+        <h3>This page is</h3>
         <p>
           A guided tour of showcase 04 of the
           <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. The contract
@@ -448,7 +451,7 @@
         </p>
       </div>
       <div>
-        <h5>Cross-links</h5>
+        <h3>Cross-links</h3>
         <ul>
           <li><a href="./index.html">← landing index</a></li>
           <li><a href="https://docs.openzeppelin.com/contracts/5.x/api/token/erc20#ERC20Votes">OpenZeppelin ERC20Votes</a></li>

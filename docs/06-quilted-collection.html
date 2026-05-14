@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>06 · QuiltedCollection — evm-nft-wal learning site</title>
 <meta name="description" content="Showcase 06: pack a 10 000-token NFT drop into one Walrus Quilt. The contract stores one quiltId; tokenURI(id) deterministically returns the aggregator URL. One upload, no per-token pin." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="./assets/site.css" />
 </head>
 <body>
@@ -13,10 +16,10 @@
   <div class="shell rail-inner">
     <span class="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
-        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+        <circle cx="12" cy="12" r="9.5" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" />
       </svg>
-      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+      <strong>evm-nft-wal · learning site</strong>
     </span>
     <span class="crumbs">
       <a href="./index.html">index</a>
@@ -75,7 +78,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Pack + deploy (one-time)</h4>
+        <h4>Pack + deploy (one-time)</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">drop/<br/>1.json, 1.png, …</div>
@@ -84,7 +87,7 @@
             <div class="arrow">→</div>
             <div class="box">quiltId</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">forge deploy</div>
             <div class="arrow">→</div>
             <div class="box accent">constructor(<br/>quiltId, …)</div>
@@ -94,7 +97,7 @@
         </div>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Mint + read</h4>
+        <h4>Mint + read</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">user</div>
@@ -103,7 +106,7 @@
             <div class="arrow">→</div>
             <div class="box good">Minted event</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">marketplace</div>
             <div class="arrow">→</div>
             <div class="box accent">tokenURI(id)<br/>→ aggregator URL</div>
@@ -300,7 +303,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Pack the drop</h4>
+        <h4>Pack the drop</h4>
         <div class="code-caption">terminal · Walrus CLI</div>
 <pre class="code"><span class="c"># install Walrus CLI from
 # https://docs.wal.app/walrus-client/installation.html</span>
@@ -318,7 +321,7 @@
 <span class="c"># → quiltId: 0xqlt... (base64url, copy this)</span></pre>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Deploy + test</h4>
+        <h4>Deploy + test</h4>
         <div class="code-caption">terminal · Foundry</div>
 <pre class="code"><span class="k">cd</span> showcases/contracts
 <span class="f">forge</span> install --no-git \
@@ -350,7 +353,7 @@
     <div class="try">
       <div class="try-item">
         <div>
-          <h5>Compare gas cost vs a per-token <code class="inline">_setTokenURI</code> drop</h5>
+          <h4>Compare gas cost vs a per-token <code class="inline">_setTokenURI</code> drop</h4>
           <p>
             Deploy the regular EvmWal NFT and mint 100 tokens; deploy this contract and mint 100 tokens.
             The quilt-backed version doesn't write per-token URI strings, so the per-mint gas savings show
@@ -360,7 +363,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>GET a quilt patch URL by hand</h5>
+          <h4>GET a quilt patch URL by hand</h4>
           <p>
             <code class="inline">curl https://aggregator.walrus-testnet.walrus.space/v1/blobs/by-quilt-id/&lt;quiltId&gt;/1.json</code>.
             You should get the same JSON you packed into <code class="inline">drop/1.json</code> — no
@@ -370,7 +373,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Add a randomized minting order</h5>
+          <h4>Add a randomized minting order</h4>
           <p>
             Most real drops don't want sequential IDs revealed in order. Wrap
             <code class="inline">_nextTokenId</code> with a Fisher-Yates-style draw from a fixed pool —
@@ -381,7 +384,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Simulate the aggregator migration</h5>
+          <h4>Simulate the aggregator migration</h4>
           <p>
             Call <code class="inline">setAggregator</code> with a different host and confirm
             <code class="inline">tokenURI(1)</code> changes prefix while everything else stays identical.
@@ -391,7 +394,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Inspect the Walrus Quilt docs</h5>
+          <h4>Inspect the Walrus Quilt docs</h4>
           <p>
             <a href="https://docs.wal.app/walrus-client/quilts.html">docs.wal.app/walrus-client/quilts</a>
             covers quilt grammar, size limits, and per-patch retrieval. Useful before authoring your own
@@ -418,7 +421,7 @@
   <div class="shell">
     <div class="foot-grid">
       <div>
-        <h5>This page is</h5>
+        <h3>This page is</h3>
         <p>
           A guided tour of showcase 06 of the
           <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. Walrus
@@ -428,7 +431,7 @@
         </p>
       </div>
       <div>
-        <h5>Cross-links</h5>
+        <h3>Cross-links</h3>
         <ul>
           <li><a href="./index.html">← landing index</a></li>
           <li><a href="./01-evm-nft.html">showcase 01 (single-token analogue)</a></li>

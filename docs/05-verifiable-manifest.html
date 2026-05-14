@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>05 · Verifiable manifest — evm-nft-wal learning site</title>
 <meta name="description" content="Showcase 05: an ENS-named, Walrus-backed Uniswap-style token list. One eth_call resolves the pointer; one aggregator GET returns the JSON. Reuses WalrusResolver from showcase 03." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="./assets/site.css" />
 </head>
 <body>
@@ -13,10 +16,10 @@
   <div class="shell rail-inner">
     <span class="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
-        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+        <circle cx="12" cy="12" r="9.5" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" />
       </svg>
-      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+      <strong>evm-nft-wal · learning site</strong>
     </span>
     <span class="crumbs">
       <a href="./index.html">index</a>
@@ -76,7 +79,7 @@
 
     <div class="two-col">
       <div>
-        <h4 style="margin-bottom: 14px;">Resolve</h4>
+        <h4>Resolve</h4>
         <div class="flow">
           <div class="flow-row">
             <div class="box">tokens.uniswap.eth</div>
@@ -85,7 +88,7 @@
             <div class="arrow">→</div>
             <div class="box">walrusBlob(node)</div>
           </div>
-          <div class="flow-row" style="margin-top: 6px;">
+          <div class="flow-row">
             <div class="box">blobId · ct</div>
             <div class="arrow">→</div>
             <div class="box accent">aggregator GET</div>
@@ -93,13 +96,13 @@
             <div class="box good">JSON.parse</div>
           </div>
         </div>
-        <p style="margin-top:14px; font-size:13.5px;">
+        <p>
           Two network round-trips. The first is a sub-200 ms RPC call. The second is a normal HTTPS GET
           your CDN can already cache.
         </p>
       </div>
       <div>
-        <h4 style="margin-bottom: 14px;">Trust boundary</h4>
+        <h4>Trust boundary</h4>
         <p style="font-size: 14.5px;">
           The aggregator serves the bytes that correspond to the requested blob id — that's the same
           trust assumption as fetching by CID from an IPFS gateway. The leverage over IPFS lives in the
@@ -315,7 +318,7 @@
     <div class="try">
       <div class="try-item">
         <div>
-          <h5>Type a different manifest schema and pass it as the generic <code class="inline">T</code></h5>
+          <h4>Type a different manifest schema and pass it as the generic <code class="inline">T</code></h4>
           <p>
             <code class="inline">resolveManifest&lt;MyShape&gt;(name, opts)</code> gives you a fully typed
             response — no codegen, no runtime cost. Useful for dApp config files, RSS feeds, or any JSON
@@ -325,7 +328,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Add a Reed-Solomon-backed integrity check on top</h5>
+          <h4>Add a Reed-Solomon-backed integrity check on top</h4>
           <p>
             Import <code class="inline">@mysten/walrus</code>, encode the returned bytes with the same
             parameters Walrus used, recompute the blob id, and assert equality before
@@ -336,7 +339,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Cache the resolved blob id by ENS name</h5>
+          <h4>Cache the resolved blob id by ENS name</h4>
           <p>
             The pointer only changes when the ENS owner explicitly updates it; for read-heavy paths a
             short-TTL in-memory cache keyed by <code class="inline">namehash(ensName)</code> is safe and
@@ -346,7 +349,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Subscribe to <code class="inline">WalrusBlobChanged</code> for cache invalidation</h5>
+          <h4>Subscribe to <code class="inline">WalrusBlobChanged</code> for cache invalidation</h4>
           <p>
             From showcase 03's contract. Filter by <code class="inline">indexed node</code> equal to your
             <code class="inline">namehash</code>; on each event, drop the cache entry. That's the full
@@ -356,7 +359,7 @@
       </div>
       <div class="try-item">
         <div>
-          <h5>Build a viewer with a 10-token preview + diff</h5>
+          <h4>Build a viewer with a 10-token preview + diff</h4>
           <p>
             Resolve the same ENS name from two different aggregators (testnet + a self-hosted mirror) and
             compare. They should agree exactly — same blob id, same bytes. If they don't, one of the
@@ -383,7 +386,7 @@
   <div class="shell">
     <div class="foot-grid">
       <div>
-        <h5>This page is</h5>
+        <h3>This page is</h3>
         <p>
           A guided tour of showcase 05 of the
           <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. The
@@ -392,7 +395,7 @@
         </p>
       </div>
       <div>
-        <h5>Cross-links</h5>
+        <h3>Cross-links</h3>
         <ul>
           <li><a href="./index.html">← landing index</a></li>
           <li><a href="./03-walrus-resolver.html">showcase 03 (the contract this reuses)</a></li>
