@@ -1,15 +1,19 @@
 /**
- * Verifiable token-list / dApp manifest client.
+ * Token-list / dApp manifest client.
  *
  * Resolves an ENS name (e.g. `tokens.uniswap.eth`) to a Walrus blob via the
- * WalrusResolver contract from showcase 03, fetches the manifest body from a
- * Walrus aggregator, and validates that the on-chain blobId matches what the
- * aggregator returned.
+ * WalrusResolver contract from showcase 03, then fetches the manifest body
+ * from a Walrus aggregator by its content-addressed blob id.
  *
- * This is the IPFS-token-list pattern with one critical difference: the
- * `tokens.uniswap.eth` pointer is updated by a single Sui-aware EVM tx and
- * resolves in one eth_call — no gateway lottery, no IPNS-style 30-second
- * cold path.
+ * Trust model: this client trusts the aggregator to serve the bytes that
+ * correspond to the requested blob id; it does NOT re-encode the bytes with
+ * Walrus's Reed-Solomon scheme to recompute the blob id client-side. Doing
+ * so requires the `@mysten/walrus` encoder and is left to the caller. For
+ * showcase purposes, the leverage over IPFS comes from the *pointer*: one
+ * `eth_call` to the resolver beats IPNS, regardless of aggregator trust.
+ *
+ * If you need true trustless retrieval, post-process `manifest` and `blobId`
+ * with a Walrus-SDK-backed verifier before relying on the contents.
  */
 
 import { createPublicClient, hexToBytes, http, namehash, type Address } from "viem";

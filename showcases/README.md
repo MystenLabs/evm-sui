@@ -58,10 +58,17 @@ forge test -vv
 cd showcases/03-walrus-resolver/keeper
 pnpm install
 
+# EVM side
 export EVM_RPC_URL=https://eth.llamarpc.com
+export EVM_CHAIN_ID=1                          # mainnet; set 11155111 for Sepolia, etc.
 export RESOLVER_ADDRESS=0x...                  # deployed WalrusResolver
-export SUI_RPC_URL=https://fullnode.mainnet.sui.io
+
+# Sui / Walrus side
+export SUI_RPC_URL=https://fullnode.testnet.sui.io:443
+export WALRUS_NETWORK=testnet                  # 'testnet' or 'mainnet'
 export SUI_PRIVATE_KEY=suiprivkey...           # holds WAL for extensions
+
+# Keeper config
 export KEEPER_NAMES="blog.vitalik.eth,tokens.uniswap.eth"
 export EXTENSION_THRESHOLD=5
 export EXTEND_BY_EPOCHS=50
@@ -100,6 +107,13 @@ See `publish.sh` for the SuiNS link + optional ENS bridge follow-up steps.
 - **Governance** answers "Snapshot uses 4Everland-pinned IPFS" (§9). Proposer
   pays the WAL storage cost via the public publisher; only the 32-byte
   blobId, deadline, and tallies live on-chain.
+
+  > **Warning — showcase-only voting surface.** `Governance.vote` weights by
+  > live `voteToken.balanceOf(msg.sender)`, which is **flash-loan-attackable**
+  > against any ERC-20 with a flash-mint or flash-borrow integration. For
+  > production, pair with an OpenZeppelin `ERC20Votes` token and switch
+  > `vote()` to read `IVotes(voteToken).getPastVotes(msg.sender, proposalStartBlock)`.
+  > See the NatSpec at the top of `contracts/src/Governance.sol`.
 - **QuiltedCollection** answers "OpenSea improved metadata reliability 99.2%
   when they switched to Pinata" (§8). One Walrus Quilt holds every token's
   metadata; `tokenURI(id)` deterministically returns the aggregator URL — no

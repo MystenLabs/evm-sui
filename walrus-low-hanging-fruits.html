@@ -790,9 +790,9 @@
           </p>
           <h4>The Walrus fix</h4>
           <p class="fix">
-            Combine showcase 03's mutable pointer with a strict JSON schema. Frontend resolves the pointer, fetches the manifest
-            from the aggregator, and verifies the embedded blob hash matches the on-chain pointer. Same shape that powers
-            Uniswap's token list — just without the gateway lottery.
+            Combine showcase 03's mutable pointer with a strict JSON schema. Frontend resolves the pointer in one <code style="color:var(--text);font-family:var(--mono);font-size:13px;">eth_call</code> and fetches the manifest from a Walrus aggregator
+            by its content-addressed blob id. The aggregator is the trust boundary — same model as fetching by CID from an IPFS gateway — but the *pointer* lookup is now deterministic instead of an IPNS lottery,
+            which is the actual leverage over the Uniswap token-list pattern. Add Reed-Solomon-backed client-side hash verification on top with <code style="color:var(--text);font-family:var(--mono);font-size:13px;">@mysten/walrus</code> if your threat model needs it.
           </p>
           <div class="effort">
             <span class="pill good">straightforward</span>

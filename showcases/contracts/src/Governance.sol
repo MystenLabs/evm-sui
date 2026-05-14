@@ -11,10 +11,22 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// 32-byte Walrus blob id is stored on-chain alongside the deadline and the
 /// vote tallies.
 ///
-/// Voting weight is the proposer-supplied ERC-20's `balanceOf` at vote time —
-/// snapshotting is intentionally out of scope to keep the contract focused;
-/// in production pair with an ERC20Votes-style token if Sybil-resistance
-/// against last-minute transfers matters.
+/// WARNING — NOT PRODUCTION-SAFE AS WRITTEN.
+/// Voting weight is read as the live `voteToken.balanceOf(msg.sender)` at the
+/// instant of the `vote()` call. If `voteToken` supports flash loans or
+/// flash mints (true of most modern ERC-20s integrated with Aave, Solidly
+/// forks, or any DEX with a `flash` hook), an attacker can borrow tokens,
+/// vote, and repay in a single transaction — overriding any honest tally.
+/// This contract is a showcase of the *Walrus integration shape* (proposer-
+/// pays blob storage, on-chain pointer, deterministic resolution) and
+/// deliberately keeps the voting surface minimal.
+///
+/// For production, replace the live `balanceOf` read with a past-balance
+/// snapshot: pair this contract with an OpenZeppelin `ERC20Votes` token,
+/// store the proposal's start block in `Proposal`, and read voting weight
+/// via `IVotes(voteToken).getPastVotes(msg.sender, proposalStartBlock)`.
+/// That is the only correct way to use this pattern against an asset that
+/// can be borrowed or rapidly transferred.
 contract Governance {
     struct Proposal {
         address proposer;
