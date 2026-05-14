@@ -6,9 +6,17 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagm
 import { decodeEventLog } from 'viem';
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from '@/lib/contract';
 import { uploadWalrusBlob } from '@/lib/walrus-upload';
+import { uploadWalrusBlobViaBackend } from '@/lib/walrus-upload-backend';
 import { aggregatorUrl } from '@/lib/walrus';
 import { buildMetadata, type Category } from '@/lib/metadata';
 import { anvil } from '@/lib/chains';
+
+// NEXT_PUBLIC_* env vars are inlined at build time. Anything other than
+// 'publisher' falls through to the backend path — backend is the default.
+const uploadBlob =
+  process.env.NEXT_PUBLIC_WALRUS_UPLOAD_MODE === 'publisher'
+    ? uploadWalrusBlob
+    : uploadWalrusBlobViaBackend;
 
 export type MintStatus =
   | 'idle'
@@ -34,6 +42,11 @@ export interface MintHandle {
   mintedTokenId: bigint | null;
   blobIdImage: string | null;
   blobIdMetadata: string | null;
+  // On-Sui Blob object ids, populated only when the operator-backend write
+  // path is in use. Null when the public-publisher path was taken (the
+  // publisher owns the Blob object in that case, not the operator).
+  suiObjectIdImage: string | null;
+  suiObjectIdMetadata: string | null;
   submit: (input: MintInput) => Promise<void>;
   reset: () => void;
 }
@@ -45,6 +58,8 @@ export function useMint(): MintHandle {
   const [mintedTokenId, setMintedTokenId] = useState<bigint | null>(null);
   const [blobIdImage, setBlobIdImage] = useState<string | null>(null);
   const [blobIdMetadata, setBlobIdMetadata] = useState<string | null>(null);
+  const [suiObjectIdImage, setSuiObjectIdImage] = useState<string | null>(null);
+  const [suiObjectIdMetadata, setSuiObjectIdMetadata] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const { chain } = useAccount();
@@ -82,6 +97,8 @@ export function useMint(): MintHandle {
     setMintedTokenId(null);
     setBlobIdImage(null);
     setBlobIdMetadata(null);
+    setSuiObjectIdImage(null);
+    setSuiObjectIdMetadata(null);
   }, []);
 
   const submit = useCallback(
@@ -93,8 +110,9 @@ export function useMint(): MintHandle {
         setError(null);
         setStatus('uploading-image');
         const bytes = new Uint8Array(await input.file.arrayBuffer());
-        const imageRes = await uploadWalrusBlob(bytes, input.file.type);
+        const imageRes = await uploadBlob(bytes, input.file.type);
         setBlobIdImage(imageRes.blobId);
+        setSuiObjectIdImage(imageRes.suiObjectId ?? null);
 
         setStatus('uploading-metadata');
         const metaJson = buildMetadata({
@@ -105,8 +123,9 @@ export function useMint(): MintHandle {
           vibe: input.vibe,
           createdAt: Math.floor(Date.now() / 1000),
         });
-        const metaRes = await uploadWalrusBlob(JSON.stringify(metaJson), 'application/json');
+        const metaRes = await uploadBlob(JSON.stringify(metaJson), 'application/json');
         setBlobIdMetadata(metaRes.blobId);
+        setSuiObjectIdMetadata(metaRes.suiObjectId ?? null);
 
         const tokenURI = aggregatorUrl(metaRes.blobId);
 
@@ -129,5 +148,16 @@ export function useMint(): MintHandle {
     [chain, writeContractAsync],
   );
 
-  return { status, error, txHash, mintedTokenId, blobIdImage, blobIdMetadata, submit, reset };
+  return {
+    status,
+    error,
+    txHash,
+    mintedTokenId,
+    blobIdImage,
+    blobIdMetadata,
+    suiObjectIdImage,
+    suiObjectIdMetadata,
+    submit,
+    reset,
+  };
 }

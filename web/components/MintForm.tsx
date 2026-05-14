@@ -5,6 +5,12 @@ import { useAccount } from 'wagmi';
 import { useMint } from '@/hooks/useMint';
 import { anvil } from '@/lib/chains';
 import type { Category } from '@/lib/metadata';
+import { suiscanObjectUrl } from '@/lib/suiscan';
+
+// Mirror of WALRUS_NETWORK (server) exposed to the client so Suiscan links
+// land on the right explorer when the operator switches to mainnet.
+const SUISCAN_NETWORK: 'testnet' | 'mainnet' =
+  process.env.NEXT_PUBLIC_WALRUS_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
 
 const NAME_MAX = 64;
 const DESCRIPTION_MAX = 500;
@@ -20,7 +26,8 @@ function isAllowedType(t: string): boolean {
 export function MintForm() {
   const { isConnected, chain } = useAccount();
   const onAnvil = chain?.id === anvil.id;
-  const { status, error, mintedTokenId, submit, reset } = useMint();
+  const { status, error, mintedTokenId, suiObjectIdImage, suiObjectIdMetadata, submit, reset } =
+    useMint();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -158,9 +165,44 @@ export function MintForm() {
       </button>
 
       {status === 'success' && (
-        <div className="text-sm text-emerald-600">
-          Your NFT has been minted. It should appear in the Gallery and My NFTs tabs shortly.{' '}
-          <button type="button" onClick={reset} className="underline">Mint another</button>
+        <div className="text-sm text-emerald-600 space-y-2">
+          <div>
+            Your NFT has been minted. It should appear in the Gallery and My NFTs tabs shortly.{' '}
+            <button type="button" onClick={reset} className="underline">Mint another</button>
+          </div>
+          {(suiObjectIdImage || suiObjectIdMetadata) && (
+            <div className="text-xs text-emerald-700 dark:text-emerald-400">
+              On-Sui Blob objects (operator-paid storage commitment):
+              <ul className="list-disc list-inside">
+                {suiObjectIdImage && (
+                  <li>
+                    image:{' '}
+                    <a
+                      href={suiscanObjectUrl(suiObjectIdImage, SUISCAN_NETWORK)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline font-mono"
+                    >
+                      {suiObjectIdImage.slice(0, 10)}…{suiObjectIdImage.slice(-6)}
+                    </a>
+                  </li>
+                )}
+                {suiObjectIdMetadata && (
+                  <li>
+                    metadata:{' '}
+                    <a
+                      href={suiscanObjectUrl(suiObjectIdMetadata, SUISCAN_NETWORK)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline font-mono"
+                    >
+                      {suiObjectIdMetadata.slice(0, 10)}…{suiObjectIdMetadata.slice(-6)}
+                    </a>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

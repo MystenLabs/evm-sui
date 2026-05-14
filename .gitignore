@@ -15,6 +15,7 @@ web/.env.local
 .forge/
 .forge-v1/
 .remember/
+.claude-pr-review/
 
 # macOS / editor noise
 .DS_Store
