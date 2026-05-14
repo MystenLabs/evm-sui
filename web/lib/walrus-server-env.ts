@@ -5,9 +5,12 @@ import { SuiGrpcClient } from '@mysten/sui/grpc';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { walrus } from '@mysten/walrus';
 
-const DEFAULT_TESTNET_GRPC_URL = 'https://fullnode.testnet.sui.io:443';
-
 type WalrusNetwork = 'testnet' | 'mainnet';
+
+const DEFAULT_GRPC_URLS: Record<WalrusNetwork, string> = {
+  testnet: 'https://fullnode.testnet.sui.io:443',
+  mainnet: 'https://fullnode.mainnet.sui.io:443',
+};
 
 function buildClient(network: WalrusNetwork, baseUrl: string) {
   return new SuiGrpcClient({ network, baseUrl }).$extend(walrus());
@@ -18,20 +21,14 @@ export type WalrusServer = {
   keypair: Ed25519Keypair;
 };
 
-// Cache holds the resolved server on success and the validation error on
-// failure, so bad env fails fast on every subsequent call.
-let cache: WalrusServer | Error | undefined;
+// Successful results are cached for the lifetime of the dev server. Errors
+// are NOT cached so a typo in .env.local can be fixed without a restart.
+let cache: WalrusServer | undefined;
 
 export function getWalrusServer(): WalrusServer {
-  if (cache instanceof Error) throw cache;
   if (cache) return cache;
-  try {
-    cache = loadWalrusServer();
-    return cache;
-  } catch (err) {
-    cache = err as Error;
-    throw cache;
-  }
+  cache = loadWalrusServer();
+  return cache;
 }
 
 function loadWalrusServer(): WalrusServer {
@@ -53,7 +50,9 @@ function loadWalrusServer(): WalrusServer {
   if (network !== 'testnet' && network !== 'mainnet') {
     throw new Error(`WALRUS_NETWORK must be 'testnet' or 'mainnet' (got '${network}')`);
   }
-  const baseUrl = process.env.SUI_RPC_URL ?? DEFAULT_TESTNET_GRPC_URL;
+  // Pick the RPC default that matches the chosen network — setting only
+  // WALRUS_NETWORK=mainnet would otherwise silently keep the testnet URL.
+  const baseUrl = process.env.SUI_RPC_URL ?? DEFAULT_GRPC_URLS[network];
 
   return { walrusClient: buildClient(network, baseUrl), keypair };
 }

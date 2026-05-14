@@ -15,6 +15,9 @@ interface BackendResponse {
   error?: string;
 }
 
+// The route itself ignores Content-Type — bytes are read with arrayBuffer().
+// `mime` exists for signature parity with the publisher path (which DOES
+// route on it) and for HTTP-level visibility (proxy logs, devtools).
 export async function uploadWalrusBlobViaBackend(
   body: Uint8Array | ArrayBuffer | Blob | string,
   mime: string,

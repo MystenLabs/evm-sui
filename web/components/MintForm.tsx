@@ -7,6 +7,11 @@ import { anvil } from '@/lib/chains';
 import type { Category } from '@/lib/metadata';
 import { suiscanObjectUrl } from '@/lib/suiscan';
 
+// Mirror of WALRUS_NETWORK (server) exposed to the client so Suiscan links
+// land on the right explorer when the operator switches to mainnet.
+const SUISCAN_NETWORK: 'testnet' | 'mainnet' =
+  process.env.NEXT_PUBLIC_WALRUS_NETWORK === 'mainnet' ? 'mainnet' : 'testnet';
+
 const NAME_MAX = 64;
 const DESCRIPTION_MAX = 500;
 const VIBE_MAX = 32;
@@ -173,7 +178,7 @@ export function MintForm() {
                   <li>
                     image:{' '}
                     <a
-                      href={suiscanObjectUrl(suiObjectIdImage)}
+                      href={suiscanObjectUrl(suiObjectIdImage, SUISCAN_NETWORK)}
                       target="_blank"
                       rel="noreferrer"
                       className="underline font-mono"
@@ -186,7 +191,7 @@ export function MintForm() {
                   <li>
                     metadata:{' '}
                     <a
-                      href={suiscanObjectUrl(suiObjectIdMetadata)}
+                      href={suiscanObjectUrl(suiObjectIdMetadata, SUISCAN_NETWORK)}
                       target="_blank"
                       rel="noreferrer"
                       className="underline font-mono"

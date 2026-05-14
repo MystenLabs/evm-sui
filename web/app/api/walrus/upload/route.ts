@@ -70,8 +70,10 @@ function jsonError(status: number, message: string): Response {
   return Response.json({ error: message }, { status });
 }
 
-// Surface the error message but never the full Error object — stack traces
-// can leak file paths or, worse, env-derived values from re-thrown errors.
+// Returns the error's `message` — never the full Error (stack traces include
+// file paths). The route is gated to non-production builds above, so a
+// dev-visible SDK message (which may embed RPC URLs or object ids) is
+// acceptable here; reuse with caution if you ever drop the NODE_ENV guard.
 function describe(err: unknown): string {
   if (err instanceof Error) return err.message;
   return String(err);

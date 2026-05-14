@@ -1,6 +1,8 @@
 // Source-grep AC tests for the backend-Walrus upload feature (issue #1).
-// Convention matches tests/v2-cycle3/walrus-upload.test.mjs: regex assertions
-// on file contents, not behavior tests. Run with:
+// Cheap regex assertions on file contents — these catch wholesale deletion
+// or rename of public surface. Behavioral assertions live in the sibling
+// `walrus-backend-upload.behavior.test.ts` (run via tsx).
+// Run with:
 //   node --test tests/walrus-backend-upload.test.mjs
 
 import { test } from 'node:test';
