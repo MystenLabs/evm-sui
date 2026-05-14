@@ -24,19 +24,10 @@ export async function uploadWalrusBlobViaBackend(
     headers: { 'Content-Type': mime },
     body: body as BodyInit,
   });
-  let json: BackendResponse | null = null;
-  try {
-    json = (await res.json()) as BackendResponse;
-  } catch {
-    // ignore parse failure; handled by !res.ok branch below
-  }
+  const json = (await res.json().catch(() => null)) as BackendResponse | null;
   if (!res.ok) {
-    const detail = json?.error ?? '';
-    throw new Error(
-      `Walrus backend upload failed: HTTP ${res.status} ${res.statusText}${
-        detail ? ` — ${detail.slice(0, 200)}` : ''
-      }`,
-    );
+    const detail = json?.error ? ` — ${json.error.slice(0, 200)}` : '';
+    throw new Error(`Walrus backend upload failed: HTTP ${res.status} ${res.statusText}${detail}`);
   }
   if (!json?.blobId) {
     throw new Error(

@@ -11,9 +11,8 @@ import { aggregatorUrl } from '@/lib/walrus';
 import { buildMetadata, type Category } from '@/lib/metadata';
 import { anvil } from '@/lib/chains';
 
-// Pick the Walrus write path once at module load. NEXT_PUBLIC_* env vars are
-// inlined at build time, so this becomes a static reference. Unset / unknown
-// values fall through to the backend path — that's the default architecture.
+// NEXT_PUBLIC_* env vars are inlined at build time. Anything other than
+// 'publisher' falls through to the backend path — backend is the default.
 const uploadBlob =
   process.env.NEXT_PUBLIC_WALRUS_UPLOAD_MODE === 'publisher'
     ? uploadWalrusBlob

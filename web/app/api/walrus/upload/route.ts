@@ -12,39 +12,17 @@
 
 import 'server-only';
 
-import {
-  EmptyUploadError,
-  MAX_UPLOAD_BYTES,
-  UploadTooLargeError,
-  handleWalrusUpload,
-} from './handler';
 import { getWalrusServer } from '@/lib/walrus-server-env';
+import { EmptyUploadError, UploadTooLargeError, handleWalrusUpload } from './handler';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-export async function POST(req: Request) {
-  let bytes: Uint8Array;
+export async function POST(req: Request): Promise<Response> {
   try {
-    const buf = await req.arrayBuffer();
-    if (buf.byteLength > MAX_UPLOAD_BYTES) {
-      return jsonError(413, `Upload exceeds ${MAX_UPLOAD_BYTES} bytes`);
-    }
-    bytes = new Uint8Array(buf);
-  } catch (err) {
-    return jsonError(400, `Failed to read request body: ${describe(err)}`);
-  }
-
-  let server;
-  try {
-    server = getWalrusServer();
-  } catch (err) {
-    return jsonError(500, `Walrus backend not configured: ${describe(err)}`);
-  }
-
-  try {
-    const result = await handleWalrusUpload(bytes, server);
+    const bytes = new Uint8Array(await req.arrayBuffer());
+    const result = await handleWalrusUpload(bytes, getWalrusServer());
     return Response.json(result);
   } catch (err) {
     if (err instanceof UploadTooLargeError || err instanceof EmptyUploadError) {
