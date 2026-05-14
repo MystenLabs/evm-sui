@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Walrus Low-Hanging Fruit · Six Showcases for Web3 Storage Pain Points</title>
+<meta name="description" content="A precise report on six shippable Walrus showcases that address the specific IPFS pain points web3 builders are voicing in 2026, modeled on the EvmWal NFT example." />
+<style>
+  :root {
+    --bg: #07080b;
+    --bg-soft: #0d1015;
+    --bg-card: #11151b;
+    --bg-elev: #161b22;
+    --line: #1f2630;
+    --line-soft: #161c25;
+    --text: #e6edf3;
+    --text-soft: #9aa6b2;
+    --text-dim: #5e6a78;
+    --accent: #4da2ff;
+    --accent-soft: rgba(77, 162, 255, 0.12);
+    --accent-line: rgba(77, 162, 255, 0.35);
+    --warn: #f0b429;
+    --warn-soft: rgba(240, 180, 41, 0.1);
+    --good: #4ade80;
+    --good-soft: rgba(74, 222, 128, 0.1);
+    --bad: #f87171;
+    --bad-soft: rgba(248, 113, 113, 0.1);
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --maxw: 1120px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 120ms ease; }
+  a:hover { border-bottom-color: var(--accent); }
+
+  ::selection { background: var(--accent-soft); color: var(--text); }
+
+  /* ── layout shell ─────────────────────────────────────────────── */
+  .shell { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+  /* ── top rail ─────────────────────────────────────────────────── */
+  .rail {
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+  .rail-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0;
+    font-size: 13px;
+    color: var(--text-soft);
+    letter-spacing: 0.02em;
+  }
+  .rail .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); }
+  .rail .brand svg { display: block; }
+  .rail .crumbs { font-family: var(--mono); font-size: 12px; }
+  .rail .crumbs span { color: var(--text-dim); }
+  .rail .crumbs em { color: var(--text-soft); font-style: normal; }
+  .rail .crumbs strong { color: var(--text); font-weight: 500; }
+
+  /* ── hero ─────────────────────────────────────────────────────── */
+  .hero { padding: 80px 0 56px; border-bottom: 1px solid var(--line); position: relative; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(1100px 400px at 20% -10%, rgba(77, 162, 255, 0.10), transparent 60%),
+                radial-gradient(800px 280px at 90% 30%, rgba(77, 162, 255, 0.06), transparent 60%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); padding: 6px 12px; border: 1px solid var(--accent-line); border-radius: 999px;
+    background: var(--accent-soft);
+  }
+  h1 {
+    font-size: clamp(36px, 5.4vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    margin: 24px 0 18px;
+    max-width: 18ch;
+  }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede {
+    font-size: 19px; line-height: 1.55; color: var(--text-soft); max-width: 68ch; margin: 0 0 28px;
+  }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 24px;
+    font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+    letter-spacing: 0.04em;
+  }
+  .meta strong { color: var(--text-soft); font-weight: 500; }
+
+  /* ── shared sections ──────────────────────────────────────────── */
+  section { padding: 72px 0; border-bottom: 1px solid var(--line); }
+  section.tight { padding: 56px 0; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+  .section-num {
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  h2 {
+    font-size: clamp(26px, 3vw, 34px);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+    margin: 0;
+    max-width: 24ch;
+  }
+  .section-sub {
+    color: var(--text-soft);
+    max-width: 64ch;
+    font-size: 17px;
+    margin: 14px 0 0;
+  }
+
+  /* ── pain anchor strip ────────────────────────────────────────── */
+  .pain-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  }
+  @media (max-width: 880px) { .pain-grid { grid-template-columns: 1fr; } }
+  .pain-card {
+    border: 1px solid var(--line);
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 22px 22px 20px;
+    position: relative;
+  }
+  .pain-card .stat {
+    font-family: var(--mono);
+    font-size: 11px; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .pain-card blockquote {
+    margin: 0 0 14px; padding: 0;
+    font-size: 16px; line-height: 1.5; color: var(--text);
+    font-weight: 500;
+  }
+  .pain-card cite {
+    font-style: normal; font-size: 12px; color: var(--text-soft); font-family: var(--mono);
+  }
+  .pain-card .corner {
+    position: absolute; top: 0; right: 0; padding: 6px 10px;
+    border-left: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    border-radius: 0 10px 0 10px;
+    font-family: var(--mono); font-size: 11px; color: var(--bad);
+    background: var(--bad-soft);
+  }
+
+  /* ── thesis ───────────────────────────────────────────────────── */
+  .thesis-grid {
+    display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: start;
+  }
+  @media (max-width: 880px) { .thesis-grid { grid-template-columns: 1fr; gap: 28px; } }
+  .thesis-grid p { color: var(--text-soft); font-size: 17px; line-height: 1.65; margin: 0 0 18px; }
+  .thesis-grid p strong { color: var(--text); font-weight: 600; }
+  .thesis-grid .callout {
+    border-left: 2px solid var(--accent);
+    padding: 4px 0 4px 20px;
+    color: var(--text);
+    font-size: 17px;
+    line-height: 1.55;
+  }
+  .thesis-grid .callout em { color: var(--accent); font-style: normal; }
+
+  .pillars {
+    display: grid; grid-template-columns: 1fr; gap: 12px;
+  }
+  .pillar {
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px 18px;
+    background: var(--bg-soft);
+    display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: start;
+  }
+  .pillar svg { margin-top: 2px; }
+  .pillar h4 { margin: 0 0 4px; font-size: 14px; color: var(--text); font-weight: 600; }
+  .pillar p { margin: 0; font-size: 14px; color: var(--text-soft); line-height: 1.55; }
+
+  /* ── template recap ──────────────────────────────────────────── */
+  .template {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: stretch;
+  }
+  @media (max-width: 880px) { .template { grid-template-columns: 1fr; } }
+  .template > div { display: flex; flex-direction: column; }
+  .template h3 { margin: 0 0 10px; font-size: 18px; font-weight: 600; }
+  .template p { color: var(--text-soft); margin: 0 0 16px; }
+
+  /* ── code blocks ──────────────────────────────────────────────── */
+  pre, code { font-family: var(--mono); }
+  pre.code {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 0;
+  }
+  pre.code .k { color: #c792ea; }    /* keyword */
+  pre.code .s { color: #c3e88d; }    /* string */
+  pre.code .n { color: #82aaff; }    /* number / identifier */
+  pre.code .c { color: var(--text-dim); font-style: italic; } /* comment */
+  pre.code .f { color: #ffcb6b; }    /* function */
+  pre.code .t { color: #89ddff; }    /* type */
+  pre.code .p { color: var(--text-soft); }  /* punctuation soft */
+
+  /* ── showcase cards ──────────────────────────────────────────── */
+  .showcase {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-soft) 100%);
+    overflow: hidden;
+    margin: 0 0 28px;
+  }
+  .showcase-head {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-elev);
+  }
+  .showcase-head .num {
+    font-family: var(--mono); font-size: 13px; color: var(--accent);
+    letter-spacing: 0.16em;
+  }
+  .showcase-head h3 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .showcase-head .tag {
+    font-family: var(--mono); font-size: 11px; color: var(--text-soft);
+    border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  .showcase-body {
+    display: grid; grid-template-columns: 1fr 1.15fr; gap: 0;
+  }
+  @media (max-width: 980px) { .showcase-body { grid-template-columns: 1fr; } }
+  .showcase-prose, .showcase-code {
+    padding: 24px 28px;
+  }
+  .showcase-prose { border-right: 1px solid var(--line); }
+  @media (max-width: 980px) { .showcase-prose { border-right: none; border-bottom: 1px solid var(--line); } }
+
+  .showcase-prose h4 {
+    margin: 0 0 8px; font-size: 11px; color: var(--text-dim);
+    letter-spacing: 0.16em; text-transform: uppercase; font-family: var(--mono);
+    font-weight: 500;
+  }
+  .showcase-prose .pain-quote {
+    border-left: 2px solid var(--bad);
+    padding: 2px 0 2px 14px;
+    margin: 0 0 18px;
+    color: var(--text);
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+  .showcase-prose .pain-quote em { color: var(--text-soft); font-style: normal; font-size: 12px; display: block; margin-top: 6px; }
+  .showcase-prose .fix {
+    color: var(--text-soft); font-size: 15px; line-height: 1.65; margin: 0 0 18px;
+  }
+  .showcase-prose .fix strong { color: var(--text); font-weight: 600; }
+  .showcase-prose .effort {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px;
+  }
+  .pill {
+    font-family: var(--mono); font-size: 11px;
+    padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--text-soft); background: var(--bg-soft);
+    letter-spacing: 0.04em;
+  }
+  .pill.good { color: var(--good); border-color: rgba(74,222,128,0.3); background: var(--good-soft); }
+  .pill.accent { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+  .pill.warn { color: var(--warn); border-color: rgba(240,180,41,0.3); background: var(--warn-soft); }
+
+  .showcase-code .caption {
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin: 0 0 10px;
+  }
+
+  /* ── flow diagrams ───────────────────────────────────────────── */
+  .flow {
+    margin: 16px 0 0;
+    border-top: 1px dashed var(--line);
+    padding-top: 16px;
+  }
+  .flow-row {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; align-items: center;
+    font-family: var(--mono); font-size: 11px;
+  }
+  .flow-row .box {
+    padding: 8px 6px; border: 1px solid var(--line); border-radius: 6px;
+    text-align: center; background: var(--bg-elev); color: var(--text-soft);
+    line-height: 1.3;
+  }
+  .flow-row .box.accent { border-color: var(--accent-line); color: var(--accent); background: var(--accent-soft); }
+  .flow-row .arrow { text-align: center; color: var(--text-dim); }
+
+  /* ── comparison matrix ───────────────────────────────────────── */
+  .matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table.matrix {
+    width: 100%; border-collapse: collapse; font-size: 13.5px;
+    min-width: 760px;
+  }
+  table.matrix th, table.matrix td {
+    text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top;
+  }
+  table.matrix thead th {
+    background: var(--bg-elev); color: var(--text); font-weight: 600;
+    font-size: 13px; letter-spacing: 0.02em; position: sticky; top: 0;
+  }
+  table.matrix tbody td:first-child { color: var(--text); font-weight: 500; width: 28%; }
+  table.matrix tbody td { color: var(--text-soft); }
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+  table.matrix td.pain { color: var(--bad); }
+  table.matrix td.fix { color: var(--good); }
+
+  /* ── sequencing ──────────────────────────────────────────────── */
+  .ladder { display: grid; grid-template-columns: 1fr; gap: 12px; counter-reset: rung; }
+  .rung {
+    display: grid; grid-template-columns: 56px 1fr auto; gap: 16px; align-items: center;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--bg-card);
+    padding: 16px 20px;
+  }
+  .rung::before {
+    counter-increment: rung; content: counter(rung, decimal-leading-zero);
+    font-family: var(--mono); font-size: 18px; color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .rung h4 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .rung p { margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.5; }
+  .rung .estimate { font-family: var(--mono); font-size: 12px; color: var(--text-soft); white-space: nowrap; }
+  @media (max-width: 720px) {
+    .rung { grid-template-columns: 40px 1fr; }
+    .rung .estimate { grid-column: 1 / -1; text-align: left; padding-left: 56px; }
+  }
+
+  /* ── footer ──────────────────────────────────────────────────── */
+  footer { padding: 56px 0 80px; color: var(--text-soft); font-size: 14px; }
+  footer .foot-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 48px; }
+  @media (max-width: 720px) { footer .foot-grid { grid-template-columns: 1fr; gap: 24px; } }
+  footer h5 { margin: 0 0 10px; color: var(--text); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--mono); }
+  footer ul { margin: 0; padding: 0; list-style: none; }
+  footer li { padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+  footer li:last-child { border-bottom: none; }
+  footer code { font-size: 12px; color: var(--text-dim); }
+
+  /* ── tiny utilities ──────────────────────────────────────────── */
+  .hr-dot { height: 1px; background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px); border: 0; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<!-- ─── top rail ─────────────────────────────────────────────── -->
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <strong style="font-weight:600">Walrus · Low-Hanging Fruit</strong>
+    </span>
+    <span class="crumbs"><span>report</span> <em>/</em> <strong>six showcases for web3 storage pain</strong></span>
+  </div>
+</div>
+
+<!-- ─── hero ─────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Builder report · 2026-05-14</span>
+    <h1>Six precise dApps Walrus can ship to <em>convert IPFS pain</em> into adoption.</h1>
+    <p class="lede">
+      Web3 builders in 2026 don't dislike content addressing — they dislike the IPFS network. CIDs survive,
+      ENS contenthash is non-negotiable, and verifiability is non-optional. What's collapsing is the operational
+      promise: free public goods that deprecated, pinning vendors that churn SDKs, and IPNS that quietly broke
+      everyone's mutable pointers. This report names six low-hanging fruits where Walrus can answer a specific,
+      already-voiced grievance with a small, opinionated example in the shape of <a href="https://github.com/MystenLabs/evm-nft-wal">EvmWal NFT</a>.
+    </p>
+    <div class="meta">
+      <span><strong>Source pain:</strong> ipfs-pain.md (2026-05-14 builder survey)</span>
+      <span><strong>Template:</strong> MystenLabs/evm-nft-wal · 200 LOC</span>
+      <span><strong>Author scope:</strong> developer relations &amp; example apps</span>
+    </div>
+  </div>
+</header>
+
+<!-- ─── pain anchor ──────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · anchor</span>
+      <h2>What builders actually say in 2026</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      Three quotes set the temperature of the conversation. Every showcase below maps to one of these
+      verbatim grievances or a sibling cited in <code style="font-family:var(--mono); color:var(--text-soft); font-size:13px;">ipfs-pain.md</code>.
+    </p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <span class="corner">trust shock</span>
+        <div class="stat">2024 · 75-day window</div>
+        <blockquote>Cloudflare gateway sunset, NFT.Storage Classic decommissioned, web3.storage rebranded to Storacha — shattering trust in the free-public-goods model.</blockquote>
+        <cite>— ipfs-pain.md, §1</cite>
+      </div>
+      <div class="pain-card">
+        <span class="corner">DX rot</span>
+        <div class="stat">w3up issue #1585</div>
+        <blockquote>This project's DX keeps going down as it ages like milk. Why CAN'T you keep using simple API keys and secret schemes as in the past?</blockquote>
+        <cite>— Storacha user, Nov 2024</cite>
+      </div>
+      <div class="pain-card">
+        <span class="corner">IPNS broken</span>
+        <div class="stat">Pinata blog · Jan 2025</div>
+        <blockquote>IPNS has been known to be slow and hard to work with. One of the biggest problems with IPNS is the speed.</blockquote>
+        <cite>— Pinata VP of Product</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── thesis ───────────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · thesis</span>
+      <h2>Content addressing detached from the network</h2>
+    </div>
+    <div class="thesis-grid">
+      <div>
+        <p>
+          The crucial observation in the 2026 survey is that the conversation has <strong>detached "content addressing" from "IPFS the network."</strong>
+          Builders still want CIDs — for verifiability, ENS contenthash, on-chain references — but no longer want to participate in or trust the
+          public P2P substrate underneath. That detachment is exactly the surface Walrus is built for.
+        </p>
+        <p>
+          The EvmWal NFT example demonstrates this in 200 lines: a vanilla OpenZeppelin ERC-721 storing a plain <code style="color:var(--text);font-family:var(--mono);font-size:13px;">tokenURI</code> string —
+          identical in shape to an IPFS-backed NFT — pointing at a Walrus aggregator URL. The Solidity side is unchanged.
+          The migration cost is one URL prefix.
+        </p>
+        <p class="callout">
+          Every fruit on this tree shares the same shape: <em>keep the contract that builders already know, swap the storage layer behind a single fetch.</em>
+        </p>
+      </div>
+      <div class="pillars">
+        <div class="pillar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10 L9 15 L17 5" stroke="#4da2ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <h4>Verifiable retrieval, native</h4>
+            <p>Walrus aggregators serve content-addressed blobs over plain HTTPS — verifiability without P2P plumbing in the browser.</p>
+          </div>
+        </div>
+        <div class="pillar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="#4da2ff" stroke-width="1.6"/><circle cx="10" cy="10" r="2" fill="#4da2ff"/></svg>
+          <div>
+            <h4>On-Sui Blob objects</h4>
+            <p>Each blob is a Sui object an operator can extend, delete, or transfer — replacing fragile pinning-service state with on-chain truth.</p>
+          </div>
+        </div>
+        <div class="pillar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 6 L16 6 M4 10 L16 10 M4 14 L11 14" stroke="#4da2ff" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <div>
+            <h4>Two write paths, one read path</h4>
+            <p>Public publisher PUT for zero-infra prototypes; SDK-backed operator path for production. Reads are the same anonymous aggregator GET either way.</p>
+          </div>
+        </div>
+        <div class="pillar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3 L10 17 M3 10 L17 10" stroke="#4da2ff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="10" r="3" stroke="#4da2ff" stroke-width="1.6"/></svg>
+          <div>
+            <h4>Deterministic node assignment</h4>
+            <p>Walrus's Red Stuff erasure coding fixes the "random walk" provider-discovery problem Shipyard itself cites as IPFS's structural retrieval flaw.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── template recap ──────────────────────────────────────── -->
+<section class="tight">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · template</span>
+      <h2>The shape of a Walrus showcase</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      The EvmWal NFT example, already shipped in this repo, is the canonical template. Each of the six fruits
+      below is a variation on it: one tiny Solidity contract, one or two fetch calls, one URL prefix.
+    </p>
+
+    <div class="template">
+      <div>
+        <h3>Browser write — one fetch, either mode</h3>
+        <p>Default mode posts to a local Next.js route that signs Sui transactions with an env-keyed operator wallet. Publisher mode PUTs directly to the public publisher and the EVM mint still works.</p>
+<pre class="code"><span class="c">// from web/lib/walrus-upload.ts — fallback (publisher) path</span>
+<span class="k">const</span> res = <span class="k">await</span> <span class="f">fetch</span>(<span class="s">`${WALRUS_PUBLISHER}/v1/blobs?epochs=5`</span>, {
+  method: <span class="s">'PUT'</span>,
+  headers: { <span class="s">'Content-Type'</span>: mime },
+  body: bytes,
+});
+<span class="k">const</span> { blobId } = <span class="k">await</span> res.<span class="f">json</span>();
+
+<span class="c">// from web/app/api/walrus/upload/handler.ts — operator (backend) path</span>
+<span class="k">const</span> { blobId, blobObject } = <span class="k">await</span> deps.walrusClient.walrus.<span class="f">writeBlob</span>({
+  blob: bytes,
+  deletable: <span class="k">false</span>,
+  epochs: <span class="n">5</span>,
+  signer: deps.keypair,
+});</pre>
+      </div>
+      <div>
+        <h3>EVM contract — unchanged from IPFS</h3>
+        <p>OpenZeppelin ERC-721 + ERC721URIStorage. The contract has no Walrus knowledge — it just holds a string. The migration from IPFS is changing what your frontend uploads to and which URL prefix it reads from.</p>
+<pre class="code"><span class="c">// from contracts/src/EvmWalNFT.sol — same shape an IPFS NFT uses</span>
+<span class="k">function</span> <span class="f">mint</span>(<span class="t">string</span> <span class="k">memory</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> tokenId) {
+    tokenId = <span class="f">_nextId</span>();
+    <span class="f">_safeMint</span>(<span class="n">msg.sender</span>, tokenId);
+    <span class="f">_setTokenURI</span>(tokenId, tokenURI_);
+    <span class="k">emit</span> <span class="f">Minted</span>(tokenId, <span class="n">msg.sender</span>, tokenURI_);
+}
+
+<span class="c">// tokenURI_ ends up as:
+// https://aggregator.walrus-testnet.walrus.space/v1/blobs/&lt;blobId&gt;</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── the six showcases ───────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · the six</span>
+      <h2>Six showcases, six grievances, six tiny dApps</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 40px;">
+      Each card maps a verbatim 2026 builder complaint to a Walrus-shaped reply that fits in roughly
+      the same code budget as the NFT example. They are ordered from "ship this week" to "ship this quarter."
+    </p>
+
+    <!-- 01 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">01</span>
+        <h3>EvmWal NFT — image + metadata (shipped)</h3>
+        <span class="tag">reference · 200 LOC</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "Don't trust free decentralized storage to outlive your project. Bankless's Metaversal newsletter now routinely
+            frames IPFS as 'data must be pinned through services like ClubNFT or Pinata to be maintained.'"
+            <em>ipfs-pain.md §4 — NFT.Storage collapse fallout</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            <strong>Already shipped in this repo.</strong> Vanilla ERC-721 + ERC721URIStorage; Walrus aggregator URL in <code style="color:var(--text);font-family:var(--mono);font-size:13px;">tokenURI</code>;
+            dual write paths (operator-pays SDK or public publisher) that converge on the same anonymous aggregator GET.
+            The Solidity side is identical to an IPFS NFT.
+          </p>
+          <div class="effort">
+            <span class="pill good">ready</span>
+            <span class="pill">~200 LOC</span>
+            <span class="pill accent">migration: 1 URL prefix</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape</div>
+<pre class="code"><span class="c">// the entire EVM-side contract surface</span>
+<span class="k">function</span> <span class="f">mint</span>(<span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
+<span class="k">function</span> <span class="f">mintTo</span>(<span class="t">address</span> to, <span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
+<span class="k">event</span> <span class="f">Minted</span>(<span class="t">uint256</span> <span class="k">indexed</span> tokenId, <span class="t">address</span> <span class="k">indexed</span> minter, <span class="t">string</span> tokenURI_);</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">picker</div>
+              <div class="arrow">→</div>
+              <div class="box accent">walrus PUT</div>
+              <div class="arrow">→</div>
+              <div class="box">mint(uri)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">02</span>
+        <h3>Walrus Sites for dApp frontend hosting</h3>
+        <span class="tag">scaffolded · showcases/02-walrus-sites/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "ENS contenthash is non-negotiable; pay Pinata or Filebase rather than trusting any free gateway;
+            treat IPNS as broken." — and Uniswap interface #7753 had to rewrite "all references to Cloudflare's IPFS gateway."
+            <em>ipfs-pain.md §10 — the 2026 newcomer vibe</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            Publish a Next.js or SPA build with <code style="color:var(--text);font-family:var(--mono);font-size:13px;">site-builder publish</code>; a Sui object holds the site, a <strong>SuiNS</strong> name
+            points at it, and the public <a href="https://wal.app">wal.app</a> portal resolves it for any visitor. Updates land via one Sui transaction —
+            no IPNS, no DNSLink. The ENS bridge is a single CNAME or DNSLink record from your <code style="color:var(--text);font-family:var(--mono);font-size:13px;">.eth</code> name to the portal host.
+          </p>
+          <div class="effort">
+            <span class="pill good">trivial</span>
+            <span class="pill">~10 LOC config</span>
+            <span class="pill accent">migration: SuiNS link + optional CNAME</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · CLI + SuiNS link</div>
+<pre class="code"><span class="c"># build once, publish to Walrus Sites</span>
+<span class="f">pnpm</span> build
+<span class="f">site-builder</span> publish ./out \
+  --epochs <span class="n">200</span>
+
+<span class="c"># → site_object_id: 0xa1b2…
+# → resolves at &lt;base36-of-id&gt;.wal.app
+#   (or yourdapp.wal.app once linked to a SuiNS name)</span>
+
+<span class="c"># link a SuiNS name → site object_id (single Sui tx),
+# then point yourdapp.eth at yourdapp.wal.app via CNAME / DNSLink.</span></pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">build/</div>
+              <div class="arrow">→</div>
+              <div class="box accent">site-builder</div>
+              <div class="arrow">→</div>
+              <div class="box">SuiNS · wal.app</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">03</span>
+        <h3>Mutable pointer — the IPNS replacement</h3>
+        <span class="tag">implemented · WalrusResolver.sol + keeper</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "Pinata is now openly pitching its smart-contract-based IPCM (IPFS CID Mapping) as a <em>replacement</em> for IPNS —
+            a remarkable position from inside the IPFS commercial ecosystem."
+            <em>ipfs-pain.md §6 — IPNS broken</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            A 30-line Solidity registry: <strong>name → current blobId</strong>, owner-gated update, full event log for
+            verifiable history. Replaces IPNS with one EVM read and one aggregator GET. The same contract works for
+            personal blogs, dApp config, RSS feeds, or audit-report archives.
+          </p>
+          <div class="effort">
+            <span class="pill good">trivial</span>
+            <span class="pill">~50 LOC total</span>
+            <span class="pill accent">migration: replace ipns:// with one contract read</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · Solidity registry</div>
+<pre class="code"><span class="c">// MutablePointer.sol — IPNS-shaped, on-chain, no random walk</span>
+<span class="k">contract</span> MutablePointer {
+  <span class="k">mapping</span>(<span class="t">bytes32</span> <span class="k">name</span> <span class="k">=&gt;</span> <span class="t">bytes32</span>) <span class="k">public</span> currentBlob;
+  <span class="k">mapping</span>(<span class="t">bytes32</span> <span class="k">=&gt;</span> <span class="t">address</span>) <span class="k">public</span> owner;
+
+  <span class="k">event</span> <span class="f">Updated</span>(<span class="t">bytes32</span> <span class="k">indexed</span> name, <span class="t">bytes32</span> blobId, <span class="t">uint256</span> at);
+
+  <span class="k">function</span> <span class="f">claim</span>(<span class="t">bytes32</span> name) <span class="k">external</span> {
+    <span class="k">require</span>(owner[name] == <span class="t">address</span>(<span class="n">0</span>), <span class="s">"taken"</span>);
+    owner[name] = <span class="n">msg.sender</span>;
+  }
+  <span class="k">function</span> <span class="f">update</span>(<span class="t">bytes32</span> name, <span class="t">bytes32</span> blobId) <span class="k">external</span> {
+    <span class="k">require</span>(owner[name] == <span class="n">msg.sender</span>, <span class="s">"not owner"</span>);
+    currentBlob[name] = blobId;
+    <span class="k">emit</span> <span class="f">Updated</span>(name, blobId, <span class="n">block.timestamp</span>);
+  }
+}</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">EVM read</div>
+              <div class="arrow">→</div>
+              <div class="box accent">aggregator GET</div>
+              <div class="arrow">→</div>
+              <div class="box">verified bytes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">04</span>
+        <h3>DAO governance proposals — Snapshot pattern</h3>
+        <span class="tag">implemented · Governance.sol</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "4Everland is used by Snapshot governance for Aave and Uniswap DAO votes" — bundled into the same hosted-IPFS tier
+            that absorbs the operational pain because public gateways can't be trusted.
+            <em>ipfs-pain.md §9 — hosted IPFS providers</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            One contract storing <strong>proposalId → (blobId, deadline, votes)</strong>. Proposal body uploaded to Walrus
+            in publisher mode (so the proposer pays, not the DAO operator); contract stores the 32-byte blobId.
+            Anyone reads the proposal anonymously via the aggregator. No pinning-vendor dependency, no rate-limit surprise on vote day.
+          </p>
+          <div class="effort">
+            <span class="pill good">straightforward</span>
+            <span class="pill">~150 LOC</span>
+            <span class="pill accent">migration: store blobId, not CID</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · proposer-pays write + DAO-readable bytes</div>
+<pre class="code"><span class="c">// Governance.sol — proposal body lives on Walrus, weight on-chain</span>
+<span class="k">struct</span> Proposal {
+  <span class="t">bytes32</span> blobId;       <span class="c">// Walrus blob holding the proposal markdown</span>
+  <span class="t">uint64</span>  deadline;
+  <span class="t">uint256</span> yes;
+  <span class="t">uint256</span> no;
+}
+<span class="k">mapping</span>(<span class="t">uint256</span> <span class="k">=&gt;</span> Proposal) <span class="k">public</span> proposals;
+
+<span class="k">function</span> <span class="f">propose</span>(<span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> id) {
+  id = ++lastId;
+  proposals[id] = Proposal(blobId, deadline, <span class="n">0</span>, <span class="n">0</span>);
+  <span class="k">emit</span> <span class="f">Proposed</span>(id, <span class="n">msg.sender</span>, blobId);
+}
+
+<span class="c">// frontend reads:  https://aggregator.../v1/blobs/&lt;blobId&gt;</span></pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">proposer</div>
+              <div class="arrow">→</div>
+              <div class="box accent">walrus PUT</div>
+              <div class="arrow">→</div>
+              <div class="box">propose(blobId)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">05</span>
+        <h3>Verifiable token list / dApp manifest</h3>
+        <span class="tag">implemented · manifest.ts</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "ipfs.io 85–90% of the time, it resolves … sometimes takes 5 min" — and Uniswap's interface release notes
+            broke because public gateways flake. Token lists and dApp manifests are exactly the small, high-read,
+            cache-friendly artifact that public-gateway flakiness ruins.
+            <em>ipfs-pain.md §2 — gateways</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            Combine showcase 03's mutable pointer with a strict JSON schema. Frontend resolves the pointer in one <code style="color:var(--text);font-family:var(--mono);font-size:13px;">eth_call</code> and fetches the manifest from a Walrus aggregator
+            by its content-addressed blob id. The aggregator is the trust boundary — same model as fetching by CID from an IPFS gateway — but the *pointer* lookup is now deterministic instead of an IPNS lottery,
+            which is the actual leverage over the Uniswap token-list pattern. Add Reed-Solomon-backed client-side hash verification on top with <code style="color:var(--text);font-family:var(--mono);font-size:13px;">@mysten/walrus</code> if your threat model needs it.
+          </p>
+          <div class="effort">
+            <span class="pill good">straightforward</span>
+            <span class="pill">~80 LOC</span>
+            <span class="pill accent">migration: swap ipfs:// for blobId lookup</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · one fetch + one verification</div>
+<pre class="code"><span class="c">// resolve "uniswap.tokens" → current blobId → manifest JSON</span>
+<span class="k">const</span> name  = ethers.<span class="f">id</span>(<span class="s">"uniswap.tokens"</span>);
+<span class="k">const</span> blobId = <span class="k">await</span> pointer.<span class="f">currentBlob</span>(name);
+
+<span class="k">const</span> res = <span class="k">await</span> <span class="f">fetch</span>(<span class="s">`${AGGREGATOR}/v1/blobs/${toBase64Url(blobId)}`</span>);
+<span class="k">const</span> bytes = <span class="k">new</span> <span class="t">Uint8Array</span>(<span class="k">await</span> res.<span class="f">arrayBuffer</span>());
+
+<span class="c">// optional integrity belt-and-braces:
+// recompute blake2b(bytes) and assert it matches blobId</span>
+<span class="k">const</span> list = <span class="t">JSON</span>.<span class="f">parse</span>(<span class="k">new</span> <span class="t">TextDecoder</span>().<span class="f">decode</span>(bytes));</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">pointer.call</div>
+              <div class="arrow">→</div>
+              <div class="box accent">aggregator GET</div>
+              <div class="arrow">→</div>
+              <div class="box">JSON.parse</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 06 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">06</span>
+        <h3>NFT collection drop — one Walrus Quilt, 10 000 tokens</h3>
+        <span class="tag">implemented · QuiltedCollection.sol</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "OpenSea actually improved their NFT metadata reliability by 99.2% when they switched to Pinata's infrastructure" —
+            i.e. the centralization tax for collection drops is enormous because each token needs its own pin.
+            <em>ipfs-pain.md §8 — decentralization theater</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            Pack every image + metadata file from the drop into <strong>one Walrus Quilt</strong> with each token's filename
+            as its identifier. The contract stores one <code style="color:var(--text);font-family:var(--mono);font-size:13px;">quiltId</code>; <code style="color:var(--text);font-family:var(--mono);font-size:13px;">tokenURI(id)</code> deterministically
+            returns the aggregator URL for that token's patch. One upload, 10 000 retrievable blobs, no pin-management surface.
+          </p>
+          <div class="effort">
+            <span class="pill good">solid</span>
+            <span class="pill">~120 LOC</span>
+            <span class="pill warn">requires quilt CLI</span>
+            <span class="pill accent">migration: bulk packer + 1-line contract change</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · quilt + deterministic tokenURI</div>
+<pre class="code"><span class="c"># pack the whole drop in one go</span>
+<span class="f">walrus</span> store-quilt --paths ./drop/**/*.{json,png} \
+  --epochs <span class="n">200</span>
+<span class="c"># → quiltId: 0xqlt…</span>
+
+<span class="c">// QuiltedCollection.sol</span>
+<span class="t">bytes32</span> <span class="k">public</span> <span class="k">immutable</span> quiltId;
+<span class="t">string</span>  <span class="k">public</span> <span class="k">constant</span> AGG = <span class="s">"https://aggregator.walrus-testnet.walrus.space"</span>;
+
+<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> id) <span class="k">public</span> <span class="k">view</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
+    <span class="c">// /v1/blobs/by-quilt-id/&lt;quiltId&gt;/&lt;identifier&gt;</span>
+    <span class="k">return</span> <span class="f">string.concat</span>(AGG, <span class="s">"/v1/blobs/by-quilt-id/"</span>, <span class="f">_b64url</span>(quiltId), <span class="s">"/"</span>, <span class="f">_dec</span>(id), <span class="s">".json"</span>);
+}</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">drop/</div>
+              <div class="arrow">→</div>
+              <div class="box accent">store-quilt</div>
+              <div class="arrow">→</div>
+              <div class="box">contract(quiltId)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ─── matrix ──────────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · matrix</span>
+      <h2>The six showcases against the IPFS baseline</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 28px;">
+      Same axes as the comparison table in the EvmWal NFT README, extended across all six fruits.
+    </p>
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Showcase</th>
+            <th>IPFS today</th>
+            <th>Walrus replacement</th>
+            <th>Migration cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>01 · NFT image + metadata</td>
+            <td class="pain">Pinata SDK churn, gateway flakiness, pin-lifetime anxiety</td>
+            <td class="fix">Aggregator URL in <code>tokenURI</code>, dual write paths</td>
+            <td>1 URL prefix</td>
+          </tr>
+          <tr>
+            <td>02 · dApp frontend hosting</td>
+            <td class="pain">IPNS broken; Cloudflare/eth.limo SPOFs; DNSLink fragility</td>
+            <td class="fix">Walrus Sites + SuiNS + wal.app portal; Sui-backed updates</td>
+            <td>SuiNS link + optional CNAME</td>
+          </tr>
+          <tr>
+            <td>03 · Mutable pointer (IPNS replacement)</td>
+            <td class="pain">"IPNS is the most loudly broken primitive"</td>
+            <td class="fix">30-line EVM registry + aggregator GET</td>
+            <td>1 contract deploy</td>
+          </tr>
+          <tr>
+            <td>04 · DAO governance proposals</td>
+            <td class="pain">4Everland-pinned IPFS; rate-limit risk on vote day</td>
+            <td class="fix">Proposer-pays publisher PUT; blobId stored on-chain</td>
+            <td>Snapshot adapter, ~150 LOC</td>
+          </tr>
+          <tr>
+            <td>05 · Token list / dApp manifest</td>
+            <td class="pain">Public gateway tail latency; Uniswap interface #7753</td>
+            <td class="fix">Mutable pointer + JSON manifest, hash-verified</td>
+            <td>One pointer entry per manifest</td>
+          </tr>
+          <tr>
+            <td>06 · 10 000-token collection drop</td>
+            <td class="pain">10 000 separate pins; OpenSea-only reliability tax</td>
+            <td class="fix">One Quilt; deterministic per-token URL</td>
+            <td>Bulk packer + 1-line tokenURI</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ─── sequencing ──────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">06 · sequencing</span>
+      <h2>What to ship, in what order</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      Ordered by leverage-per-week-of-engineering. The first three are stand-alone repos in the shape of
+      <code style="font-family:var(--mono);color:var(--text-soft);font-size:13px;">MystenLabs/evm-nft-wal</code>. The last three reuse infrastructure from earlier showcases.
+    </p>
+
+    <div class="ladder">
+      <div class="rung">
+        <div>
+          <h4>Mutable pointer demo (showcase 03)</h4>
+          <p>Smallest possible repo. Directly answers the IPNS grievance — the single most-cited structural complaint in the report. Becomes a dependency for showcases 05 and parts of 04.</p>
+        </div>
+        <span class="estimate">≈ 1 dev-week</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4>Walrus Sites + SuiNS frontend how-to (showcase 02)</h4>
+          <p>Mostly a focused tutorial repo: a tiny Next.js app, one publish script, a SuiNS-link walkthrough, and an optional CNAME from a .eth name to wal.app. Closes the Cloudflare-gateway-sunset wound with a path Uniswap-class projects can follow.</p>
+        </div>
+        <span class="estimate">≈ 1 dev-week</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4>Verifiable token list (showcase 05)</h4>
+          <p>Fork the mutable-pointer repo and add the manifest schema + a viewer. Speaks directly to the wallet / DEX teams already maintaining IPFS-pinned token lists.</p>
+        </div>
+        <span class="estimate">≈ 1 dev-week</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4>DAO proposals (showcase 04)</h4>
+          <p>Larger surface — a proposer UI plus a vote-tally view. Best landed as a Snapshot adapter rather than a full Snapshot replacement; reuse the EvmWal NFT publisher path so proposers pay their own WAL.</p>
+        </div>
+        <span class="estimate">≈ 2 dev-weeks</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4>Quilted collection drop (showcase 06)</h4>
+          <p>Pairs naturally with an NFT studio partner — Magic Eden, Sound.xyz, or a launchpad. Requires polish on the bulk packer and the patch-id URL helper, but every other piece is reused from showcase 01.</p>
+        </div>
+        <span class="estimate">≈ 2 dev-weeks</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4>Composite: dApp frontend reference stack</h4>
+          <p>Once 02–05 exist, bundle them as a "Walrus reference dApp": Walrus Sites for hosting, mutable pointer for manifests, NFT example for tokens, DAO module for governance. This is the canonical "what does a Walrus-native dApp look like" answer.</p>
+        </div>
+        <span class="estimate">≈ 1 sprint of integration</span>
+      </div>
+    </div>
+
+    <hr class="hr-dot" />
+
+    <div class="thesis-grid">
+      <div>
+        <h2 style="margin-bottom: 12px;">Where your input shapes this</h2>
+        <p>
+          The contract surface for showcase 03 — the mutable pointer — has two open design calls that materially affect adoption:
+          <strong>(a)</strong> whether ownership is per-name or via a global registry with namespacing (<code style="font-family:var(--mono);color:var(--text-soft);font-size:13px;">"vitalik.eth/blog"</code>), and
+          <strong>(b)</strong> whether the contract emits enough event history to reconstruct prior versions without an indexer.
+          Both are five-to-ten-line decisions in <code style="font-family:var(--mono);color:var(--text-soft);font-size:13px;">MutablePointer.sol</code> but they decide whether the example is a toy or a Pinata-IPCM-class primitive.
+        </p>
+        <p class="callout">
+          The most adoption-shaped choice in this report is <em>not what to build first, but what surface the IPNS-replacement contract exposes.</em>
+          Pick (a) and (b) before showcase 03 is taped out and the other five fall into place.
+        </p>
+      </div>
+      <div class="pillars">
+        <div class="pillar" style="grid-template-columns: 1fr;">
+          <div>
+            <h4>Question (a) · Namespacing</h4>
+            <p>Per-name owners are simpler but encourage squatting. Hierarchical names mirror ENS / DNS intuition but need an admin contract. <strong>Sui-side parallel</strong>: SuiNS already solves this for Sui addresses.</p>
+          </div>
+        </div>
+        <div class="pillar" style="grid-template-columns: 1fr;">
+          <div>
+            <h4>Question (b) · History reconstruction</h4>
+            <p>If <code style="font-family:var(--mono);color:var(--text-soft);font-size:13px;">Updated(name, blobId, at)</code> is the only audit trail, clients need a log indexer. Adding a <code style="font-family:var(--mono);color:var(--text-soft);font-size:13px;">history[name][i]</code> array makes "view at block N" a single EVM call but quadruples storage cost.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── footer ─────────────────────────────────────────────── -->
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>Methodology</h5>
+        <p>
+          Each showcase is anchored to at least one verbatim builder quote in
+          <code>ipfs-pain.md</code> (the 2026 builder-sentiment survey checked into this repo).
+          Code sketches assume the same stack as <code>MystenLabs/evm-nft-wal</code>:
+          OpenZeppelin ERC-721 + ERC721URIStorage, Next.js 16 App Router, viem + wagmi, and either
+          <code>@mysten/walrus</code> in a local Next.js route or the public Walrus publisher.
+          LOC estimates are total lines for a self-contained demo repo, not just net-new code.
+        </p>
+        <p>
+          The report is intentionally narrow: every fruit listed is one a small DevRel team can ship in 1–2
+          weeks and which a mid-sized EVM dApp can adopt in days. Larger Walrus-native designs
+          (data marketplaces, Walrus Relays, Nautilus-attested uploads) are out of scope on purpose — they're
+          the next tree, not the low-hanging fruit.
+        </p>
+      </div>
+      <div>
+        <h5>Sources in repo</h5>
+        <ul>
+          <li><a href="./ipfs-pain.md">ipfs-pain.md</a> <code>· 2026-05-14 survey</code></li>
+          <li><a href="./README.md">EvmWal NFT README</a> <code>· template</code></li>
+          <li><code>web/lib/walrus-upload.ts</code></li>
+          <li><code>web/app/api/walrus/upload/handler.ts</code></li>
+          <li><code>contracts/src/EvmWalNFT.sol</code></li>
+        </ul>
+        <h5 style="margin-top: 22px;">External anchors</h5>
+        <ul>
+          <li><a href="https://docs.wal.app/">docs.wal.app</a></li>
+          <li><a href="https://docs.wal.app/walrus-client/quilts.html">Walrus Quilts</a></li>
+          <li><a href="https://docs.wal.app/sites/">Walrus Sites</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
