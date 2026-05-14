@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 
 /// 10 000-token NFT collection where every token's metadata + image lives
 /// inside ONE Walrus Quilt.
@@ -37,6 +36,7 @@ contract QuiltedCollection is ERC721, Ownable {
     uint256 private _nextTokenId = 1;
 
     event Minted(uint256 indexed tokenId, address indexed to);
+    event AggregatorUpdated(string oldAggregator, string newAggregator);
 
     constructor(
         string memory name_,
@@ -64,6 +64,16 @@ contract QuiltedCollection is ERC721, Ownable {
 
     function totalMinted() external view returns (uint256) {
         return _nextTokenId - 1;
+    }
+
+    /// @notice Migration knob for the canonical aggregator host. The owner
+    /// can point the collection at a different Walrus aggregator (e.g. if
+    /// the original host sunsets or testnet→mainnet migration). The quilt
+    /// itself is content-addressed; only the resolver URL prefix changes.
+    function setAggregator(string calldata newAggregator) external onlyOwner {
+        require(bytes(newAggregator).length > 0, "QuiltedCollection: empty aggregator");
+        emit AggregatorUpdated(aggregator, newAggregator);
+        aggregator = newAggregator;
     }
 
     /// @notice Resolve token id to its Walrus-quilt-backed metadata URL.

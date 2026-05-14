@@ -12,11 +12,17 @@
  */
 import { resolveTokenList } from "./manifest.ts";
 
+function requireEnv(key: string): string {
+  const v = process.env[key];
+  if (!v) throw new Error(`missing env: ${key}`);
+  return v;
+}
+
 const ensName = process.env.ENS_NAME ?? "tokens.uniswap.eth";
 
 const { manifest, blobId, contentType } = await resolveTokenList(ensName, {
-  rpcUrl: process.env.EVM_RPC_URL!,
-  resolverAddress: process.env.RESOLVER_ADDRESS! as `0x${string}`,
+  rpcUrl: requireEnv("EVM_RPC_URL"),
+  resolverAddress: requireEnv("RESOLVER_ADDRESS") as `0x${string}`,
   aggregator: process.env.AGGREGATOR ?? "https://aggregator.walrus-testnet.walrus.space",
 });
 

@@ -71,4 +71,31 @@ contract QuiltedCollectionTest is Test {
         vm.expectRevert();
         c.tokenURI(42);
     }
+
+    function test_setAggregator_ownerCanMigrateAggregator() public {
+        vm.prank(alice);
+        uint256 id = c.mint();
+
+        string memory newAgg = "https://aggregator.walrus.example";
+        vm.prank(owner_);
+        c.setAggregator(newAgg);
+
+        assertEq(c.aggregator(), newAgg);
+        assertEq(
+            c.tokenURI(id),
+            string.concat(newAgg, "/v1/blobs/by-quilt-id/", QUILT_ID, "/1.json")
+        );
+    }
+
+    function test_setAggregator_revertsForNonOwner() public {
+        vm.prank(alice);
+        vm.expectRevert(); // OZ Ownable: OwnableUnauthorizedAccount
+        c.setAggregator("https://aggregator.walrus.example");
+    }
+
+    function test_setAggregator_revertsOnEmpty() public {
+        vm.prank(owner_);
+        vm.expectRevert(bytes("QuiltedCollection: empty aggregator"));
+        c.setAggregator("");
+    }
 }

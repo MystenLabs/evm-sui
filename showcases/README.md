@@ -52,6 +52,12 @@ forge build
 forge test -vv
 ```
 
+### Showcase 03 — full walkthrough
+
+See [`03-walrus-resolver/README.md`](./03-walrus-resolver/README.md) for the
+WalrusResolver deployment pattern (subdomain trick, ENS-gated authorization,
+keeper expectations) and the rationale for each design decision.
+
 ### Run the keeper (showcase 03)
 
 ```bash
