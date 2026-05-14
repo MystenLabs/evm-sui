@@ -88,11 +88,14 @@ contract Governance {
     }
 
     /// @notice Convenience view: returns (yes, no, passed, closed).
+    /// Reverts for unknown proposal ids — callers that need to probe for
+    /// existence should compare `id <= lastProposalId` first.
     function tally(uint256 id) external view returns (uint128 yes, uint128 no, bool passed, bool closed) {
         Proposal storage p = proposals[id];
+        require(p.deadline != 0, "Governance: unknown proposal");
         yes = p.yes;
         no = p.no;
-        closed = block.timestamp >= p.deadline && p.deadline != 0;
+        closed = block.timestamp >= p.deadline;
         passed = closed && yes > no;
     }
 }

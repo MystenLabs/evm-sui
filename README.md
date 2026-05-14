@@ -16,6 +16,14 @@ The **read path is identical** in both modes: an anonymous `GET` against the Wal
 
 The result: a normal Next.js + wagmi dApp where anyone with an injected EVM wallet can mint an NFT whose image and metadata live on Walrus testnet, and where every card links back to [Walruscan](https://walruscan.com/testnet) so users can verify their own blobs.
 
+## Looking for more showcases?
+
+This NFT dApp is showcase 01 of a six-part series tying specific IPFS pain points to focused Walrus replacements:
+
+- [`ipfs-pain.md`](./ipfs-pain.md) — 2026 builder-sentiment survey on the state of IPFS, the source material for the showcase set.
+- [`walrus-low-hanging-fruits.html`](./walrus-low-hanging-fruits.html) — visual report mapping each pain point to a Walrus showcase.
+- [`showcases/`](./showcases/) — the other five showcases (Walrus Sites + ENS, WalrusResolver IPNS replacement, on-Walrus DAO proposals, verifiable token list, quilted NFT drop), each with contracts, tests, and minimal TS clients.
+
 ## How the Walrus integration works
 
 ### Write — default (`backend` mode)

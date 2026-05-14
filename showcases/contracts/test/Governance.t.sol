@@ -44,6 +44,32 @@ contract GovernanceTest is Test {
         assertEq(no, 0);
     }
 
+    function test_propose_secondCall_assignsSequentialIdAndIndependentStorage() public {
+        uint64 deadline = uint64(block.timestamp + 1 days);
+        bytes32 anotherBlob = bytes32(uint256(0xFADE));
+
+        vm.prank(proposer);
+        uint256 id1 = gov.propose(blob, deadline);
+        vm.prank(proposer);
+        uint256 id2 = gov.propose(anotherBlob, deadline);
+
+        assertEq(id1, 1);
+        assertEq(id2, 2);
+
+        (, bytes32 b1, , , ) = gov.proposals(id1);
+        (, bytes32 b2, , , ) = gov.proposals(id2);
+        assertEq(b1, blob);
+        assertEq(b2, anotherBlob);
+
+        // Voting on one proposal must not bleed into the other's tallies.
+        vm.prank(alice);
+        gov.vote(id1, true);
+        (, , , uint128 yes1, ) = gov.proposals(id1);
+        (, , , uint128 yes2, ) = gov.proposals(id2);
+        assertEq(uint256(yes1), 100 ether);
+        assertEq(uint256(yes2), 0);
+    }
+
     function test_propose_revertsOnPastDeadline() public {
         vm.expectRevert(bytes("Governance: deadline in past"));
         gov.propose(blob, uint64(block.timestamp));
@@ -122,6 +148,11 @@ contract GovernanceTest is Test {
         (, , bool passed, bool closed) = gov.tally(id);
         assertTrue(closed);
         assertFalse(passed);
+    }
+
+    function test_tally_revertsOnUnknownProposal() public {
+        vm.expectRevert(bytes("Governance: unknown proposal"));
+        gov.tally(999);
     }
 
     function test_tally_closedAndPassed_whenYesExceedsNo() public {

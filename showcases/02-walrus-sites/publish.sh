@@ -33,6 +33,26 @@ if ! command -v site-builder >/dev/null 2>&1; then
   exit 1
 fi
 
+# site-builder treats site names as a free-form label — keep it conservative.
+# Reject names that would surprise the CLI parser or look unsafe in shell logs.
+if ! printf '%s' "$SITE_NAME" | grep -Eq '^[A-Za-z0-9._-]{1,64}$'; then
+  echo "SITE_NAME must match [A-Za-z0-9._-]{1,64} (got: '$SITE_NAME')" >&2
+  exit 1
+fi
+
+case "$NETWORK" in
+  testnet|mainnet) ;;
+  *)
+    echo "NETWORK must be 'testnet' or 'mainnet' (got: '$NETWORK')" >&2
+    exit 1
+    ;;
+esac
+
+if ! [ "$EPOCHS" -gt 0 ] 2>/dev/null; then
+  echo "EPOCHS must be a positive integer (got: '$EPOCHS')" >&2
+  exit 1
+fi
+
 echo "publishing $SITE_DIR for $EPOCHS epochs on $NETWORK as '$SITE_NAME'..."
 
 site-builder \

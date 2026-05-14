@@ -76,7 +76,9 @@ export async function resolveManifest<T = unknown>(
   }
 
   const contentType = asciiTrim(contentTypeRaw);
-  if (!contentType.startsWith("app/json") && !contentType.startsWith("application/json")) {
+  // The on-chain field is bytes8 — only the 8-char shortcode form fits.
+  // Long MIMEs like "application/json" are intentionally out of grammar here.
+  if (!contentType.startsWith("app/json")) {
     throw new Error(`manifest: unexpected contentType "${contentType}" for ${ensName}`);
   }
 
