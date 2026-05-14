@@ -12,7 +12,7 @@
  * cold path.
  */
 
-import { createPublicClient, http, namehash, type Address } from "viem";
+import { createPublicClient, hexToBytes, http, namehash, type Address } from "viem";
 import { mainnet } from "viem/chains";
 
 const WALRUS_RESOLVER_ABI = [
@@ -92,20 +92,14 @@ export async function resolveManifest<T = unknown>(
 
 /** Convert a 32-byte hex string to a base64url-encoded Walrus blob id. */
 function bytes32ToBase64Url(hex: `0x${string}`): string {
-  const bytes = new Uint8Array(32);
-  for (let i = 0; i < 32; i++) {
-    bytes[i] = parseInt(hex.slice(2 + i * 2, 4 + i * 2), 16);
-  }
+  const bytes = hexToBytes(hex, { size: 32 });
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function asciiTrim(b: `0x${string}`): string {
-  const bytes = new Uint8Array(8);
-  for (let i = 0; i < 8; i++) {
-    bytes[i] = parseInt(b.slice(2 + i * 2, 4 + i * 2), 16);
-  }
+  const bytes = hexToBytes(b, { size: 8 });
   const end = bytes.indexOf(0);
   const slice = end === -1 ? bytes : bytes.subarray(0, end);
   return new TextDecoder("ascii").decode(slice);
