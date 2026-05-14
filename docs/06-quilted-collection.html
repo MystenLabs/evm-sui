@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>06 · QuiltedCollection — evm-nft-wal learning site</title>
+<meta name="description" content="Showcase 06: pack a 10 000-token NFT drop into one Walrus Quilt. The contract stores one quiltId; tokenURI(id) deterministically returns the aggregator URL. One upload, no per-token pin." />
+<link rel="stylesheet" href="./assets/site.css" />
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+    </span>
+    <span class="crumbs">
+      <a href="./index.html">index</a>
+      <span>/</span>
+      <strong>06 · QuiltedCollection</strong>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Showcase 06 · collection drops</span>
+    <h1>One Walrus Quilt, <em>10 000 tokens</em>, zero per-token pins.</h1>
+    <p class="lede">
+      OpenSea famously improved NFT metadata reliability by 99.2% when they switched to Pinata's
+      infrastructure — i.e. the centralization tax for collection drops is enormous because each token
+      needs its own pin. This contract eliminates that tax: pack the whole drop into one Walrus Quilt with
+      filenames as identifiers, store one <code class="inline">quiltId</code> on-chain, and let
+      <code class="inline">tokenURI(id)</code> deterministically synthesize the per-token aggregator URL.
+    </p>
+    <div class="meta">
+      <span><strong>Sources:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/QuiltedCollection.sol">QuiltedCollection.sol</a></span>
+      <span><strong>Status:</strong> implemented · requires quilt CLI</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · the pain it answers</span>
+      <h2>"Decentralization theater" — one pin per token under one Pinata account.</h2>
+    </div>
+    <p class="pain-quote">
+      "Your ownership is permanent and verifiable, but your ability to actually access what you own depends
+      on services that could disappear tomorrow … OpenSea actually improved their NFT metadata reliability
+      by 99.2% when they switched to Pinata's infrastructure."
+      <em>ipfs-pain.md §8 — decentralization theater</em>
+    </p>
+    <p>
+      For a 10 000-token drop the operational shape on IPFS is brutal: 10 000 (image, metadata) pairs all
+      pinned individually, all listed in a single pinning account, all silently dropable when that account
+      lapses. The Walrus Quilt primitive answers exactly this:
+      <strong>one blob holds many files, each addressable by its filename</strong>. The contract stores
+      <em>one</em> id; the per-token URL is synthesized on-chain.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · the shape</span>
+      <h2>Pack once, deploy once, mint forever</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Pack + deploy (one-time)</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">drop/<br/>1.json, 1.png, …</div>
+            <div class="arrow">→</div>
+            <div class="box accent">walrus<br/>store-quilt</div>
+            <div class="arrow">→</div>
+            <div class="box">quiltId</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">forge deploy</div>
+            <div class="arrow">→</div>
+            <div class="box accent">constructor(<br/>quiltId, …)</div>
+            <div class="arrow">→</div>
+            <div class="box good">contract live</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Mint + read</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">user</div>
+            <div class="arrow">→</div>
+            <div class="box accent">mint()</div>
+            <div class="arrow">→</div>
+            <div class="box good">Minted event</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">marketplace</div>
+            <div class="arrow">→</div>
+            <div class="box accent">tokenURI(id)<br/>→ aggregator URL</div>
+            <div class="arrow">→</div>
+            <div class="box good">JSON + image</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="callout" style="margin-top: 28px;">
+      <em>No per-token state.</em> <code class="inline">tokenURI(id)</code> is a pure function of
+      <code class="inline">aggregator + quiltId + id</code>. Add 5 000 more mints and the contract
+      doesn't change a slot.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · read along</span>
+      <h2>Constructor invariants, string concat tokenURI, owner-only migration knob</h2>
+    </div>
+
+    <div class="walk">
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 1 · storage layout</p>
+          <h3>quiltId, aggregator, maxSupply — set once by constructor</h3>
+          <p>
+            Solidity doesn't allow <code class="inline">immutable</code> on dynamic-size types, so the
+            quilt id (base64url string) and aggregator base URL live in normal storage with a
+            constructor-only write contract. <code class="inline">maxSupply</code> is a real
+            <code class="inline">immutable</code> on a fixed-size <code class="inline">uint256</code>.
+          </p>
+          <p>
+            <strong>The quiltId is stored already base64url-encoded</strong> — Move and Sui produce blob
+            ids in that form natively, which sidesteps doing base64url encoding inside Solidity. The
+            on-chain string is exactly the path segment the aggregator URL needs.
+          </p>
+          <div class="tags">
+            <span class="pill">3 storage fields</span>
+            <span class="pill accent">no per-token state</span>
+            <span class="pill">OpenZeppelin ERC721</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/QuiltedCollection.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/QuiltedCollection.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">contract</span> QuiltedCollection <span class="k">is</span> ERC721, Ownable {
+    <span class="k">using</span> Strings <span class="k">for</span> <span class="t">uint256</span>;
+
+    <span class="t">string</span>  <span class="k">public</span> quiltId;     <span class="c">// base64url, set once</span>
+    <span class="t">string</span>  <span class="k">public</span> aggregator;  <span class="c">// e.g. https://aggregator.../</span>
+    <span class="t">uint256</span> <span class="k">public</span> <span class="k">immutable</span> maxSupply;
+    <span class="t">uint256</span> <span class="k">private</span> _nextTokenId = <span class="n">1</span>;
+
+    <span class="k">constructor</span>(
+        <span class="t">string</span> <span class="k">memory</span> name_,
+        <span class="t">string</span> <span class="k">memory</span> symbol_,
+        <span class="t">string</span> <span class="k">memory</span> quiltId_,
+        <span class="t">string</span> <span class="k">memory</span> aggregator_,
+        <span class="t">uint256</span> maxSupply_,
+        <span class="t">address</span> initialOwner
+    ) <span class="f">ERC721</span>(name_, symbol_) <span class="f">Ownable</span>(initialOwner) {
+        <span class="k">require</span>(<span class="k">bytes</span>(quiltId_).length    &gt; <span class="n">0</span>, <span class="s">"empty quiltId"</span>);
+        <span class="k">require</span>(<span class="k">bytes</span>(aggregator_).length &gt; <span class="n">0</span>, <span class="s">"empty aggregator"</span>);
+        <span class="k">require</span>(maxSupply_              &gt; <span class="n">0</span>, <span class="s">"zero maxSupply"</span>);
+        quiltId    = quiltId_;
+        aggregator = aggregator_;
+        maxSupply  = maxSupply_;
+    }
+}</pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 2 · tokenURI</p>
+          <h3>string.concat — deterministic per-token URL, no state read</h3>
+          <p>
+            The whole magic of the showcase: <code class="inline">tokenURI(id)</code> assembles
+            <code class="inline">aggregator + "/v1/blobs/by-quilt-id/" + quiltId + "/" + id + ".json"</code>.
+            That URL hits the Walrus aggregator's <em>quilt patch</em> endpoint, which serves the file
+            stored inside the quilt under identifier <code class="inline">"&lt;id&gt;.json"</code>.
+          </p>
+          <p>
+            <strong>The convention</strong>: when you pack the drop, name each file
+            <code class="inline">1.json, 2.json, …, N.json</code> for the metadata and
+            <code class="inline">1.png, 2.png, …, N.png</code> for the matching images. The metadata's
+            <code class="inline">image</code> field references the matching <code class="inline">.png</code>
+            inside the same quilt. <code class="inline">_requireOwned(tokenId)</code> enforces ERC-721's
+            "token must exist" rule.
+          </p>
+          <div class="tags">
+            <span class="pill">~10 LOC</span>
+            <span class="pill accent">pure-string assembly</span>
+            <span class="pill">deterministic</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/QuiltedCollection.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/QuiltedCollection.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> tokenId)
+    <span class="k">public</span>
+    <span class="k">view</span>
+    <span class="k">override</span>
+    <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>)
+{
+    <span class="f">_requireOwned</span>(tokenId);   <span class="c">// ERC-721 existence check</span>
+    <span class="k">return</span> <span class="f">string.concat</span>(
+        aggregator,
+        <span class="s">"/v1/blobs/by-quilt-id/"</span>,
+        quiltId,
+        <span class="s">"/"</span>,
+        tokenId.<span class="f">toString</span>(),
+        <span class="s">".json"</span>
+    );
+}
+
+<span class="c">// resulting URL, for id = 42:
+//   https://aggregator.walrus-testnet.walrus.space
+//     /v1/blobs/by-quilt-id/&lt;quiltId&gt;/42.json
+//
+// Walrus aggregator serves the file whose identifier inside
+// the quilt is "42.json" — no per-token pin, no per-token state.</span></pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 3 · the migration knob</p>
+          <h3>setAggregator(newAggregator) — owner-only, content stays content-addressed</h3>
+          <p>
+            The quilt itself is content-addressed; only the <em>resolver URL prefix</em> needs to be
+            mutable in case the original aggregator host sunsets or the project migrates
+            testnet → mainnet. <code class="inline">setAggregator</code> emits
+            <code class="inline">AggregatorUpdated(oldAggregator, newAggregator)</code> for a clean audit
+            trail.
+          </p>
+          <p>
+            <strong>What this is not</strong>: it isn't a pointer-to-content update. The
+            <code class="inline">quiltId</code> never changes after deployment — the bytes a holder owns
+            are exactly the bytes they minted. Only the host that serves them can be retargeted.
+          </p>
+          <div class="tags">
+            <span class="pill accent">owner-only</span>
+            <span class="pill">~6 LOC</span>
+            <span class="pill good">content stays addressable</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/QuiltedCollection.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/QuiltedCollection.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">event</span> <span class="f">AggregatorUpdated</span>(<span class="t">string</span> oldAggregator, <span class="t">string</span> newAggregator);
+
+<span class="k">function</span> <span class="f">setAggregator</span>(<span class="t">string</span> <span class="k">calldata</span> newAggregator)
+    <span class="k">external</span>
+    <span class="k">onlyOwner</span>
+{
+    <span class="k">require</span>(<span class="k">bytes</span>(newAggregator).length &gt; <span class="n">0</span>,
+        <span class="s">"QuiltedCollection: empty aggregator"</span>);
+    <span class="k">emit</span> <span class="f">AggregatorUpdated</span>(aggregator, newAggregator);
+    aggregator = newAggregator;
+}
+
+<span class="c">// Migration story:
+//   testnet → mainnet aggregator host
+//   primary host sunsets, switch to a self-hosted mirror
+// In both cases the quiltId stays the same, the bytes stay the same.
+// Only the URL prefix changes — the same migration shape every Walrus
+// showcase on this site uses.</span></pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · run it locally</span>
+      <h2>Pack a sample quilt, deploy, mint, check the URL</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Pack the drop</h4>
+        <div class="code-caption">terminal · Walrus CLI</div>
+<pre class="code"><span class="c"># install Walrus CLI from
+# https://docs.wal.app/walrus-client/installation.html</span>
+
+<span class="c"># prepare ./drop with one metadata JSON + one image per token id:
+#   drop/1.json     drop/1.png
+#   drop/2.json     drop/2.png
+#   ...
+#   drop/N.json     drop/N.png</span>
+
+<span class="f">walrus</span> store-quilt \
+  --paths ./drop/**/*.{json,png} \
+  --epochs <span class="n">200</span>
+
+<span class="c"># → quiltId: 0xqlt... (base64url, copy this)</span></pre>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Deploy + test</h4>
+        <div class="code-caption">terminal · Foundry</div>
+<pre class="code"><span class="k">cd</span> showcases/contracts
+<span class="f">forge</span> install --no-git \
+  foundry-rs/forge-std \
+  openzeppelin/openzeppelin-contracts
+
+<span class="c"># run the unit tests (in-process, no testnet needed)</span>
+<span class="f">forge</span> test --match-path <span class="s">"test/QuiltedCollection.t.sol"</span> -vv
+
+<span class="c"># or deploy to Anvil and call tokenURI manually:
+#   forge create QuiltedCollection \
+#     --constructor-args "Drop" "DROP" "0xqlt..." \
+#       "https://aggregator.walrus-testnet.walrus.space" \
+#       10000 0xYOUR_ADDRESS \
+#     --private-key 0x...
+#   cast send  &lt;addr&gt; "mint()"
+#   cast call  &lt;addr&gt; "tokenURI(uint256)(string)" 1</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · what to try next</span>
+      <h2>Exercises</h2>
+    </div>
+    <div class="try">
+      <div class="try-item">
+        <div>
+          <h5>Compare gas cost vs a per-token <code class="inline">_setTokenURI</code> drop</h5>
+          <p>
+            Deploy the regular EvmWal NFT and mint 100 tokens; deploy this contract and mint 100 tokens.
+            The quilt-backed version doesn't write per-token URI strings, so the per-mint gas savings show
+            up cleanly. Multiply by your target supply.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>GET a quilt patch URL by hand</h5>
+          <p>
+            <code class="inline">curl https://aggregator.walrus-testnet.walrus.space/v1/blobs/by-quilt-id/&lt;quiltId&gt;/1.json</code>.
+            You should get the same JSON you packed into <code class="inline">drop/1.json</code> — no
+            EVM, no contract, just a content-addressed fetch from a quilt.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Add a randomized minting order</h5>
+          <p>
+            Most real drops don't want sequential IDs revealed in order. Wrap
+            <code class="inline">_nextTokenId</code> with a Fisher-Yates-style draw from a fixed pool —
+            same quilt, same URLs, but unpredictable per-mint reveal. Watch out for the standard
+            commit-reveal pitfalls.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Simulate the aggregator migration</h5>
+          <p>
+            Call <code class="inline">setAggregator</code> with a different host and confirm
+            <code class="inline">tokenURI(1)</code> changes prefix while everything else stays identical.
+            That's the "future-proof" half of the showcase made tangible.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Inspect the Walrus Quilt docs</h5>
+          <p>
+            <a href="https://docs.wal.app/walrus-client/quilts.html">docs.wal.app/walrus-client/quilts</a>
+            covers quilt grammar, size limits, and per-patch retrieval. Useful before authoring your own
+            bulk packer.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pager">
+      <a href="./05-verifiable-manifest.html">
+        <span class="label">← prev</span>
+        <span class="title">05 · Verifiable manifest</span>
+      </a>
+      <a class="next" href="./index.html">
+        <span class="label">↩ back to</span>
+        <span class="title">Landing — all six showcases</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>This page is</h5>
+        <p>
+          A guided tour of showcase 06 of the
+          <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. Walrus
+          Quilts are a primitive IPFS never had a direct analogue for — pairs naturally with NFT studio
+          partners, launchpads, and any artifact whose per-item count makes per-item pinning operationally
+          unsustainable.
+        </p>
+      </div>
+      <div>
+        <h5>Cross-links</h5>
+        <ul>
+          <li><a href="./index.html">← landing index</a></li>
+          <li><a href="./01-evm-nft.html">showcase 01 (single-token analogue)</a></li>
+          <li><a href="https://docs.wal.app/walrus-client/quilts.html">Walrus Quilts docs</a></li>
+          <li><a href="https://docs.openzeppelin.com/contracts/5.x/api/token/erc721">OpenZeppelin ERC721</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

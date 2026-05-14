@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>04 · Governance — evm-nft-wal learning site</title>
+<meta name="description" content="Showcase 04: a Snapshot-style proposal contract whose proposal body lives on Walrus. Proposer pays WAL via the public publisher; the contract only stores the 32-byte blobId, deadline, and tallies." />
+<link rel="stylesheet" href="./assets/site.css" />
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+    </span>
+    <span class="crumbs">
+      <a href="./index.html">index</a>
+      <span>/</span>
+      <strong>04 · Governance</strong>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Showcase 04 · DAO proposals</span>
+    <h1>Proposal bodies on Walrus, <em>proposer-pays storage</em>, on-chain tallies.</h1>
+    <p class="lede">
+      Snapshot famously runs governance for Aave and Uniswap on top of 4Everland-pinned IPFS — bundled
+      hosted IPFS that absorbs the operational pain because public gateways can't be trusted. This
+      contract keeps the same shape but stores just the 32-byte <code class="inline">blobId</code>,
+      <code class="inline">deadline</code>, and vote tallies. The proposer uploads the body to Walrus
+      using the public publisher, so the DAO contract is never on the WAL hook.
+    </p>
+    <div class="meta">
+      <span><strong>Sources:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
+      <span><strong>Status:</strong> implemented · showcase-only voting surface</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · the pain it answers</span>
+      <h2>Hosted IPFS sits under every DAO vote.</h2>
+    </div>
+    <p class="pain-quote">
+      "4Everland is used by Snapshot governance for Aave and Uniswap DAO votes" — bundled into the same
+      hosted-IPFS tier that absorbs the operational pain because public gateways can't be trusted.
+      <em>ipfs-pain.md §9 — hosted IPFS providers</em>
+    </p>
+    <p>
+      The current arrangement works until it doesn't: a single hosted-IPFS provider sits beneath every
+      Snapshot proposal anyone reads. If that provider rate-limits, expires a pin, or has a vendor outage
+      on vote day, the proposal body becomes unverifiable bytes — even though the on-chain tally keeps
+      ticking. <strong>This contract decouples the body from the vendor</strong>: proposer publishes
+      anonymously to Walrus's public publisher, contract stores a content-addressed blob id, anyone reads
+      via the aggregator.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · the shape</span>
+      <h2>Proposer publishes; contract stores a 32-byte blobId.</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Propose</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">proposer</div>
+            <div class="arrow">→</div>
+            <div class="box accent">PUT publisher<br/>?epochs=N</div>
+            <div class="arrow">→</div>
+            <div class="box">{ blobId }</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">proposer</div>
+            <div class="arrow">→</div>
+            <div class="box accent">propose(blobId,<br/>deadline)</div>
+            <div class="arrow">→</div>
+            <div class="box good">Proposed event</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Vote + read</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">voter</div>
+            <div class="arrow">→</div>
+            <div class="box accent">vote(id, support)</div>
+            <div class="arrow">→</div>
+            <div class="box good">Voted event</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">anyone</div>
+            <div class="arrow">→</div>
+            <div class="box accent">aggregator GET<br/>/v1/blobs/&lt;blobId&gt;</div>
+            <div class="arrow">→</div>
+            <div class="box good">proposal body</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="callout" style="margin-top: 28px;">
+      The DAO contract never holds WAL. The proposer paid for storage in publisher mode; the body is
+      content-addressed; tally and deadline are the only things that need consensus.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · read along</span>
+      <h2>Proposal struct, propose, vote, tally — with one big warning.</h2>
+    </div>
+
+    <div class="walk">
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 1 · the storage shape</p>
+          <h3>Proposal struct — proposer, blobId, deadline, two tallies</h3>
+          <p>
+            Five fields per proposal. The body is referenced by its 32-byte content address — no IPFS CID
+            string, no IPNS pointer. <code class="inline">uint128</code> tallies leave room for huge
+            balances without burning a full slot; <code class="inline">uint64 deadline</code> is unix
+            seconds because Solidity's <code class="inline">block.timestamp</code> is.
+          </p>
+          <p>
+            <strong>What's <em>not</em> here</strong>: snapshot block, voting strategy id, any per-voter
+            data beyond a yes/no flag. This contract deliberately keeps the on-chain surface tiny so the
+            Walrus-integration shape is legible — see the warning in step 3 for why production deployments
+            need more.
+          </p>
+          <div class="tags">
+            <span class="pill">~100 LOC sol</span>
+            <span class="pill accent">no off-chain dependency</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/Governance.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/Governance.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">contract</span> Governance {
+    <span class="k">struct</span> Proposal {
+        <span class="t">address</span> proposer;
+        <span class="t">bytes32</span> blobId;    <span class="c">// Walrus blob holding the body</span>
+        <span class="t">uint64</span>  deadline;  <span class="c">// voting closes when block.timestamp &gt;= deadline</span>
+        <span class="t">uint128</span> yes;       <span class="c">// sum of voter weights for YES</span>
+        <span class="t">uint128</span> no;        <span class="c">// sum of voter weights for NO</span>
+    }
+
+    IERC20 <span class="k">public</span> <span class="k">immutable</span> voteToken;
+    <span class="t">uint256</span> <span class="k">public</span> lastProposalId;
+
+    <span class="k">mapping</span>(<span class="t">uint256</span> id =&gt; Proposal) <span class="k">public</span> proposals;
+    <span class="k">mapping</span>(<span class="t">uint256</span> id =&gt; <span class="k">mapping</span>(<span class="t">address</span> voter =&gt; <span class="t">bool</span>)) <span class="k">public</span> hasVoted;
+
+    <span class="k">event</span> <span class="f">Proposed</span>(<span class="t">uint256</span> <span class="k">indexed</span> id, <span class="t">address</span> <span class="k">indexed</span> proposer,
+                   <span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline);
+    <span class="k">event</span> <span class="f">Voted</span>(<span class="t">uint256</span> <span class="k">indexed</span> id, <span class="t">address</span> <span class="k">indexed</span> voter,
+                <span class="t">bool</span> support, <span class="t">uint256</span> weight);
+}</pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 2 · propose</p>
+          <h3>propose(blobId, deadline) — pointer-only, no body on-chain</h3>
+          <p>
+            The proposer has already uploaded the body to Walrus before calling
+            <code class="inline">propose</code>. The contract validates the deadline is in the future and
+            the blobId isn't zero, then stores the proposal and emits
+            <code class="inline">Proposed</code> with the blobId in the log so indexers and frontends can
+            discover proposals without scanning state.
+          </p>
+          <p>
+            <strong>The migration story</strong>: from a Snapshot operator's perspective, this is exactly
+            their existing proposal-creation flow — sign a typed message that includes a content reference
+            and a deadline — except the content reference is a Walrus blob id instead of an IPFS CID.
+          </p>
+          <div class="tags">
+            <span class="pill">~12 LOC body</span>
+            <span class="pill accent">deadline check</span>
+            <span class="pill accent">zero-blobId guard</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/Governance.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/Governance.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">function</span> <span class="f">propose</span>(<span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline)
+    <span class="k">external</span>
+    <span class="k">returns</span> (<span class="t">uint256</span> id)
+{
+    <span class="k">require</span>(deadline &gt; <span class="n">block.timestamp</span>,
+        <span class="s">"Governance: deadline in past"</span>);
+    <span class="k">require</span>(blobId != <span class="t">bytes32</span>(<span class="n">0</span>),
+        <span class="s">"Governance: zero blobId"</span>);
+
+    id = ++lastProposalId;
+    proposals[id] = <span class="f">Proposal</span>({
+        proposer: <span class="n">msg.sender</span>,
+        blobId:   blobId,
+        deadline: deadline,
+        yes:      <span class="n">0</span>,
+        no:       <span class="n">0</span>
+    });
+    <span class="k">emit</span> <span class="f">Proposed</span>(id, <span class="n">msg.sender</span>, blobId, deadline);
+}</pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 3 · vote — and the flash-loan caveat</p>
+          <h3>vote(id, support) — weight = balanceOf, with a giant production warning</h3>
+          <p>
+            The voting surface is intentionally minimal: a yes/no vote weighted by the caller's live
+            <code class="inline">voteToken.balanceOf(msg.sender)</code>. That keeps the file readable —
+            but it also makes the contract <strong>flash-loan-attackable</strong> against any ERC-20 with
+            a flash-mint or flash-borrow hook (most modern DEX-paired tokens).
+          </p>
+          <p>
+            <strong>Don't deploy this as written.</strong> Pair the contract with an OpenZeppelin
+            <code class="inline">ERC20Votes</code> token, snapshot the proposal's start block, and read
+            voting weight via <code class="inline">IVotes(voteToken).getPastVotes(msg.sender, startBlock)</code>.
+            That's the only correct way to use this pattern against an asset that can be borrowed in a
+            single transaction.
+          </p>
+          <div class="tags">
+            <span class="pill warn">flash-loan attackable as written</span>
+            <span class="pill accent">fix: ERC20Votes + getPastVotes</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/Governance.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/Governance.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">function</span> <span class="f">vote</span>(<span class="t">uint256</span> id, <span class="t">bool</span> support) <span class="k">external</span> {
+    Proposal <span class="k">storage</span> p = proposals[id];
+    <span class="k">require</span>(p.deadline != <span class="n">0</span>,           <span class="s">"unknown proposal"</span>);
+    <span class="k">require</span>(<span class="n">block.timestamp</span> &lt; p.deadline, <span class="s">"voting closed"</span>);
+    <span class="k">require</span>(!hasVoted[id][<span class="n">msg.sender</span>],     <span class="s">"already voted"</span>);
+
+    <span class="c">// ⚠ FLASH-LOAN ATTACKABLE — balanceOf reads the live balance.
+    // Production: snapshot the proposal start block, read via
+    //   IVotes(voteToken).getPastVotes(msg.sender, startBlock)
+    // and pair with an ERC20Votes token.</span>
+    <span class="t">uint256</span> weight = voteToken.<span class="f">balanceOf</span>(<span class="n">msg.sender</span>);
+    <span class="k">require</span>(weight &gt; <span class="n">0</span>, <span class="s">"zero weight"</span>);
+    <span class="k">require</span>(weight &lt;= <span class="k">type</span>(<span class="t">uint128</span>).max, <span class="s">"weight overflow"</span>);
+
+    hasVoted[id][<span class="n">msg.sender</span>] = <span class="k">true</span>;
+    <span class="k">if</span> (support) p.yes += <span class="t">uint128</span>(weight);
+    <span class="k">else</span>         p.no  += <span class="t">uint128</span>(weight);
+    <span class="k">emit</span> <span class="f">Voted</span>(id, <span class="n">msg.sender</span>, support, weight);
+}</pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 4 · tally</p>
+          <h3>tally(id) — convenience view returning (yes, no, passed, closed)</h3>
+          <p>
+            A frontend wants four pieces of information at once: the two raw counts, whether voting has
+            closed, and whether the proposal passed. <code class="inline">tally</code> packages all four
+            into a single call, with a deliberate revert on unknown ids so probing for existence requires
+            comparing against <code class="inline">lastProposalId</code> first — which keeps logs honest.
+          </p>
+          <p>
+            <strong>What <em>passed</em> means here is intentionally simple</strong>: more YES weight than
+            NO weight when the deadline elapses. Real DAOs almost always want a quorum and a supermajority
+            on top — both clean follow-on exercises against this contract.
+          </p>
+          <div class="tags">
+            <span class="pill">~10 LOC</span>
+            <span class="pill accent">no quorum (yet)</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/Governance.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/Governance.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">function</span> <span class="f">tally</span>(<span class="t">uint256</span> id)
+    <span class="k">external</span>
+    <span class="k">view</span>
+    <span class="k">returns</span> (<span class="t">uint128</span> yes, <span class="t">uint128</span> no, <span class="t">bool</span> passed, <span class="t">bool</span> closed)
+{
+    Proposal <span class="k">storage</span> p = proposals[id];
+    <span class="k">require</span>(p.deadline != <span class="n">0</span>, <span class="s">"unknown proposal"</span>);
+    yes    = p.yes;
+    no     = p.no;
+    closed = <span class="n">block.timestamp</span> &gt;= p.deadline;
+    passed = closed &amp;&amp; yes &gt; no;
+}</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · run it locally</span>
+      <h2>Forge test, then wire a frontend to the publisher</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Tests</h4>
+        <div class="code-caption">terminal</div>
+<pre class="code"><span class="k">cd</span> showcases/contracts
+<span class="f">forge</span> install --no-git \
+  foundry-rs/forge-std \
+  openzeppelin/openzeppelin-contracts
+<span class="f">forge</span> test --match-path <span class="s">"test/Governance.t.sol"</span> -vv</pre>
+        <p style="margin-top: 14px; font-size: 14px;">
+          Tests cover deadline guards, double-vote prevention, zero-weight rejection, tally correctness,
+          and unknown-proposal reverts.
+        </p>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Upload a proposal body</h4>
+        <div class="code-caption">browser-side · publisher mode</div>
+<pre class="code"><span class="c">// in your DAO frontend (any framework)</span>
+<span class="k">const</span> bytes = <span class="k">new</span> <span class="t">TextEncoder</span>().<span class="f">encode</span>(markdown);
+<span class="k">const</span> res = <span class="k">await</span> <span class="f">fetch</span>(
+  <span class="s">`${WALRUS_PUBLISHER}/v1/blobs?epochs=200`</span>,
+  { method: <span class="s">'PUT'</span>,
+    headers: { <span class="s">'Content-Type'</span>: <span class="s">'text/markdown'</span> },
+    body: bytes }
+);
+<span class="k">const</span> { blobId } = <span class="k">await</span> res.<span class="f">json</span>();
+
+<span class="c">// then propose() with that blobId</span>
+<span class="k">await</span> dao.<span class="f">write</span>.<span class="f">propose</span>([blobId, deadline]);</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · what to try next</span>
+      <h2>Exercises</h2>
+    </div>
+    <div class="try">
+      <div class="try-item">
+        <div>
+          <h5>Replace <code class="inline">balanceOf</code> with <code class="inline">getPastVotes</code></h5>
+          <p>
+            Add OpenZeppelin's <code class="inline">ERC20Votes</code> to the test setup, store
+            <code class="inline">startBlock</code> on the Proposal struct, and switch
+            <code class="inline">vote()</code> to read past balances. That alone makes the contract
+            flash-loan-safe.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Add a quorum threshold</h5>
+          <p>
+            Pass a quorum parameter to the constructor (or per-proposal); change
+            <code class="inline">passed</code> in <code class="inline">tally()</code> to require
+            <code class="inline">yes + no &gt;= quorum</code>. Cheap, useful, near-universal in real DAOs.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Build a viewer that fetches and renders the proposal body</h5>
+          <p>
+            <code class="inline">const blobId = proposals(id).blobId</code> then
+            <code class="inline">fetch(`${AGGREGATOR}/v1/blobs/${base64url(blobId)}`)</code> → render
+            markdown. Compare latency against a Snapshot proposal hosted on 4Everland-IPFS.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Index <code class="inline">Proposed</code> and <code class="inline">Voted</code> with viem</h5>
+          <p>
+            Both events have indexed topics for cheap filtering. A 20-line indexer is enough to power a
+            full DAO dashboard — useful as a comparison point against running a Subgraph.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Read the NatSpec at the top of the file in full</h5>
+          <p>
+            The flash-loan warning, the fix recipe, and the scope disclaimer all live in the contract
+            header. That's the part you'd want to read aloud during a security review — it tells you what
+            the showcase is and isn't.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pager">
+      <a href="./03-walrus-resolver.html">
+        <span class="label">← prev</span>
+        <span class="title">03 · WalrusResolver</span>
+      </a>
+      <a class="next" href="./05-verifiable-manifest.html">
+        <span class="label">next →</span>
+        <span class="title">05 · Verifiable manifest</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>This page is</h5>
+        <p>
+          A guided tour of showcase 04 of the
+          <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. The contract
+          is deliberately a <em>showcase of the Walrus integration shape</em> — proposer-pays storage,
+          on-chain pointer, deterministic resolution — and keeps its voting surface tiny on purpose. The
+          flash-loan warning in step 3 is not optional reading.
+        </p>
+      </div>
+      <div>
+        <h5>Cross-links</h5>
+        <ul>
+          <li><a href="./index.html">← landing index</a></li>
+          <li><a href="https://docs.openzeppelin.com/contracts/5.x/api/token/erc20#ERC20Votes">OpenZeppelin ERC20Votes</a></li>
+          <li><a href="https://docs.snapshot.org/">Snapshot docs (comparison)</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

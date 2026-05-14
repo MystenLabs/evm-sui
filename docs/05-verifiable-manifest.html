@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>05 · Verifiable manifest — evm-nft-wal learning site</title>
+<meta name="description" content="Showcase 05: an ENS-named, Walrus-backed Uniswap-style token list. One eth_call resolves the pointer; one aggregator GET returns the JSON. Reuses WalrusResolver from showcase 03." />
+<link rel="stylesheet" href="./assets/site.css" />
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+    </span>
+    <span class="crumbs">
+      <a href="./index.html">index</a>
+      <span>/</span>
+      <strong>05 · Verifiable manifest</strong>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Showcase 05 · token lists & dApp manifests</span>
+    <h1>Resolve <em>tokens.uniswap.eth</em> in one <code class="inline">eth_call</code> + one GET.</h1>
+    <p class="lede">
+      The Uniswap token list is the canonical example of a small, high-read, cache-friendly JSON blob whose
+      IPFS-pinned hosting flaked enough to trigger interface issue #7753 (rewrite every Cloudflare gateway
+      reference). This showcase reuses
+      <a href="./03-walrus-resolver.html">WalrusResolver</a> from showcase 03 plus a strict JSON schema:
+      one <code class="inline">eth_call</code> resolves the pointer, one aggregator GET returns the bytes,
+      <code class="inline">JSON.parse</code> closes it out. ~80 LOC of TypeScript, no SDK on the read path.
+    </p>
+    <div class="meta">
+      <span><strong>Sources:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/manifest.ts">manifest.ts</a> · <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/example-usage.ts">example-usage.ts</a></span>
+      <span><strong>Status:</strong> implemented · reuses showcase 03</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · the pain it answers</span>
+      <h2>Public gateways flake; token lists are exactly where that hurts.</h2>
+    </div>
+    <p class="pain-quote">
+      "<code>ipfs.io</code> … 85–90% of the time, it resolves … sometimes takes 5 min" — and Uniswap's
+      interface release notes broke because public gateways flake. Token lists and dApp manifests are
+      exactly the small, high-read, cache-friendly artifact that public-gateway flakiness ruins.
+      <em>ipfs-pain.md §2 — gateways</em>
+    </p>
+    <p>
+      Wallets and DEX frontends fetch token lists on every cold start; if the lookup is an IPNS resolution
+      plus an IPFS gateway GET, both stages can stall on any given visit. Replacing the pointer with an
+      EVM read is the entire leverage:
+      <strong>the resolver is deterministic instead of a DHT lottery</strong>, the aggregator is a normal
+      HTTPS cache target, and the bytes are content-addressed by the same blob id the EVM call returned.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · the shape</span>
+      <h2>Pointer-then-bytes, but the pointer is on-chain</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Resolve</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">tokens.uniswap.eth</div>
+            <div class="arrow">→</div>
+            <div class="box accent">namehash → node</div>
+            <div class="arrow">→</div>
+            <div class="box">walrusBlob(node)</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">blobId · ct</div>
+            <div class="arrow">→</div>
+            <div class="box accent">aggregator GET</div>
+            <div class="arrow">→</div>
+            <div class="box good">JSON.parse</div>
+          </div>
+        </div>
+        <p style="margin-top:14px; font-size:13.5px;">
+          Two network round-trips. The first is a sub-200 ms RPC call. The second is a normal HTTPS GET
+          your CDN can already cache.
+        </p>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Trust boundary</h4>
+        <p style="font-size: 14.5px;">
+          The aggregator serves the bytes that correspond to the requested blob id — that's the same
+          trust assumption as fetching by CID from an IPFS gateway. The leverage over IPFS lives in the
+          <em>pointer</em>: one deterministic EVM read instead of an IPNS lottery.
+        </p>
+        <p class="callout">
+          For true trustless retrieval, recompute the blob id from the bytes using
+          <code class="inline">@mysten/walrus</code>'s Reed-Solomon encoder client-side and assert
+          equality. The showcase keeps that out of the read path on purpose — read-path simplicity is
+          the migration story.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · read along</span>
+      <h2>Three short pieces, all in TypeScript</h2>
+    </div>
+
+    <div class="walk">
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 1 · the ABI fragment</p>
+          <h3>WALRUS_RESOLVER_ABI — just one function, viem-typed</h3>
+          <p>
+            Showcase 03's contract has more methods, but this client only needs
+            <code class="inline">walrusBlob(bytes32)</code>. Declaring the ABI inline is the right call
+            for a single-purpose client — no codegen step, no full-contract drift, and viem infers the
+            return tuple types from the literal.
+          </p>
+          <div class="tags">
+            <span class="pill accent">viem strict types</span>
+            <span class="pill">~12 LOC</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/05-verifiable-manifest/manifest.ts (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/manifest.ts">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">const</span> WALRUS_RESOLVER_ABI = [
+  {
+    type: <span class="s">"function"</span>,
+    name: <span class="s">"walrusBlob"</span>,
+    stateMutability: <span class="s">"view"</span>,
+    inputs:  [{ name: <span class="s">"node"</span>, type: <span class="s">"bytes32"</span> }],
+    outputs: [
+      { name: <span class="s">"blobId"</span>,      type: <span class="s">"bytes32"</span> },
+      { name: <span class="s">"suiObjectId"</span>, type: <span class="s">"bytes32"</span> },
+      { name: <span class="s">"contentType"</span>, type: <span class="s">"bytes8"</span>  },
+    ],
+  },
+] <span class="k">as const</span>;</pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 2 · resolveManifest</p>
+          <h3>One generic function, four failure modes</h3>
+          <p>
+            <code class="inline">resolveManifest&lt;T&gt;</code> is the whole product surface. It does
+            four things in sequence: namehash the ENS string, read the pointer, validate the on-chain
+            <code class="inline">contentType</code> shortcode, then GET and parse. Each step throws a
+            specific error so callers can route on it.
+          </p>
+          <p>
+            <strong>The contentType check is the interesting part</strong>: showcase 03 stores an 8-char
+            ASCII shortcode in <code class="inline">bytes8</code>. This client refuses to parse anything
+            that doesn't start with <code class="inline">"app/json"</code>. Long MIMEs like
+            <code class="inline">application/json</code> don't fit and are intentionally out of grammar.
+          </p>
+          <div class="tags">
+            <span class="pill">~40 LOC</span>
+            <span class="pill accent">generic over T</span>
+            <span class="pill warn">four failure modes</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/05-verifiable-manifest/manifest.ts (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/manifest.ts">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">export async function</span> <span class="f">resolveManifest</span>&lt;T = <span class="t">unknown</span>&gt;(
+  ensName: <span class="t">string</span>,
+  opts: <span class="t">ResolveOpts</span>,
+): <span class="t">Promise</span>&lt;<span class="t">ResolvedManifest</span>&lt;T&gt;&gt; {
+  <span class="k">const</span> evm = <span class="f">createPublicClient</span>({
+    chain: mainnet, transport: <span class="f">http</span>(opts.rpcUrl),
+  });
+
+  <span class="k">const</span> node = <span class="f">namehash</span>(ensName);
+  <span class="k">const</span> [blobId, , contentTypeRaw] = <span class="k">await</span> evm.<span class="f">readContract</span>({
+    address: opts.resolverAddress,
+    abi: WALRUS_RESOLVER_ABI,
+    functionName: <span class="s">"walrusBlob"</span>,
+    args: [node],
+  });
+
+  <span class="k">if</span> (blobId === ZERO_BYTES32)
+    <span class="k">throw new</span> <span class="f">Error</span>(<span class="s">`pointer unset for ${ensName}`</span>);
+
+  <span class="k">const</span> contentType = <span class="f">asciiTrim</span>(contentTypeRaw);
+  <span class="k">if</span> (!contentType.<span class="f">startsWith</span>(<span class="s">"app/json"</span>))
+    <span class="k">throw new</span> <span class="f">Error</span>(<span class="s">`unexpected contentType "${contentType}"`</span>);
+
+  <span class="k">const</span> url = <span class="s">`</span><span class="s">${opts.aggregator}/v1/blobs/${bytes32ToBase64Url(blobId)}</span><span class="s">`</span>;
+  <span class="k">const</span> res = <span class="k">await</span> <span class="f">fetch</span>(url);
+  <span class="k">if</span> (!res.ok)
+    <span class="k">throw new</span> <span class="f">Error</span>(<span class="s">`aggregator HTTP ${res.status}`</span>);
+
+  <span class="k">return</span> {
+    manifest:    <span class="t">JSON</span>.<span class="f">parse</span>(<span class="k">await</span> res.<span class="f">text</span>()) <span class="k">as</span> T,
+    blobId,
+    contentType,
+  };
+}</pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 3 · the base64url helper</p>
+          <h3>bytes32ToBase64Url — bridging EVM and Walrus URL conventions</h3>
+          <p>
+            EVM hands you <code class="inline">bytes32</code>; Walrus aggregator URLs use canonical
+            base64url (no padding). The helper does the conversion in vanilla browser-runtime APIs —
+            <code class="inline">hexToBytes</code> + <code class="inline">btoa</code> with the +/=
+            replacements. Same convention Move and Sui produce natively for blob ids, so the round-trip
+            preserves the content address.
+          </p>
+          <div class="tags">
+            <span class="pill">~6 LOC</span>
+            <span class="pill accent">browser-runtime only</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/05-verifiable-manifest/manifest.ts (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/manifest.ts">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">function</span> <span class="f">bytes32ToBase64Url</span>(hex: <span class="s">`0x${string}`</span>): <span class="t">string</span> {
+  <span class="k">const</span> bytes = <span class="f">hexToBytes</span>(hex, { size: <span class="n">32</span> });
+  <span class="k">let</span> bin = <span class="s">""</span>;
+  <span class="k">for</span> (<span class="k">const</span> b <span class="k">of</span> bytes) bin += <span class="t">String</span>.<span class="f">fromCharCode</span>(b);
+  <span class="k">return</span> <span class="f">btoa</span>(bin)
+    .<span class="f">replace</span>(/\+/g, <span class="s">"-"</span>)
+    .<span class="f">replace</span>(/\//g, <span class="s">"_"</span>)
+    .<span class="f">replace</span>(/=+$/, <span class="s">""</span>);
+}
+
+<span class="c">// asciiTrim() — read a `bytes8` shortcode off the chain, drop the
+// trailing zeros so 'app/json\0\0\0\0' becomes 'app/json'.</span>
+<span class="k">function</span> <span class="f">asciiTrim</span>(b: <span class="s">`0x${string}`</span>): <span class="t">string</span> {
+  <span class="k">const</span> bytes = <span class="f">hexToBytes</span>(b, { size: <span class="n">8</span> });
+  <span class="k">const</span> end = bytes.<span class="f">indexOf</span>(<span class="n">0</span>);
+  <span class="k">return new</span> <span class="t">TextDecoder</span>(<span class="s">"ascii"</span>).<span class="f">decode</span>(
+    end === -<span class="n">1</span> ? bytes : bytes.<span class="f">subarray</span>(<span class="n">0</span>, end)
+  );
+}</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · run it locally</span>
+      <h2>One pnpm script, against any mainnet RPC</h2>
+    </div>
+
+<pre class="code" style="max-width: 760px;"><span class="k">cd</span> showcases/05-verifiable-manifest
+<span class="f">pnpm</span> install
+
+<span class="k">export</span> EVM_RPC_URL=https://eth.llamarpc.com
+<span class="k">export</span> RESOLVER_ADDRESS=0x...                <span class="c"># your deployed WalrusResolver</span>
+<span class="k">export</span> ENS_NAME=tokens.uniswap.eth
+<span class="k">export</span> AGGREGATOR=https://aggregator.walrus-testnet.walrus.space
+
+<span class="f">pnpm</span> tsx example-usage.ts
+
+<span class="c"># prints something like:
+#   Resolved tokens.uniswap.eth → blobId=0x... (app/json)
+#   Token list "Uniswap Labs Default" contains 423 tokens.
+#     - USDC     0xa0b8...
+#     - WETH     0xc02a...
+#     - ...</span>
+</pre>
+
+    <p style="margin-top: 24px;">
+      <code class="inline">example-usage.ts</code> is a 30-line driver that calls
+      <code class="inline">resolveTokenList</code> (a typed wrapper for the Uniswap token-list schema)
+      and prints the first five tokens — useful as both a smoke test and a copy-paste seed for your own
+      manifest-typed wrapper.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · what to try next</span>
+      <h2>Exercises</h2>
+    </div>
+    <div class="try">
+      <div class="try-item">
+        <div>
+          <h5>Type a different manifest schema and pass it as the generic <code class="inline">T</code></h5>
+          <p>
+            <code class="inline">resolveManifest&lt;MyShape&gt;(name, opts)</code> gives you a fully typed
+            response — no codegen, no runtime cost. Useful for dApp config files, RSS feeds, or any JSON
+            artifact whose schema is known.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Add a Reed-Solomon-backed integrity check on top</h5>
+          <p>
+            Import <code class="inline">@mysten/walrus</code>, encode the returned bytes with the same
+            parameters Walrus used, recompute the blob id, and assert equality before
+            <code class="inline">JSON.parse</code>. That closes the aggregator trust gap mentioned in
+            section 02.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Cache the resolved blob id by ENS name</h5>
+          <p>
+            The pointer only changes when the ENS owner explicitly updates it; for read-heavy paths a
+            short-TTL in-memory cache keyed by <code class="inline">namehash(ensName)</code> is safe and
+            cuts the RPC traffic in half. Wallets and indexers should default this on.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Subscribe to <code class="inline">WalrusBlobChanged</code> for cache invalidation</h5>
+          <p>
+            From showcase 03's contract. Filter by <code class="inline">indexed node</code> equal to your
+            <code class="inline">namehash</code>; on each event, drop the cache entry. That's the full
+            picture of "deterministic mutable pointer" with no IPNS in sight.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Build a viewer with a 10-token preview + diff</h5>
+          <p>
+            Resolve the same ENS name from two different aggregators (testnet + a self-hosted mirror) and
+            compare. They should agree exactly — same blob id, same bytes. If they don't, one of the
+            aggregators is misbehaving and you've discovered the value of client-side integrity checks.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pager">
+      <a href="./04-governance.html">
+        <span class="label">← prev</span>
+        <span class="title">04 · Governance</span>
+      </a>
+      <a class="next" href="./06-quilted-collection.html">
+        <span class="label">next →</span>
+        <span class="title">06 · QuiltedCollection</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>This page is</h5>
+        <p>
+          A guided tour of showcase 05 of the
+          <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. The
+          showcase reuses <a href="./03-walrus-resolver.html">WalrusResolver</a> for the pointer — read
+          that page first if the ENS-gated contract surface isn't yet familiar.
+        </p>
+      </div>
+      <div>
+        <h5>Cross-links</h5>
+        <ul>
+          <li><a href="./index.html">← landing index</a></li>
+          <li><a href="./03-walrus-resolver.html">showcase 03 (the contract this reuses)</a></li>
+          <li><a href="https://tokenlists.org/">tokenlists.org spec</a></li>
+          <li><a href="https://docs.wal.app/walrus-client/typescript-sdk.html">@mysten/walrus docs</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

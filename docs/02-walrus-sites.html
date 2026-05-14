@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>02 · Walrus Sites — evm-nft-wal learning site</title>
+<meta name="description" content="Showcase 02: host the dApp's frontend on Walrus. site-builder publish + SuiNS + wal.app portal. Optional ENS bridge via DNSLink or CNAME." />
+<link rel="stylesheet" href="./assets/site.css" />
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+    </span>
+    <span class="crumbs">
+      <a href="./index.html">index</a>
+      <span>/</span>
+      <strong>02 · Walrus Sites</strong>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Showcase 02 · frontend hosting</span>
+    <h1>Ship the dApp itself on <em>Walrus, not IPNS</em>.</h1>
+    <p class="lede">
+      The bytes of an EVM dApp's frontend are exactly the kind of asset that broke when Cloudflare sunsetted
+      its public IPFS gateway in 2024 and Uniswap had to rewrite every reference to it. Walrus Sites
+      publishes a static build with one command, parks it as a Sui object, and lets the public
+      <code class="inline">wal.app</code> portal resolve it for any visitor — without IPNS, DNSLink, or a
+      single hosted-gateway dependency.
+    </p>
+    <div class="meta">
+      <span><strong>Sources:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/02-walrus-sites/publish.sh">publish.sh</a></span>
+      <span><strong>Status:</strong> scaffolded</span>
+      <span><strong>Walrus docs:</strong> <a href="https://docs.wal.app/sites/">docs.wal.app/sites</a></span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · the pain it answers</span>
+      <h2>ENS contenthash works; the IPFS network underneath doesn't.</h2>
+    </div>
+    <p class="pain-quote">
+      "Cloudflare's public IPFS gateway (<code>cf-ipfs.com</code>) was fully decommissioned on August 14, 2024."
+      Uniswap GitHub issue interface#7753: "All references to Cloudflare's IPFS gateway should be updated because
+      all these links will be broken soon." And Pinata's VP of Product in January 2025: "IPNS has been known to
+      be slow and hard to work with. One of the biggest problems with IPNS is the speed."
+      <em>ipfs-pain.md §2, §6 — gateways and IPNS</em>
+    </p>
+    <p>
+      The state of the art for "decentralized dApp frontend" in 2026 is a paid Pinata gateway + ENS
+      contenthash, with an IPNS record that nobody trusts and a DNSLink TXT record that propagates
+      whenever DNS feels like it. That works until any one of those services blinks.
+      <strong>Walrus Sites replaces the IPFS-network half with one Sui transaction and a portal that doesn't
+      DHT-walk.</strong>
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · the shape</span>
+      <h2>One publish, one SuiNS link, optional ENS bridge</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Publish + resolve</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">pnpm build</div>
+            <div class="arrow">→</div>
+            <div class="box accent">site-builder<br/>publish ./out</div>
+            <div class="arrow">→</div>
+            <div class="box">site object id</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">SuiNS app</div>
+            <div class="arrow">→</div>
+            <div class="box accent">link name<br/>→ site object id</div>
+            <div class="arrow">→</div>
+            <div class="box good">name.wal.app</div>
+          </div>
+        </div>
+        <p style="margin-top:14px; font-size:13.5px;">
+          The site is content-addressed and Sui-backed: anyone can verify the bytes; only the SuiNS owner
+          can update what name resolves to.
+        </p>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Optional ENS bridge</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">yourdapp.eth</div>
+            <div class="arrow">→</div>
+            <div class="box accent">DNSLink TXT<br/>or CNAME</div>
+            <div class="arrow">→</div>
+            <div class="box good">name.wal.app</div>
+          </div>
+        </div>
+        <p style="margin-top:14px; font-size:13.5px;">
+          One DNS record. The <code class="inline">.eth</code> name keeps working as your public identity;
+          the bytes underneath are Walrus instead of an IPFS-pinned blob behind an eth.limo or
+          cf-ipfs gateway.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · read along</span>
+      <h2>The whole showcase is one bash script</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      <code class="inline">publish.sh</code> is the entire surface area — it just wraps
+      <code class="inline">site-builder publish</code> with the conventions you'll want (sane defaults,
+      input validation, and a printed next-steps block for the SuiNS + ENS hookup).
+    </p>
+
+    <div class="walk">
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 1 · the publish command</p>
+          <h3>publish.sh — validate inputs, call site-builder, print the SuiNS recipe</h3>
+          <p>
+            The interesting work is the <code class="inline">site-builder</code> call. Everything around it
+            (regex check on <code class="inline">SITE_NAME</code>, network whitelist, epochs sanity check)
+            exists because the script is the kind of thing teams paste into a CI runbook — fail loudly
+            before publishing, not after.
+          </p>
+          <p>
+            <strong>The output</strong> includes a <code class="inline">site_object_id</code> on Sui.
+            That's the only artifact you need to link your SuiNS name; the contents are content-addressed
+            and verifiable by anyone with the id.
+          </p>
+          <div class="tags">
+            <span class="pill">~90 LOC bash</span>
+            <span class="pill accent">epochs default 200</span>
+            <span class="pill">testnet / mainnet</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/02-walrus-sites/publish.sh (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/02-walrus-sites/publish.sh">view source ↗</a>
+          </div>
+<pre class="code"><span class="c">#!/usr/bin/env bash
+# Publish a Walrus Site for the directory passed in $1.</span>
+<span class="k">set</span> -euo pipefail
+
+SITE_DIR=${<span class="n">1</span>:-./example-site}
+EPOCHS=${EPOCHS:-<span class="n">200</span>}
+SITE_NAME=${SITE_NAME:-<span class="s">"showcase-02-demo"</span>}
+NETWORK=${NETWORK:-testnet}
+
+<span class="c"># reject names that would surprise the CLI parser or look unsafe in logs</span>
+<span class="k">if</span> ! <span class="f">printf</span> <span class="s">'%s'</span> <span class="s">"$SITE_NAME"</span> | <span class="f">grep</span> -Eq <span class="s">'^[A-Za-z0-9._-]{1,64}$'</span>; <span class="k">then</span>
+  <span class="f">echo</span> <span class="s">"SITE_NAME must match [A-Za-z0-9._-]{1,64}"</span> &gt;&amp;<span class="n">2</span>; <span class="k">exit</span> <span class="n">1</span>
+<span class="k">fi</span>
+
+<span class="f">site-builder</span> \
+  --context <span class="s">"$NETWORK"</span> \
+  publish <span class="s">"$SITE_DIR"</span> \
+  --epochs <span class="s">"$EPOCHS"</span> \
+  --site-name <span class="s">"$SITE_NAME"</span>
+
+<span class="c"># ↑ site-builder prints something like:
+#     site_object_id: 0xa1b2c3...
+# Link that id to your SuiNS name in https://suins.io
+# Visit https://&lt;your-name&gt;.wal.app to confirm.</span></pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 2 · what you publish</p>
+          <h3>example-site/index.html — a placeholder, but the real one is your Next.js build</h3>
+          <p>
+            The repo ships a one-file placeholder so the script has something to publish without
+            shipping a full build artifact in source control. For a real dApp,
+            <code class="inline">site-builder publish ./out</code> (Next.js export) or
+            <code class="inline">./dist</code> (Vite) gives you the whole SPA on Walrus.
+          </p>
+          <p>
+            <strong>What's <em>not</em> here</strong> is any IPFS-era plumbing — no pinning service token,
+            no IPNS publish step, no DNSLink propagation wait. Just the static build and a single CLI call.
+          </p>
+          <div class="tags">
+            <span class="pill">single-file placeholder</span>
+            <span class="pill accent">drop in your real build/</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/02-walrus-sites/example-site/index.html (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/02-walrus-sites/example-site/index.html">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">&lt;!doctype html&gt;</span>
+<span class="k">&lt;html</span> lang=<span class="s">"en"</span><span class="k">&gt;</span>
+  <span class="k">&lt;body&gt;</span>
+    <span class="k">&lt;main&gt;</span>
+      <span class="k">&lt;h1&gt;</span>Hello from Walrus Sites.<span class="k">&lt;/h1&gt;</span>
+      <span class="k">&lt;p&gt;</span>If you're reading this, the site published via
+         <span class="k">&lt;code&gt;</span>site-builder<span class="k">&lt;/code&gt;</span> resolved through a
+         portal (likely <span class="k">&lt;code&gt;</span>wal.app<span class="k">&lt;/code&gt;</span>)
+         without touching IPNS, Cloudflare, or eth.limo.<span class="k">&lt;/p&gt;</span>
+    <span class="k">&lt;/main&gt;</span>
+  <span class="k">&lt;/body&gt;</span>
+<span class="k">&lt;/html&gt;</span>
+
+<span class="c">// Replace this whole directory with your real `pnpm build` output
+// before publishing. site-builder treats it as opaque static bytes.</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · run it locally</span>
+      <h2>Install site-builder, publish, then point a name at it</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Publish</h4>
+        <div class="code-caption">terminal</div>
+<pre class="code"><span class="c"># install the Walrus site-builder CLI
+# https://docs.wal.app/sites/getting-started/installing-the-site-builder/</span>
+
+<span class="c"># ensure a testnet Sui keypair with gas SUI + WAL is configured</span>
+<span class="f">cat</span> ~/.config/walrus/sites-config.yaml
+
+<span class="c"># publish the placeholder (or your own build dir)</span>
+<span class="k">cd</span> showcases/02-walrus-sites
+./publish.sh ./example-site
+
+<span class="c"># → site_object_id: 0x...
+# → resolves at &lt;base36-of-id&gt;.wal.app immediately</span></pre>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Hook it up</h4>
+        <div class="code-caption">SuiNS + ENS</div>
+<pre class="code"><span class="c"># 1. Link a SuiNS name → site object id (one Sui tx).
+#    https://suins.io → your name → "Set walrus site"
+#    Now https://your-name.wal.app resolves the site.</span>
+
+<span class="c"># 2. (optional) Bridge from ENS via DNSLink.
+#    At your DNS host, on _dnslink.yourdapp.eth set a TXT:
+#      dnslink=/https/your-name.wal.app
+#    Then set ENS contenthash to DNSLink('yourdapp.eth').</span>
+
+<span class="c"># 3. (optional alt) CNAME path:
+#    A regular DNS CNAME from app.yourdomain.com to
+#    your-name.wal.app, then point ENS at app.yourdomain.com.</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · what to try next</span>
+      <h2>Exercises</h2>
+    </div>
+    <div class="try">
+      <div class="try-item">
+        <div>
+          <h5>Publish a real Next.js build, not the placeholder</h5>
+          <p>
+            <code class="inline">cd web &amp;&amp; pnpm build &amp;&amp; pnpm export</code> (or your framework's
+            equivalent) and pass the output dir to <code class="inline">publish.sh</code>. Confirm wallet
+            connect and contract reads still work when the dApp is served from
+            <code class="inline">your-name.wal.app</code>.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Measure first-byte latency vs an IPFS gateway</h5>
+          <p>
+            <code class="inline">curl -w '%{time_starttransfer}\n' -o /dev/null -s</code> against your
+            <code class="inline">wal.app</code> URL and against any public IPFS gateway hosting equivalent
+            content. The Walrus number should be stable across reloads; the IPFS one famously isn't (see
+            ipfs-pain.md §7).
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Push an update and re-publish</h5>
+          <p>
+            Change <code class="inline">example-site/index.html</code> and re-run the script. Note the new
+            <code class="inline">site_object_id</code> — that's how Walrus Sites handle "mutability":
+            content-addressed bytes plus a SuiNS pointer you update in one tx. No IPNS, no propagation
+            window.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Read the Walrus Sites docs end-to-end</h5>
+          <p>
+            <a href="https://docs.wal.app/sites/">docs.wal.app/sites</a> covers things this showcase
+            doesn't: site-builder config schema, redirect/headers files, and per-network portals. Useful
+            once you're past the placeholder.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pager">
+      <a href="./01-evm-nft.html">
+        <span class="label">← prev</span>
+        <span class="title">01 · EvmWal NFT</span>
+      </a>
+      <a class="next" href="./03-walrus-resolver.html">
+        <span class="label">next →</span>
+        <span class="title">03 · WalrusResolver — IPNS replacement</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>This page is</h5>
+        <p>
+          A guided tour of showcase 02 of the
+          <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. The showcase
+          is intentionally a thin wrapper around the
+          <a href="https://docs.wal.app/sites/">Walrus Sites docs</a> — its job is to anchor that pattern
+          inside the broader IPFS-replacement story the repo tells.
+        </p>
+      </div>
+      <div>
+        <h5>Cross-links</h5>
+        <ul>
+          <li><a href="./index.html">← landing index</a></li>
+          <li><a href="../showcases/02-walrus-sites/publish.sh">publish.sh source</a></li>
+          <li><a href="https://docs.wal.app/sites/">docs.wal.app/sites</a></li>
+          <li><a href="https://suins.io">suins.io</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

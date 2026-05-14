@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>03 · WalrusResolver — evm-nft-wal learning site</title>
+<meta name="description" content="Showcase 03: a 35-line ENS-gated Solidity contract that points an ENS name at a Walrus blob, plus a permissionless TypeScript keeper that keeps the underlying blob alive forever." />
+<link rel="stylesheet" href="./assets/site.css" />
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+    </span>
+    <span class="crumbs">
+      <a href="./index.html">index</a>
+      <span>/</span>
+      <strong>03 · WalrusResolver</strong>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Showcase 03 · IPNS replacement</span>
+    <h1>An <em>ENS-gated mutable pointer</em> that replaces IPNS in 35 lines.</h1>
+    <p class="lede">
+      IPNS is the single most loudly broken IPFS primitive — Pinata itself is openly pitching its EVM
+      "IPCM" contract as a replacement. WalrusResolver takes that same idea and connects it to ENS
+      ownership: the owner of an ENS name can park a Walrus blob pointer on-chain, anyone can resolve it
+      in one <code class="inline">eth_call</code>, and a permissionless keeper keeps the underlying blob
+      alive forever.
+    </p>
+    <div class="meta">
+      <span><strong>Sources:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/WalrusResolver.sol">WalrusResolver.sol</a> · <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/03-walrus-resolver/keeper/keeper.ts">keeper.ts</a></span>
+      <span><strong>Status:</strong> implemented · 8 unit tests</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · the pain it answers</span>
+      <h2>"IPNS is the most loudly broken primitive."</h2>
+    </div>
+    <p class="pain-quote">
+      "Pinata is now openly pitching its smart-contract-based IPCM (IPFS CID Mapping) on EVM L2s like Base as
+      a <em>replacement</em> for IPNS — a remarkable position from inside the IPFS commercial ecosystem."
+      Kubo 0.34 release notes confirmed the scale: "Many complaints about IPNS being slow are tied to the
+      default <code>--ttl</code> in <code>ipfs name publish</code>, which was set to 1 hour."
+      <em>ipfs-pain.md §6 — IPNS broken</em>
+    </p>
+    <p>
+      The mental model IPNS sells — "an ENS-name-like mutable pointer to a CID" — is exactly what builders
+      want; the part that fails is the resolution mechanism (DHT random walk, pubsub propagation, TTL
+      tuning).
+      <strong>WalrusResolver lifts the pointer onto EVM and the bytes onto Walrus.</strong> The pointer is
+      one <code class="inline">eth_call</code>, sub-200 ms. The bytes are a content-addressed Walrus blob
+      served by an aggregator over plain HTTPS. Both halves get observably better.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · the shape</span>
+      <h2>Three roles: ENS owner, reader, keeper</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Set + read</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">ENS owner</div>
+            <div class="arrow">→</div>
+            <div class="box accent">setWalrusBlob<br/>(node, blobId, …)</div>
+            <div class="arrow">→</div>
+            <div class="box good">event log</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">reader</div>
+            <div class="arrow">→</div>
+            <div class="box accent">walrusBlob(node)<br/>EVM read</div>
+            <div class="arrow">→</div>
+            <div class="box">aggregator GET</div>
+          </div>
+        </div>
+        <p style="margin-top:14px; font-size:13.5px;">
+          One SSTORE per update. Authorization piggybacks on ENS's
+          <code class="inline">owner(node)</code> and <code class="inline">isApprovedForAll</code> — no
+          separate ownership table, ENSIP-1 operator approvals work out of the box.
+        </p>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Permissionless keeper</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">cron</div>
+            <div class="arrow">→</div>
+            <div class="box accent">read pointer<br/>+ Blob.end_epoch</div>
+            <div class="arrow">→</div>
+            <div class="box">epochsLeft</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">if &lt; threshold</div>
+            <div class="arrow">→</div>
+            <div class="box accent">extendBlob<br/>(+50 epochs)</div>
+            <div class="arrow">→</div>
+            <div class="box good">blob alive</div>
+          </div>
+        </div>
+        <p style="margin-top:14px; font-size:13.5px;">
+          Anyone can run a keeper for any name, as long as they're willing to pay the WAL extension cost.
+          The EVM pointer is never touched — only the underlying Walrus blob's lifetime.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · read along</span>
+      <h2>The contract, the authorization check, and the keeper loop</h2>
+    </div>
+
+    <div class="walk">
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 1 · the storage shape</p>
+          <h3>WalrusResolver.sol — three fields per name, indexed event for history</h3>
+          <p>
+            The <code class="inline">Pointer</code> struct carries three pieces: the Walrus
+            <code class="inline">blobId</code> (content address — what the aggregator URL needs), the
+            <code class="inline">suiObjectId</code> (so the keeper knows which Sui object's
+            <code class="inline">end_epoch</code> to extend), and a
+            <code class="inline">bytes8 contentType</code> shortcode for clients that want to validate
+            MIME before parsing.
+          </p>
+          <p>
+            <strong>No on-chain version array.</strong> History is reconstructable via the indexed
+            <code class="inline">WalrusBlobChanged</code> event — a single SSTORE per update, no
+            quadratic storage growth. If you need "view at block N," index the event log; if you don't,
+            you pay nothing.
+          </p>
+          <div class="tags">
+            <span class="pill">~35 LOC sol</span>
+            <span class="pill good">8 unit tests</span>
+            <span class="pill accent">ENS-gated</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/WalrusResolver.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/WalrusResolver.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">contract</span> WalrusResolver <span class="k">is</span> IERC165 {
+    <span class="k">struct</span> Pointer {
+        <span class="t">bytes32</span> blobId;       <span class="c">// Walrus content address</span>
+        <span class="t">bytes32</span> suiObjectId;  <span class="c">// on-Sui Blob object id</span>
+        <span class="t">bytes8</span>  contentType;  <span class="c">// e.g. "text/md", "app/json"</span>
+    }
+
+    IENS <span class="k">public</span> <span class="k">immutable</span> ens;
+    <span class="k">mapping</span>(<span class="t">bytes32</span> node =&gt; Pointer) <span class="k">private</span> _pointers;
+
+    <span class="k">event</span> <span class="f">WalrusBlobChanged</span>(
+        <span class="t">bytes32</span> <span class="k">indexed</span> node,
+        <span class="t">bytes32</span> blobId,
+        <span class="t">bytes32</span> suiObjectId,
+        <span class="t">bytes8</span>  contentType,
+        <span class="t">uint64</span>  at
+    );
+
+    <span class="k">function</span> <span class="f">setWalrusBlob</span>(
+        <span class="t">bytes32</span> node,
+        <span class="t">bytes32</span> blobId,
+        <span class="t">bytes32</span> suiObjectId,
+        <span class="t">bytes8</span>  contentType
+    ) <span class="k">external</span> {
+        <span class="f">_requireAuthorized</span>(node);
+        _pointers[node] = <span class="f">Pointer</span>(blobId, suiObjectId, contentType);
+        <span class="k">emit</span> <span class="f">WalrusBlobChanged</span>(
+          node, blobId, suiObjectId, contentType, <span class="t">uint64</span>(<span class="n">block.timestamp</span>));
+    }
+}</pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 2 · authorization</p>
+          <h3>_requireAuthorized — ENS owner OR operator-approved</h3>
+          <p>
+            One internal helper handles the whole permissioning story. The check is literally
+            <code class="inline">ens.owner(node)</code> plus
+            <code class="inline">ens.isApprovedForAll</code> — the same semantics ENS itself enforces in
+            ENSIP-1. If the underlying <code class="inline">.eth</code> name transfers, the new owner can
+            immediately overwrite the pointer; no separate claim step, no orphaned state.
+          </p>
+          <p>
+            <strong>This is the leverage ENS-gating gives you</strong>: name ownership and pointer
+            ownership are the same fact. Squatting becomes ENS's problem, not yours.
+          </p>
+          <div class="tags">
+            <span class="pill accent">ENSIP-1 semantics</span>
+            <span class="pill">~7 LOC</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/contracts/src/WalrusResolver.sol (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/WalrusResolver.sol">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">function</span> <span class="f">_requireAuthorized</span>(<span class="t">bytes32</span> node) <span class="k">internal</span> <span class="k">view</span> {
+    <span class="t">address</span> nodeOwner = ens.<span class="f">owner</span>(node);
+    <span class="k">require</span>(
+        nodeOwner == <span class="n">msg.sender</span> ||
+          ens.<span class="f">isApprovedForAll</span>(nodeOwner, <span class="n">msg.sender</span>),
+        <span class="s">"WalrusResolver: not authorized"</span>
+    );
+}
+
+<span class="c">// usage from setWalrusBlob() and clearWalrusBlob() —
+// the only state-modifying entry points.
+//
+// Intended deployment pattern:
+//   ENS names have exactly one resolver record.
+//   Don't repoint vitalik.eth's resolver here — you'd lose
+//   every addr/text/contenthash record on the apex name.
+//   Use a dedicated subdomain like blog.vitalik.eth.</span></pre>
+        </div>
+      </div>
+
+      <div class="walk-step">
+        <div class="step-prose">
+          <p class="step-num">step 3 · the keeper</p>
+          <h3>keeper.ts — read pointer, inspect Sui Blob, extend if needed</h3>
+          <p>
+            The keeper is a ~100-line Node script: for every name in <code class="inline">KEEPER_NAMES</code>,
+            read the on-chain pointer, fetch the Sui Blob object to inspect its
+            <code class="inline">end_epoch</code>, and call
+            <code class="inline">executeExtendBlobTransaction</code> when the remaining window drops below
+            <code class="inline">EXTENSION_THRESHOLD</code>. Per-name failures are caught locally so one
+            bad name doesn't abort the cron tick.
+          </p>
+          <p>
+            <strong>It's permissionless on purpose</strong>: anyone willing to pay WAL can keep someone
+            else's blog alive. The EVM pointer never moves; only the Sui-side lifetime extends.
+          </p>
+          <div class="tags">
+            <span class="pill">~100 LOC</span>
+            <span class="pill accent">@mysten/walrus 1.x</span>
+            <span class="pill">cron-friendly</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-caption">
+            <span>showcases/03-walrus-resolver/keeper/keeper.ts (excerpt)</span>
+            <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/03-walrus-resolver/keeper/keeper.ts">view source ↗</a>
+          </div>
+<pre class="code"><span class="k">const</span> currentEpoch = <span class="t">Number</span>(
+  (<span class="k">await</span> sui.walrus.<span class="f">systemState</span>()).committee.epoch
+);
+
+<span class="k">for</span> (<span class="k">const</span> name <span class="k">of</span> names) {
+  <span class="k">try</span> {
+    <span class="k">const</span> node = <span class="f">namehash</span>(name);
+    <span class="k">const</span> [, suiObjectId] = <span class="k">await</span> evm.<span class="f">readContract</span>({
+      address: resolverAddress, abi: WALRUS_RESOLVER_ABI,
+      functionName: <span class="s">"walrusBlob"</span>, args: [node],
+    });
+    <span class="k">if</span> (suiObjectId === ZERO) <span class="k">continue</span>;
+
+    <span class="k">const</span> blob = <span class="k">await</span> sui.<span class="f">getObject</span>({
+      id: suiObjectId, options: { showContent: <span class="k">true</span> }
+    });
+    <span class="k">const</span> endEpoch = <span class="t">Number</span>(
+      blob.data?.content?.fields?.storage?.fields?.end_epoch);
+    <span class="k">const</span> epochsLeft = endEpoch - currentEpoch;
+
+    <span class="k">if</span> (epochsLeft &gt;= threshold) <span class="k">continue</span>;
+
+    <span class="k">await</span> sui.walrus.<span class="f">executeExtendBlobTransaction</span>({
+      blobObjectId: suiObjectId,
+      epochs: extendBy,
+      signer: keypair,
+    });
+  } <span class="k">catch</span> (err) {
+    <span class="c">// per-name isolation — one bad name doesn't kill the tick</span>
+    <span class="t">console</span>.<span class="f">error</span>(<span class="s">`[error] ${name}:`</span>, err);
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · how it dodges IPNS's failure modes</span>
+      <h2>The migration is the contract</h2>
+    </div>
+
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>IPNS today</th>
+            <th>WalrusResolver</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="pain">Resolution does a DHT random walk; first-byte often &gt; 30 s.</td>
+            <td class="fix">Pointer is one <code>eth_call</code> (&lt; 200 ms).</td>
+          </tr>
+          <tr>
+            <td class="pain">Pubsub-based update propagation is unreliable.</td>
+            <td class="fix">Updates land in one EVM transaction with on-chain provenance.</td>
+          </tr>
+          <tr>
+            <td class="pain">Pinning expires silently when the pinning service forgets.</td>
+            <td class="fix">The Sui Blob object id is on-chain — anyone can keep it alive via the keeper.</td>
+          </tr>
+          <tr>
+            <td class="pain">Squatting on names is trivial; no canonical owner.</td>
+            <td class="fix">Names are ENS-gated; sale of the ENS name carries the pointer with it.</td>
+          </tr>
+          <tr>
+            <td class="pain">No useful audit trail of past pointer values.</td>
+            <td class="fix">Indexed <code>WalrusBlobChanged</code> events — full history reconstructable from logs.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · run it locally</span>
+      <h2>Forge tests, then the keeper against testnet</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4 style="margin-bottom: 14px;">Tests</h4>
+        <div class="code-caption">terminal</div>
+<pre class="code"><span class="k">cd</span> showcases/contracts
+<span class="f">forge</span> install --no-git \
+  foundry-rs/forge-std \
+  openzeppelin/openzeppelin-contracts
+<span class="f">forge</span> build
+<span class="f">forge</span> test --match-path <span class="s">"test/WalrusResolver.t.sol"</span> -vv</pre>
+        <p style="margin-top: 14px; font-size: 14px;">
+          Eight tests cover: set, clear, owner-only, operator-approved, ENS-owner transfer, zero-on-unset,
+          and ERC-165. They use an in-process <code class="inline">MockENS</code> so no testnet is needed.
+        </p>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 14px;">Keeper</h4>
+        <div class="code-caption">terminal</div>
+<pre class="code"><span class="k">cd</span> showcases/03-walrus-resolver/keeper
+<span class="f">pnpm</span> install
+
+<span class="k">export</span> EVM_RPC_URL=https://eth.llamarpc.com
+<span class="k">export</span> EVM_CHAIN_ID=<span class="n">1</span>
+<span class="k">export</span> RESOLVER_ADDRESS=0x...    <span class="c"># your deployment</span>
+<span class="k">export</span> SUI_RPC_URL=https://fullnode.testnet.sui.io:443
+<span class="k">export</span> WALRUS_NETWORK=testnet
+<span class="k">export</span> SUI_PRIVATE_KEY=suiprivkey... <span class="c"># holds WAL</span>
+<span class="k">export</span> KEEPER_NAMES=<span class="s">"blog.vitalik.eth,tokens.uniswap.eth"</span>
+<span class="k">export</span> EXTENSION_THRESHOLD=<span class="n">5</span>
+<span class="k">export</span> EXTEND_BY_EPOCHS=<span class="n">50</span>
+
+<span class="f">pnpm</span> keeper</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">06 · what to try next</span>
+      <h2>Exercises</h2>
+    </div>
+    <div class="try">
+      <div class="try-item">
+        <div>
+          <h5>Compute <code class="inline">namehash("blog.vitalik.eth")</code> by hand</h5>
+          <p>
+            The contract takes <code class="inline">bytes32 node</code>, not a string. Use
+            <code class="inline">viem</code>'s <code class="inline">namehash()</code> (the keeper does)
+            and compare against an EIP-137 reference implementation to internalize how subdomains roll up.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Stand up a fake ENS for testing without mainnet</h5>
+          <p>
+            <code class="inline">MockENS</code> in the test file is the smallest viable ENS surface:
+            <code class="inline">owner()</code> + <code class="inline">isApprovedForAll()</code>. Deploy
+            it to Anvil alongside <code class="inline">WalrusResolver</code> and you can exercise the
+            full set/read flow locally.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Set up an operator approval and have the keeper drive everything</h5>
+          <p>
+            Call <code class="inline">ens.setApprovalForAll(operator, true)</code> and let the operator
+            address handle <code class="inline">setWalrusBlob</code> for you. Pattern matches how teams
+            already give CI bots write access to ENS records.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Read the <code class="inline">contentType</code> bytes8 carefully</h5>
+          <p>
+            It's intentionally <em>not</em> a full MIME. Showcase 05's
+            <code class="inline">asciiTrim</code> + <code class="inline">startsWith("app/json")</code>
+            check is the convention. Pick a shortcode grammar your readers can rely on before launching.
+          </p>
+        </div>
+      </div>
+      <div class="try-item">
+        <div>
+          <h5>Reconstruct full history from the event log</h5>
+          <p>
+            Subscribe to <code class="inline">WalrusBlobChanged(indexed node, ...)</code> with viem's
+            <code class="inline">getLogs</code> and you have a full mutable-pointer history without ever
+            adding a storage array. That's the trade the contract is making.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pager">
+      <a href="./02-walrus-sites.html">
+        <span class="label">← prev</span>
+        <span class="title">02 · Walrus Sites</span>
+      </a>
+      <a class="next" href="./04-governance.html">
+        <span class="label">next →</span>
+        <span class="title">04 · Governance — proposals on Walrus</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>This page is</h5>
+        <p>
+          A guided tour of showcase 03 of the
+          <a href="https://github.com/MystenLabs/evm-nft-wal">MystenLabs/evm-nft-wal</a> repo. The
+          showcase's own <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/03-walrus-resolver/README.md">README</a>
+          covers the subdomain-trick deployment pattern in more depth — useful before mainnet deploys.
+        </p>
+      </div>
+      <div>
+        <h5>Cross-links</h5>
+        <ul>
+          <li><a href="./index.html">← landing index</a></li>
+          <li><a href="./05-verifiable-manifest.html">showcase 05 — reuses this contract</a></li>
+          <li><a href="https://docs.ens.domains/ensip/1">ENSIP-1 (resolver semantics)</a></li>
+          <li><a href="https://docs.wal.app/dev-blog/2024/03/19/walrus-typescript-sdk.html">@mysten/walrus SDK</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

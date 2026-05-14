@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>evm-nft-wal · learning site</title>
+<meta name="description" content="Companion learning material for MystenLabs/evm-nft-wal — six small EVM dApps that use Walrus as decentralized storage. Read along, understand the migration shape, then go look at the source." />
+<link rel="stylesheet" href="./assets/site.css" />
+</head>
+<body>
+
+<!-- ─── top rail ──────────────────────────────────────────────── -->
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <strong style="font-weight:600">evm-nft-wal · learning site</strong>
+    </span>
+    <span class="crumbs">
+      <a href="https://github.com/MystenLabs/evm-nft-wal">github.com/MystenLabs/evm-nft-wal</a>
+    </span>
+  </div>
+</div>
+
+<!-- ─── hero ──────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Learning site · companion to the repo</span>
+    <h1><em>Walrus behind your EVM contract</em>, explained one showcase at a time.</h1>
+    <p class="lede">
+      The <a href="https://github.com/MystenLabs/evm-nft-wal">evm-nft-wal</a> repo ships an NFT dApp plus five
+      sibling showcases that swap fragile IPFS pieces for Walrus equivalents — without touching the EVM contract shape
+      builders already know. This site is the guided tour: one page per showcase, pain point first, then the
+      ~30–150 lines of code that fix it, then the exact command to run it locally.
+    </p>
+    <div class="meta">
+      <span><strong>Source repo:</strong> MystenLabs/evm-nft-wal</span>
+      <span><strong>Scope:</strong> 6 showcases, Solidity + TypeScript</span>
+      <span><strong>Audience:</strong> EVM builders curious about Walrus</span>
+    </div>
+  </div>
+</header>
+
+<!-- ─── what this is ──────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · what this is</span>
+      <h2>One repo, six tiny dApps, one shared thesis</h2>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <p>
+          Every showcase keeps the EVM contract <strong>exactly the shape builders already know</strong> —
+          OpenZeppelin ERC-721, a plain registry mapping, a Snapshot-style proposal struct — and changes only
+          two things: <em>what your frontend uploads to</em> and <em>what URL prefix it reads from</em>. The
+          contract never learns about Walrus.
+        </p>
+        <p>
+          That symmetry is the whole point. If you can migrate one IPFS-backed dApp's URL prefix you can
+          migrate them all, and the comparison between IPFS and Walrus becomes apples-to-apples instead of
+          architectural hand-waving. Read showcase 01 first; the others are variations on the same template.
+        </p>
+        <p class="callout">
+          Same OpenZeppelin contract. Same browser fetch shape. <em>One URL prefix flipped.</em> That's the
+          migration cost the repo is showing.
+        </p>
+      </div>
+      <div>
+        <h4 style="margin-bottom:14px;">The shared shape</h4>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="box">browser</div>
+            <div class="arrow">→</div>
+            <div class="box accent">walrus publisher<br/>or SDK route</div>
+            <div class="arrow">→</div>
+            <div class="box">blob id</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">browser</div>
+            <div class="arrow">→</div>
+            <div class="box accent">EVM contract<br/>store URL/blobId</div>
+            <div class="arrow">→</div>
+            <div class="box good">tx ✓</div>
+          </div>
+          <div class="flow-row" style="margin-top: 6px;">
+            <div class="box">anyone</div>
+            <div class="arrow">→</div>
+            <div class="box accent">aggregator GET<br/>blob id → bytes</div>
+            <div class="arrow">→</div>
+            <div class="box good">image / JSON</div>
+          </div>
+        </div>
+        <p style="margin-top:14px; font-size:13.5px;">
+          Three steps. Two cross the EVM↔Walrus boundary. The third is a plain anonymous HTTPS GET — the same
+          pattern an IPFS gateway serves, with deterministic node assignment underneath instead of a DHT
+          random walk.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── how to read this ──────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · how to read this site</span>
+      <h2>Three reading paths, depending on how much time you have</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      Pick one. Each path lands you at the same place — the moment where the EVM contract stays the same
+      shape but the storage layer underneath flips.
+    </p>
+
+    <div class="paths">
+      <div class="path">
+        <span class="estimate">5 min · skim</span>
+        <h4>The pitch and the picture</h4>
+        <ol>
+          <li>Read the hero above.</li>
+          <li>Open the <a href="../walrus-low-hanging-fruits.html">visual report</a> for the six-showcase map.</li>
+          <li>Skim showcase 01's <a href="./01-evm-nft.html">deep-dive</a> — just the diagrams.</li>
+        </ol>
+      </div>
+      <div class="path">
+        <span class="estimate">30 min · understand</span>
+        <h4>Read along, page by page</h4>
+        <ol>
+          <li><a href="./01-evm-nft.html">Showcase 01</a> — the NFT reference dApp.</li>
+          <li><a href="./03-walrus-resolver.html">Showcase 03</a> — the IPNS replacement.</li>
+          <li><a href="./05-verifiable-manifest.html">Showcase 05</a> — token lists, built on 03.</li>
+          <li>Cross-check with the <a href="../ipfs-pain.md">ipfs-pain.md</a> survey.</li>
+        </ol>
+      </div>
+      <div class="path">
+        <span class="estimate">1 hour · build</span>
+        <h4>Clone and run locally</h4>
+        <ol>
+          <li>Clone <a href="https://github.com/MystenLabs/evm-nft-wal">the repo</a> and follow the README.</li>
+          <li>Open <a href="./01-evm-nft.html">showcase 01</a> alongside the running dApp.</li>
+          <li>Pick a second showcase from the grid below.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── showcase grid ─────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · the six showcases</span>
+      <h2>One page per showcase, with the IPFS pain it answers</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      Each tile links to a deep-dive page: verbatim pain quote → architecture diagram → annotated walk
+      through the key Solidity + TypeScript → exact local-run commands → "what to try next."
+    </p>
+
+    <div class="tiles">
+      <a class="tile" href="./01-evm-nft.html">
+        <span class="tnum">01 · shipped reference</span>
+        <h3>EvmWal NFT — image + metadata on Walrus</h3>
+        <p class="tdesc">
+          Vanilla OpenZeppelin ERC-721 with a Walrus aggregator URL in <code class="inline">tokenURI</code>.
+          Two write paths (operator SDK or public publisher), one read path, identical EVM surface to an
+          IPFS-backed NFT.
+        </p>
+        <div class="tmeta tags">
+          <span class="pill good">shipped</span>
+          <span class="pill">~200 LOC</span>
+          <span class="pill accent">migration: 1 URL prefix</span>
+        </div>
+        <span class="read-more">Read the deep-dive</span>
+      </a>
+
+      <a class="tile" href="./02-walrus-sites.html">
+        <span class="tnum">02 · frontend hosting</span>
+        <h3>Walrus Sites — host the dApp itself on Walrus</h3>
+        <p class="tdesc">
+          One <code class="inline">site-builder publish</code> command, a SuiNS link, and the public
+          <code class="inline">wal.app</code> portal resolves it for anyone. No IPNS, no Cloudflare gateway,
+          no DNSLink fragility. Optional ENS bridge via CNAME or DNSLink.
+        </p>
+        <div class="tmeta tags">
+          <span class="pill good">scaffolded</span>
+          <span class="pill">CLI + 1 HTML</span>
+          <span class="pill accent">migration: SuiNS link</span>
+        </div>
+        <span class="read-more">Read the deep-dive</span>
+      </a>
+
+      <a class="tile" href="./03-walrus-resolver.html">
+        <span class="tnum">03 · IPNS replacement</span>
+        <h3>WalrusResolver — ENS-gated mutable pointer</h3>
+        <p class="tdesc">
+          A ~35-line Solidity contract: an ENS name owner parks a Walrus blob pointer on-chain. One
+          <code class="inline">eth_call</code> resolves it (sub-200ms vs IPNS's DHT random walk). A
+          permissionless keeper keeps the underlying blob alive forever.
+        </p>
+        <div class="tmeta tags">
+          <span class="pill good">implemented</span>
+          <span class="pill">~35 LOC sol + keeper</span>
+          <span class="pill accent">migration: 1 contract deploy</span>
+        </div>
+        <span class="read-more">Read the deep-dive</span>
+      </a>
+
+      <a class="tile" href="./04-governance.html">
+        <span class="tnum">04 · DAO proposals</span>
+        <h3>Governance — Snapshot-style proposals, body on Walrus</h3>
+        <p class="tdesc">
+          Proposer uploads the proposal markdown to Walrus (publisher pays WAL, not the DAO), contract
+          stores just the 32-byte <code class="inline">blobId</code> + deadline + tallies. Replaces a
+          4Everland-pinned dependency with a content-addressed blob.
+        </p>
+        <div class="tmeta tags">
+          <span class="pill good">implemented</span>
+          <span class="pill">~100 LOC</span>
+          <span class="pill warn">flash-loan warning</span>
+        </div>
+        <span class="read-more">Read the deep-dive</span>
+      </a>
+
+      <a class="tile" href="./05-verifiable-manifest.html">
+        <span class="tnum">05 · token lists</span>
+        <h3>Verifiable manifest — Uniswap-shaped token list, on Walrus</h3>
+        <p class="tdesc">
+          Combine showcase 03's mutable pointer with a strict JSON schema. One <code class="inline">eth_call</code>
+          resolves <code class="inline">tokens.uniswap.eth</code> to a Walrus blob; one aggregator GET returns the
+          token list. The aggregator is the trust boundary — same as fetching by CID — but the pointer is
+          deterministic instead of an IPNS lottery.
+        </p>
+        <div class="tmeta tags">
+          <span class="pill good">implemented</span>
+          <span class="pill">~80 LOC</span>
+          <span class="pill accent">migration: ipfs:// → blobId</span>
+        </div>
+        <span class="read-more">Read the deep-dive</span>
+      </a>
+
+      <a class="tile" href="./06-quilted-collection.html">
+        <span class="tnum">06 · collection drops</span>
+        <h3>QuiltedCollection — 10 000 tokens, one Walrus Quilt</h3>
+        <p class="tdesc">
+          Pack every image + metadata file into one Walrus Quilt with each token's filename as its
+          identifier. The contract stores one <code class="inline">quiltId</code>;
+          <code class="inline">tokenURI(id)</code> deterministically returns the aggregator URL. One upload,
+          10 000 retrievable blobs, no pin-management surface.
+        </p>
+        <div class="tmeta tags">
+          <span class="pill good">implemented</span>
+          <span class="pill">~120 LOC</span>
+          <span class="pill warn">requires quilt CLI</span>
+        </div>
+        <span class="read-more">Read the deep-dive</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── primitives ────────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · primitives glossary</span>
+      <h2>The six Walrus and Sui pieces every showcase uses</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 28px;">
+      If you've built on IPFS before, the cognitive mapping is small. Each primitive below replaces a
+      specific IPFS concept — or fills a gap IPFS never had a clean answer for.
+    </p>
+
+    <div class="primitives">
+      <div class="primitive">
+        <div class="kind">replaces · ipfs gateway</div>
+        <h4>Walrus aggregator</h4>
+        <p>
+          A public HTTPS endpoint that serves a blob by its content address:
+          <code class="inline">/v1/blobs/&lt;blobId&gt;</code>. Anonymous, no auth, no SDK. Used in
+          <em>every</em> read path on this site.
+        </p>
+      </div>
+      <div class="primitive">
+        <div class="kind">replaces · pinning service</div>
+        <h4>Walrus publisher</h4>
+        <p>
+          A public HTTPS endpoint that accepts <code class="inline">PUT /v1/blobs?epochs=N</code> with raw
+          bytes and returns a blob id. Publisher pays WAL on the user's behalf — zero infra to upload.
+        </p>
+      </div>
+      <div class="primitive">
+        <div class="kind">new · no ipfs analogue</div>
+        <h4>On-Sui Blob object</h4>
+        <p>
+          Every blob also exists as a Sui object whose <code class="inline">end_epoch</code> field encodes
+          its retention. Operators can extend, delete, or transfer it on-chain — replacing fragile
+          pinning-service state with on-chain truth.
+        </p>
+      </div>
+      <div class="primitive">
+        <div class="kind">new · scales pin counts</div>
+        <h4>Walrus Quilt</h4>
+        <p>
+          A single blob that packs many files, each addressable by an identifier. Powers showcase 06: one
+          upload, 10 000 retrievable patches at
+          <code class="inline">/v1/blobs/by-quilt-id/&lt;quiltId&gt;/&lt;id&gt;</code>.
+        </p>
+      </div>
+      <div class="primitive">
+        <div class="kind">replaces · dnslink</div>
+        <h4>SuiNS · wal.app portal</h4>
+        <p>
+          SuiNS is Sui-side naming; <code class="inline">wal.app</code> is the public portal that resolves
+          a SuiNS name to a Walrus Site object. Powers showcase 02 — your dApp's hosting becomes a
+          <code class="inline">your-name.wal.app</code> URL.
+        </p>
+      </div>
+      <div class="primitive">
+        <div class="kind">unchanged · ens still works</div>
+        <h4>ENS contenthash · DNSLink</h4>
+        <p>
+          Your <code class="inline">.eth</code> name still works as your public identity. CNAME or DNSLink
+          from there to <code class="inline">wal.app</code> bridges Walrus content into the existing
+          web2 / ENS surface area users already trust.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── repo map ──────────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · repo map</span>
+      <h2>Where each showcase lives in the source tree</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 28px;">
+      Every page on this site is a guided tour of files in the repo — these links go straight to the source
+      on GitHub so you can read along.
+    </p>
+
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Showcase</th>
+            <th>Solidity</th>
+            <th>TypeScript / shell</th>
+            <th>Tests</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>01 · EvmWal NFT</td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/contracts/src/EvmWalNFT.sol">EvmWalNFT.sol</a></td>
+            <td>
+              <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/web/app/api/walrus/upload/handler.ts">handler.ts</a>,
+              <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/web/hooks/useMint.ts">useMint.ts</a>
+            </td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/contracts/test/EvmWalNFT.t.sol">EvmWalNFT.t.sol</a></td>
+          </tr>
+          <tr>
+            <td>02 · Walrus Sites</td>
+            <td>—</td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/02-walrus-sites/publish.sh">publish.sh</a></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>03 · WalrusResolver</td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/WalrusResolver.sol">WalrusResolver.sol</a></td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/03-walrus-resolver/keeper/keeper.ts">keeper.ts</a></td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/test/WalrusResolver.t.sol">WalrusResolver.t.sol</a></td>
+          </tr>
+          <tr>
+            <td>04 · Governance</td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></td>
+            <td>—</td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/test/Governance.t.sol">Governance.t.sol</a></td>
+          </tr>
+          <tr>
+            <td>05 · Verifiable manifest</td>
+            <td>(reuses 03)</td>
+            <td>
+              <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/manifest.ts">manifest.ts</a>,
+              <a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/example-usage.ts">example-usage.ts</a>
+            </td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>06 · QuiltedCollection</td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/QuiltedCollection.sol">QuiltedCollection.sol</a></td>
+            <td>—</td>
+            <td><a class="src-link" href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/test/QuiltedCollection.t.sol">QuiltedCollection.t.sol</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ─── footer ────────────────────────────────────────────────── -->
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>Methodology</h5>
+        <p>
+          The six showcases share one template — the EvmWal NFT dApp — so the migration shape stays
+          legible across them. Every page on this site quotes a verbatim builder grievance from
+          <a href="../ipfs-pain.md">ipfs-pain.md</a> (the 2026 builder-sentiment survey checked into the
+          repo) and pairs it with the specific files in the repo that answer it.
+        </p>
+        <p>
+          The companion visual report at
+          <a href="../walrus-low-hanging-fruits.html">walrus-low-hanging-fruits.html</a> sequences the six
+          showcases by leverage-per-week-of-engineering — read that first if you want the strategic shape
+          before the implementation detail.
+        </p>
+      </div>
+      <div>
+        <h5>This site</h5>
+        <ul>
+          <li><a href="./01-evm-nft.html">01 · EvmWal NFT</a></li>
+          <li><a href="./02-walrus-sites.html">02 · Walrus Sites</a></li>
+          <li><a href="./03-walrus-resolver.html">03 · WalrusResolver</a></li>
+          <li><a href="./04-governance.html">04 · Governance</a></li>
+          <li><a href="./05-verifiable-manifest.html">05 · Verifiable manifest</a></li>
+          <li><a href="./06-quilted-collection.html">06 · QuiltedCollection</a></li>
+        </ul>
+        <h5 style="margin-top: 22px;">External anchors</h5>
+        <ul>
+          <li><a href="https://github.com/MystenLabs/evm-nft-wal">github · the repo</a></li>
+          <li><a href="https://docs.wal.app/">docs.wal.app</a></li>
+          <li><a href="https://docs.wal.app/walrus-client/quilts.html">Walrus Quilts</a></li>
+          <li><a href="https://docs.wal.app/sites/">Walrus Sites</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
