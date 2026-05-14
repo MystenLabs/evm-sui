@@ -1,0 +1,19 @@
+{
+  "name": "walrus-resolver-keeper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "keeper": "tsx keeper.ts"
+  },
+  "dependencies": {
+    "@mysten/sui": "2.16.2",
+    "@mysten/walrus": "1.1.7",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
