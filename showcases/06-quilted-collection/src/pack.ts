@@ -91,13 +91,17 @@ function pack(opts: PackOptions): void {
   if (!st.isDirectory()) {
     throw new Error(`not a directory: ${opts.dropDir}`);
   }
-  const files = listDropFiles(opts.dropDir);
-  if (files.length === 0) {
+  // Count is informational so the user can sanity-check before the CLI runs.
+  // The directory itself (not the file list) is passed to walrus — at the
+  // documented 10 000-token scale, spreading every path into argv would
+  // exceed the OS `ARG_MAX` limit (~256 KB on macOS).
+  const count = listDropFiles(opts.dropDir).length;
+  if (count === 0) {
     throw new Error(`no .json or .png files under ${opts.dropDir}`);
   }
-  console.log(`[pack] ${files.length} files from ${opts.dropDir} (epochs=${opts.epochs})`);
+  console.log(`[pack] ${count} files under ${opts.dropDir} (epochs=${opts.epochs})`);
 
-  const args = ["store-quilt", "--epochs", String(opts.epochs), "--paths", ...files];
+  const args = ["store-quilt", "--epochs", String(opts.epochs), "--paths", opts.dropDir];
 
   if (opts.dryRun) {
     console.log(`[dry-run] would invoke: walrus ${args.join(" ")}`);

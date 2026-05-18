@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "pack": "tsx src/pack.ts",
-    "deploy": "tsx src/deploy.ts",
+    "pack:quilt": "tsx src/pack.ts",
+    "deploy:contract": "tsx src/deploy.ts",
     "url": "tsx src/url.ts"
   },
   "devDependencies": {

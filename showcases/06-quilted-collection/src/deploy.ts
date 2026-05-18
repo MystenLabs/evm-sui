@@ -65,8 +65,13 @@ function main(): void {
 
   const dryRun = process.argv[2] === "--dry-run";
   if (dryRun) {
+    // Redact the private key so the dry-run print is safe to paste into
+    // chat / CI logs. The previous arg in `args` tags the value.
+    const redacted = args.map((value, i) =>
+      args[i - 1] === "--private-key" ? "<REDACTED>" : value,
+    );
     console.log(`[dry-run] would invoke (cwd=${CONTRACTS_ROOT}):`);
-    console.log(`  ${forgeBin} ${args.join(" ")}`);
+    console.log(`  ${forgeBin} ${redacted.join(" ")}`);
     return;
   }
 

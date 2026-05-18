@@ -30,30 +30,39 @@ per-file identifiers.
 ## The shape
 
 ```
-artist          ──pnpm pack ./drop──▶  walrus store-quilt --paths drop/*.{json,png}
+artist  ──pnpm pack:quilt ./images──▶ walrus store-quilt --paths ./images
                                                  │
                                                  ▼
-                                            quiltId (base64url)
+                                            QID_IMAGES (base64url)
                                                  │
-artist          ──QC_QUILT_ID=… pnpm deploy──▶ DeployQuiltedCollection.s.sol
+artist  ──generate meta/<id>.json with image=<agg>/by-quilt-id/<QID_IMAGES>/<id>.png
+                                                 │
+artist  ──pnpm pack:quilt ./meta────▶ walrus store-quilt --paths ./meta
+                                                 │
+                                                 ▼
+                                            QID_METADATA (base64url)
+                                                 │
+artist  ──QC_QUILT_ID=… pnpm deploy:contract──▶ DeployQuiltedCollection.s.sol
                                                           │
                                                           ▼
                                               QuiltedCollection (EVM)
                                                           │
 collector       ──mint()──▶  QuiltedCollection            │
                                                           ▼
-client          ──tokenURI(id)──▶ "<agg>/v1/blobs/by-quilt-id/<quiltId>/<id>.json"
+client          ──tokenURI(id)──▶ "<agg>/v1/blobs/by-quilt-id/<QID_METADATA>/<id>.json"
                        │
                        └──GET that URL──▶ token's metadata JSON
                                                   │
-                                                  └─.image─▶ "<agg>/.../<id>.png"
+                                                  └─.image─▶ "<agg>/.../<QID_IMAGES>/<id>.png"
 ```
 
-Three on-chain artifacts at deploy time:
+On-chain artifacts at deploy time:
 
-- the **Quilt** on Sui — one Walrus operation, holds every file as a named slice;
-- the immutable **`quiltId` string** in the `QuiltedCollection` contract;
-- the immutable **`aggregator` string** — the canonical resolver host
+- the **metadata Quilt** on Sui — one Walrus operation, holds every token's JSON;
+- the **images Quilt** on Sui — one Walrus operation, holds every token's image;
+- the **`quiltId` string** stored on the `QuiltedCollection` contract
+  (the metadata quilt's id);
+- the **`aggregator` string** — the canonical resolver host
   (owner-mutable via `setAggregator` for sunset migration).
 
 ## Why it dodges per-token pinning
@@ -67,31 +76,35 @@ Three on-chain artifacts at deploy time:
 
 ## End-to-end flow
 
-### 1. Prepare the drop directory
+### 1. Prepare two drop directories — images first, then metadata
+
+A metadata JSON's `image` field has to be a fully-qualified aggregator
+URL, which means it has to include the quiltId of the quilt it's pointing
+at. If you put images and metadata in the **same** quilt, the metadata's
+content depends on the quilt's id, but the quilt's id is content-addressed
+from the metadata — a circular dependency that no number of re-packs can
+break.
+
+The clean fix is to use **two quilts**: one for images, one for metadata.
+Metadata references the images quilt's id (known after step 2), and the
+contract is deployed against the metadata quilt's id (known after step 4).
 
 ```
-drop/
-├── 1.json
+images/
 ├── 1.png
-├── 2.json
 ├── 2.png
-└── ... up to 10000.{json,png}
+└── ...
+
+meta/
+├── 1.json     # contains: image = "<AGG>/v1/blobs/by-quilt-id/<QID_IMAGES>/1.png"
+├── 2.json
+└── ...
 ```
 
-Each metadata JSON's `image` field must point at its sibling PNG via the
-aggregator-by-quilt-id URL. **The aggregator + quiltId you'll use is
-known only AFTER `walrus store-quilt` runs**, so most drops bootstrap by:
+For purely on-chain rendering (no images), skip the images quilt entirely
+and just pack the metadata.
 
-- placing a templated `{{AGG}}/by-quilt-id/{{QID}}/<id>.png` in each
-  metadata JSON,
-- running `pack`,
-- substituting the real `quiltId` back into the JSON files,
-- re-running `pack` (the second pass produces the canonical quiltId).
-
-For purely on-chain rendering (no images), skip the PNGs and just include
-metadata JSONs.
-
-### 2. Pack the drop into a Quilt
+### 2. Pack the images quilt
 
 ```bash
 cd showcases/06-quilted-collection
@@ -101,30 +114,57 @@ pnpm install
 export WALRUS_EPOCHS=200
 
 # Dry run prints the walrus CLI invocation without uploading.
-pnpm pack --dry-run ./drop
+pnpm pack:quilt --dry-run ./images
 
-# Real run — uploads everything in one CLI call.
-pnpm pack ./drop
-# → quiltId: <base64url>
+# Real run — passes the drop directory to `walrus store-quilt`.
+pnpm pack:quilt ./images
+# → quiltId: <base64url>  (this is QID_IMAGES)
+```
+
+### 3. Generate the metadata JSONs
+
+With `QID_IMAGES` from step 2 and your chosen aggregator host, generate
+each `meta/<id>.json` so its `image` field is the aggregator URL for the
+matching PNG in the images quilt:
+
+```json
+{
+  "name": "Walrus Quilted #1",
+  "description": "...",
+  "image": "https://aggregator.walrus-testnet.walrus.space/v1/blobs/by-quilt-id/<QID_IMAGES>/1.png"
+}
+```
+
+How you generate these is up to you — a 20-line script, a templating
+engine, or a one-off `sed`. The key is that **the metadata files are
+written exactly once**, with the final image URLs already baked in.
+
+### 4. Pack the metadata quilt
+
+```bash
+pnpm pack:quilt ./meta
+# → quiltId: <base64url>  (this is QID_METADATA)
 ```
 
 [`src/pack.ts`](./src/pack.ts):
 
-1. Walks the drop dir for `*.json` and `*.png` files.
-2. Spawns `walrus store-quilt --paths ... --epochs ...`.
+1. Sanity-checks the drop directory exists and has at least one `.json` or
+   `.png` file.
+2. Spawns `walrus store-quilt --epochs <N> --paths <dropDir>` (passing the
+   directory, not individual file paths, to avoid `ARG_MAX` on large drops).
 3. Parses the quiltId out of the CLI's stdout (handles both JSON-envelope
    and `quiltId: <b64url>` line formats).
 
 Requires the `walrus` CLI on PATH — install per
 <https://docs.wal.app/usage/setup.html>.
 
-### 3. Deploy the contract
+### 5. Deploy the contract against QID_METADATA
 
 ```bash
 # Constructor args (forwarded to DeployQuiltedCollection.s.sol via env)
 export QC_NAME="Walrus Quilted #01"
 export QC_SYMBOL="WQ01"
-export QC_QUILT_ID=<base64url from step 2>
+export QC_QUILT_ID=<QID_METADATA from step 4>
 export QC_AGGREGATOR=https://aggregator.walrus-testnet.walrus.space
 export QC_MAX_SUPPLY=10000
 
@@ -132,8 +172,8 @@ export QC_MAX_SUPPLY=10000
 export EVM_RPC_URL=http://127.0.0.1:8545
 export DEPLOYER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
-pnpm deploy --dry-run    # prints the forge command without sending the tx
-pnpm deploy              # forge script broadcast
+pnpm deploy:contract --dry-run    # prints the forge command (private key redacted)
+pnpm deploy:contract              # forge script broadcast
 ```
 
 [`src/deploy.ts`](./src/deploy.ts) shells out to
@@ -141,14 +181,14 @@ pnpm deploy              # forge script broadcast
 `showcases/contracts/`. The forge script reads the `QC_*` env vars and
 deploys the contract with the given constructor args.
 
-### 4. Resolve a token URL off-chain
+### 6. Resolve a token URL off-chain
 
 Indexers, marketplaces, and gallery frontends can compute tokenURIs
 deterministically — no EVM RPC required.
 
 ```bash
 export AGGREGATOR=https://aggregator.walrus-testnet.walrus.space
-export QUILT_ID=<base64url>
+export QUILT_ID=<QID_METADATA>
 
 pnpm url 42
 # → https://aggregator.walrus-testnet.walrus.space/v1/blobs/by-quilt-id/<...>/42.json
