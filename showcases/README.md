@@ -1,21 +1,21 @@
 # Walrus Low-Hanging-Fruit Showcases
 
-Five shippable dApps that map the IPFS pain points catalogued in
-[`../ipfs-pain.md`](../ipfs-pain.md) to concrete Walrus replacements, modelled
-on the [EvmWal NFT](../README.md) reference (showcase 01, already shipped at
-the repo root).
+Six shippable dApps that map the IPFS pain points catalogued in
+[`../ipfs-pain.md`](../ipfs-pain.md) to concrete Walrus replacements. Showcase
+01 ([EvmWal NFT](./01-evmwal-nft/README.md)) is the reference template —
+every other fruit is a variation on it.
 
 Each showcase is intentionally small — a tiny Solidity contract plus a few
 hundred lines of TypeScript — so the migration path from IPFS is obvious.
 
 | # | Showcase | Layout | Status |
 |---|---|---|---|
-| 01 | NFT image + metadata | `../` (the rest of this repo) | shipped |
-| 02 | Walrus Sites for dApp frontend hosting | `02-walrus-sites/` | scaffold |
-| 03 | WalrusResolver — IPNS replacement | `03-walrus-resolver/` + `contracts/src/WalrusResolver.sol` | implemented |
-| 04 | DAO governance proposals on Walrus | `contracts/src/Governance.sol` | implemented |
-| 05 | Verifiable token list / dApp manifest | `05-verifiable-manifest/` | implemented |
-| 06 | Quilted ERC-721 collection drop | `contracts/src/QuiltedCollection.sol` | implemented |
+| 01 | NFT image + metadata | [`01-evmwal-nft/`](./01-evmwal-nft/) + [`contracts/src/EvmWalNFT.sol`](./contracts/src/EvmWalNFT.sol) | shipped |
+| 02 | Walrus Sites for dApp frontend hosting | [`02-walrus-sites/`](./02-walrus-sites/) | implemented |
+| 03 | WalrusResolver — IPNS replacement | [`03-walrus-resolver/`](./03-walrus-resolver/) + [`contracts/src/WalrusResolver.sol`](./contracts/src/WalrusResolver.sol) | implemented |
+| 04 | DAO governance proposals on Walrus | [`04-dao-proposals/`](./04-dao-proposals/) + [`contracts/src/Governance.sol`](./contracts/src/Governance.sol) | implemented |
+| 05 | Verifiable token list / dApp manifest | [`05-verifiable-manifest/`](./05-verifiable-manifest/) + [`contracts/src/WalrusResolver.sol`](./contracts/src/WalrusResolver.sol) | implemented |
+| 06 | Quilted ERC-721 collection drop | [`06-quilted-collection/`](./06-quilted-collection/) + [`contracts/src/QuiltedCollection.sol`](./contracts/src/QuiltedCollection.sol) | implemented |
 
 The full design narrative — which IPFS quote each fruit addresses, the
 shape of each migration, the recommended sequencing — lives in
@@ -25,19 +25,27 @@ shape of each migration, the recommended sequencing — lives in
 
 ```
 showcases/
-├── contracts/              one Foundry package, three contracts + tests
+├── contracts/              one Foundry package, four contracts + tests + deploy scripts
 │   ├── src/
-│   │   ├── WalrusResolver.sol      (showcase 03 — also serves 05)
-│   │   ├── Governance.sol          (showcase 04)
-│   │   └── QuiltedCollection.sol   (showcase 06)
-│   └── test/
-│       ├── WalrusResolver.t.sol
-│       ├── Governance.t.sol
-│       └── QuiltedCollection.t.sol
-├── 02-walrus-sites/        publish.sh + example-site/ (no contract)
+│   │   ├── EvmWalNFT.sol            (showcase 01)
+│   │   ├── WalrusResolver.sol       (showcase 03 — also serves 05)
+│   │   ├── Governance.sol           (showcase 04)
+│   │   └── QuiltedCollection.sol    (showcase 06)
+│   ├── test/
+│   │   ├── EvmWalNFT.t.sol
+│   │   ├── WalrusResolver.t.sol
+│   │   ├── Governance.t.sol
+│   │   └── QuiltedCollection.t.sol
+│   └── script/
+│       ├── DeployEvmWalNFT.s.sol         (showcase 01)
+│       └── DeployQuiltedCollection.s.sol (showcase 06)
+├── 01-evmwal-nft/          Next.js dApp + scripts + assets + tests
+├── 02-walrus-sites/        publish.sh + example-site/ + walkthrough README
 ├── 03-walrus-resolver/
 │   └── keeper/             TS keeper that extends Sui Blob objects
+├── 04-dao-proposals/       TS propose + tally CLIs (publisher PUT + viem)
 ├── 05-verifiable-manifest/ TS client; resolves token lists through WalrusResolver
+├── 06-quilted-collection/  TS pack + deploy + url helpers (walrus store-quilt)
 └── README.md               this file
 ```
 
@@ -51,6 +59,11 @@ forge install --no-git foundry-rs/forge-std openzeppelin/openzeppelin-contracts
 forge build
 forge test -vv
 ```
+
+### Showcase 01 — full walkthrough
+
+See [`01-evmwal-nft/README.md`](./01-evmwal-nft/README.md) for the EvmWal NFT
+dApp (open mint via browser, dual Walrus write paths, Anvil-backed local dev).
 
 ### Showcase 03 — full walkthrough
 
@@ -107,6 +120,10 @@ See `publish.sh` for the SuiNS link + optional ENS bridge follow-up steps.
 
 ## How each contract maps to the IPFS grievance
 
+- **EvmWalNFT** answers "Don't trust free decentralized storage to outlive
+  your project" (ipfs-pain.md §4). Vanilla ERC-721 + ERC721URIStorage;
+  Walrus aggregator URL in `tokenURI`; dual write paths (operator SDK or
+  public publisher) — the Solidity side is identical to an IPFS NFT.
 - **WalrusResolver** answers "IPNS is the most loudly broken primitive"
   (ipfs-pain.md §6). 35 lines, ENS-gated, struct pointer carrying the on-Sui
   Blob object id so a permissionless keeper can keep blobs alive forever.
@@ -127,9 +144,11 @@ See `publish.sh` for the SuiNS link + optional ENS bridge follow-up steps.
 
 ## Notes
 
-- The keeper and manifest clients declare their dependencies but expect
-  `pnpm install` to be run in their respective directories. They are not
-  wired into the repo-root `pnpm-workspace.yaml` yet.
+- Showcase 01, 04, and 06 are wired into the repo-root `pnpm-workspace.yaml`
+  (packages: `01-evmwal-nft`, `01-evmwal-nft/web`, `04-dao-proposals`,
+  `06-quilted-collection`). The keeper (03) and manifest (05) clients still
+  expect `pnpm install` in their respective directories — they are not
+  workspace members yet.
 - `WalrusResolver` takes the ENS Registry address in its constructor; tests
   use an in-process `MockENS`. For mainnet, pass the real ENS registry at
   `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`.

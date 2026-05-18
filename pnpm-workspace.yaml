@@ -1,3 +1,5 @@
 packages:
-  - contracts
-  - web
+  - showcases/01-evmwal-nft
+  - showcases/01-evmwal-nft/web
+  - showcases/04-dao-proposals
+  - showcases/06-quilted-collection

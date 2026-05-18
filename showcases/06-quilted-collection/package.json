@@ -1,0 +1,16 @@
+{
+  "name": "06-quilted-collection",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pack:quilt": "tsx src/pack.ts",
+    "deploy:contract": "tsx src/deploy.ts",
+    "url": "tsx src/url.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

@@ -7,21 +7,14 @@
   },
   "scripts": {
     "dev:chain": "\"$HOME/.foundry/bin/anvil\"",
-    "seed:walrus": "tsx scripts/upload-walrus.ts",
-    "deploy:local": "cd contracts && \"$HOME/.foundry/bin/forge\" script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 && cd .. && tsx scripts/write-deployed-address.ts",
-    "extract-abi": "tsx scripts/extract-abi.ts",
-    "dev:web": "pnpm --filter web dev",
-    "lint": "pnpm --filter web lint || true",
-    "format": "prettier --write \"**/*.{ts,tsx,sol,md,json,yaml,yml}\" --ignore-path .gitignore",
-    "gen:assets": "tsx scripts/generate-assets.ts"
+    "dev:nft": "pnpm --filter ./showcases/01-evmwal-nft/web dev",
+    "format": "prettier --write \"**/*.{ts,tsx,sol,md,json,yaml,yml}\" --ignore-path .gitignore"
   },
   "devDependencies": {
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.3",
     "prettier": "^3.4.2",
     "prettier-plugin-solidity": "^1.4.1",
     "solhint": "^5.0.3",
-    "sharp": "^0.34.0"
+    "typescript": "^5.7.3"
   },
   "pnpm": {
     "overrides": {
