@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Showcase 05 — Verifiable token list / dApp manifest · Walrus Low-Hanging Fruit</title>
+<meta name="description" content="Resolve a token list / dApp manifest via WalrusResolver + a Walrus aggregator. One eth_call replaces the IPNS lottery; the manifest body is content-addressed." />
+<meta property="og:title" content="Showcase 05 — Verifiable token list / dApp manifest" />
+<meta property="og:description" content="Token lists and dApp manifests resolved via ENS + WalrusResolver, no IPNS." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-nft-wal/05-verifiable-manifest.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-nft-wal/05-verifiable-manifest.html" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <a href="./">Walrus · Low-Hanging Fruit</a>
+    </span>
+    <span class="crumbs">
+      <span>showcase</span> <em>/</em> <strong>05 · Verifiable manifest</strong>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Showcase 05 · implemented</span>
+    <h1>Token lists resolved via <em>one eth_call</em>, no IPNS lottery.</h1>
+    <p class="lede">
+      An 80-line TypeScript client that resolves an ENS name (e.g. <code>tokens.uniswap.eth</code>) to a Walrus blob via
+      the <a href="03-walrus-resolver.html">WalrusResolver contract from showcase 03</a>, then fetches the manifest
+      body from any Walrus aggregator by its content-addressed blob id. The pointer lookup is deterministic; the
+      bytes are content-addressed; opt-in client-side hash verification is one Walrus SDK call away.
+    </p>
+    <div class="meta">
+      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/tree/main/showcases/05-verifiable-manifest">05-verifiable-manifest/</a></span>
+      <span><strong>Depends on:</strong> <a href="03-walrus-resolver.html">showcase 03 · WalrusResolver</a></span>
+      <span><strong>Stack:</strong> TypeScript · viem · Walrus aggregator</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · the pain</span>
+      <h2>Public gateways flake exactly when token lists matter most.</h2>
+    </div>
+    <div class="pain-card" style="max-width: 56rem;">
+      <span class="corner">gateways</span>
+      <div class="stat">ipfs-pain.md · §2</div>
+      <blockquote>
+        "ipfs.io 85–90% of the time, it resolves … sometimes takes 5 min" — and Uniswap's interface release notes
+        broke because public gateways flake. Token lists and dApp manifests are exactly the small, high-read,
+        cache-friendly artifact that public-gateway flakiness ruins.
+      </blockquote>
+      <cite>— 2026 builder-sentiment survey</cite>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · the shape</span>
+      <h2>Deterministic pointer + content-addressed body + optional verifier.</h2>
+    </div>
+    <div class="thesis-grid">
+      <div>
+        <p>
+          The trust boundary is the aggregator — same model as fetching by CID from an IPFS gateway. The leverage
+          over IPFS is that the <em>pointer</em> lookup is now an EVM read, not an IPNS lottery.
+        </p>
+        <p>
+          The client validates that the on-chain <code>contentType</code> shortcode starts with <code>app/json</code>
+          before parsing, so non-JSON pointers fail loud instead of silently corrupting the schema.
+        </p>
+        <p class="callout">
+          For trustless retrieval, re-encode the returned bytes with <code>@mysten/walrus</code> and assert the hash
+          matches the on-chain blobId. The 80-line client doesn't do this by default — it's the showcase's job to
+          demonstrate the <em>pointer</em> swap; verification is one composition away.
+        </p>
+      </div>
+      <div>
+<pre class="code"><span class="c">// the entire public surface</span>
+<span class="k">export interface</span> <span class="t">ResolvedManifest</span>&lt;T&gt; {
+  manifest: T;
+  blobId: <span class="t">`0x${string}`</span>;
+  contentType: <span class="t">string</span>;
+}
+
+<span class="k">export</span> <span class="f">async function</span> <span class="f">resolveManifest</span>&lt;T&gt;(
+  ensName: <span class="t">string</span>,
+  opts: <span class="t">ResolveOpts</span>,
+): <span class="t">Promise</span>&lt;<span class="t">ResolvedManifest</span>&lt;T&gt;&gt;;
+
+<span class="c">// + a typed wrapper for the Uniswap TokenList shape</span>
+<span class="k">export const</span> <span class="f">resolveTokenList</span> = (ens, opts) =&gt;
+  <span class="f">resolveManifest</span>&lt;<span class="t">UniswapTokenList</span>&gt;(ens, opts);</pre>
+        <div class="flow" style="margin-top: 18px;">
+          <div class="flow-row">
+            <div class="box">pointer.call</div>
+            <div class="arrow">→</div>
+            <div class="box accent">aggregator GET</div>
+            <div class="arrow">→</div>
+            <div class="box">JSON.parse</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · try it locally</span>
+      <h2>Resolve <code>tokens.uniswap.eth</code> (or your own ENS-pointed name).</h2>
+    </div>
+
+    <div class="step">
+      <span class="num">01</span>
+      <div>
+        <h3>Have a WalrusResolver pointer in place</h3>
+        <p>This client depends on the <a href="03-walrus-resolver.html">WalrusResolver</a> from showcase 03. Either:</p>
+        <ul>
+          <li>Use the one you deployed in showcase 03 + a name whose subdomain you set with <code>setWalrusBlob</code> (content-type <code>app/json</code>), or</li>
+          <li>Point at a publicly-deployed WalrusResolver if your team has one, or</li>
+          <li>Deploy a fresh one and call <code>setWalrusBlob</code> with the blobId of a JSON manifest you've already uploaded to Walrus.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">02</span>
+      <div>
+        <h3>Install + configure</h3>
+<pre class="code"><span class="f">cd</span> showcases/05-verifiable-manifest
+<span class="f">pnpm</span> install</pre>
+        <table class="env">
+          <thead><tr><th>Env</th><th>Required?</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>EVM_RPC_URL</td><td>yes</td><td>Mainnet (or wherever your WalrusResolver lives + the ENS registry it points at).</td></tr>
+            <tr><td>RESOLVER_ADDRESS</td><td>yes</td><td>Deployed <code>WalrusResolver</code> address.</td></tr>
+            <tr><td>ENS_NAME</td><td>default <code>tokens.uniswap.eth</code></td><td>The ENS name whose subdomain holds the manifest pointer.</td></tr>
+            <tr><td>AGGREGATOR</td><td>default testnet</td><td>Walrus aggregator URL (any will do — same blobId, same bytes).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">03</span>
+      <div>
+        <h3>Run the example</h3>
+<pre class="code"><span class="f">pnpm</span> tsx example-usage.ts
+<span class="c"># → Resolved tokens.uniswap.eth → blobId=0x... (app/json)
+# → Token list "Uniswap Default" contains 423 tokens.
+# →   - USDC      0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+# →   - DAI       0x6b175474e89094c44da98b954eedeac495271d0f
+# →   - ...</span></pre>
+        <p>Or use it from your own code:</p>
+<pre class="code"><span class="k">import</span> { <span class="f">resolveTokenList</span> } <span class="k">from</span> <span class="s">"walrus-verifiable-manifest"</span>;
+
+<span class="k">const</span> { manifest, blobId, contentType } = <span class="k">await</span> <span class="f">resolveTokenList</span>(<span class="s">"tokens.uniswap.eth"</span>, {
+  rpcUrl: <span class="n">EVM_RPC_URL</span>,
+  resolverAddress: <span class="n">RESOLVER_ADDRESS</span>,
+  aggregator: <span class="s">"https://aggregator.walrus-testnet.walrus.space"</span>,
+});</pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">04</span>
+      <div>
+        <h3>(Opt-in) trustless retrieval — recompute the hash</h3>
+        <p>If your threat model requires the bytes to be trustless against the aggregator, run the returned <code>manifest</code> through <code>@mysten/walrus</code>'s Reed-Solomon encoder and assert the recomputed blob id matches the on-chain one. The 80-line client deliberately keeps this opt-in to stay minimal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · verify</span>
+      <h2>What "good" looks like.</h2>
+    </div>
+    <ul>
+      <li>The first console line shows the <code>blobId</code> and content-type shortcode (e.g. <code>app/json</code>).</li>
+      <li>The token list count matches what an HTTP GET against the aggregator URL returns.</li>
+      <li>Switching to a different aggregator host (<code>AGGREGATOR=https://aggregator.walrus-testnet.walrus.space</code> → some other operator) returns the same JSON byte-for-byte.</li>
+      <li>If the pointer is unset, the client throws <code>manifest: pointer unset for &lt;ens&gt;</code> — no silent empty manifest.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · what this is NOT</span>
+      <h2>Limits to set expectations.</h2>
+    </div>
+    <div class="caveats">
+      <ul>
+        <li><strong>Not a hash verifier.</strong> Trust in the aggregator's bytes equals trust in an IPFS gateway. The leverage over IPFS is the <em>pointer</em>, not the bytes — verification is composable on top via <code>@mysten/walrus</code>.</li>
+        <li><strong>Not a token-list authoring tool.</strong> You still need to author the JSON and upload it to Walrus yourself (any of the showcase 01 / 03 / 04 upload paths work).</li>
+        <li><strong>Not multi-chain magic.</strong> The client takes a single <code>EVM_RPC_URL</code> — it doesn't proxy across chains. Run one resolver per chain you care about, or wrap with a thin multi-chain dispatcher.</li>
+        <li><strong>Not extensible past <code>app/json</code>.</strong> The contentType shortcode is checked at the start. Other content types are out of grammar for this client — fork it if you want PNG-pointer or markdown-pointer manifests.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">06 · source files</span>
+      <h2>Where to look in the repo.</h2>
+    </div>
+    <div class="sources">
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/manifest.ts"><strong>05-verifiable-manifest/manifest.ts</strong>~130 lines: <code>resolveManifest&lt;T&gt;</code> generic, <code>resolveTokenList</code> Uniswap shape, hex↔base64url helpers.</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/05-verifiable-manifest/example-usage.ts"><strong>05-verifiable-manifest/example-usage.ts</strong>Minimal CLI demonstrating the import + first-five-tokens print.</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/WalrusResolver.sol"><strong>contracts/src/WalrusResolver.sol</strong>The on-chain pointer this client reads from (see <a href="03-walrus-resolver.html">showcase 03</a> for the walkthrough).</a>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="shell">
+    <div class="siblings">
+      <a class="sibling" href="04-dao-proposals.html">
+        <div class="label">← previous</div>
+        <div class="title">04 · DAO governance proposals on Walrus</div>
+      </a>
+      <a class="sibling next" href="06-quilted-collection.html">
+        <div class="label">next →</div>
+        <div class="title">06 · Quilted ERC-721 collection drop</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <p style="margin: 0;">Part of the <a href="./">Walrus Low-Hanging Fruit</a> showcase set. <a href="https://github.com/MystenLabs/evm-nft-wal">Repo on GitHub</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>

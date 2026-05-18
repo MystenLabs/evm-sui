@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Showcase 01 — EvmWal NFT · Walrus Low-Hanging Fruit</title>
+<meta name="description" content="Mint an ERC-721 whose image and metadata live on Walrus, not IPFS. Vanilla OpenZeppelin contract, dual write paths, identical Solidity surface — only the URL prefix changes." />
+<meta property="og:title" content="Showcase 01 — EvmWal NFT" />
+<meta property="og:description" content="Mint an ERC-721 whose image and metadata live on Walrus." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-nft-wal/01-evmwal-nft.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-nft-wal/01-evmwal-nft.html" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <a href="./">Walrus · Low-Hanging Fruit</a>
+    </span>
+    <span class="crumbs">
+      <span>showcase</span> <em>/</em> <strong>01 · EvmWal NFT</strong>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Showcase 01 · implemented</span>
+    <h1>Mint an NFT whose image lives on <em>Walrus</em>, not IPFS.</h1>
+    <p class="lede">
+      A 200-line dApp that shows how to swap the storage layer behind a vanilla OpenZeppelin ERC-721. The Solidity contract
+      stores a plain <code>tokenURI</code> string — identical in shape to an IPFS-backed NFT. Two write paths drop the
+      same kind of string in; the EVM side never knows which one was used.
+    </p>
+    <div class="meta">
+      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/tree/main/showcases/01-evmwal-nft">showcases/01-evmwal-nft/</a></span>
+      <span><strong>Stack:</strong> Foundry · Next.js 16 · viem · wagmi · @mysten/walrus</span>
+      <span><strong>Local chain:</strong> Anvil 31337</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · the pain</span>
+      <h2>NFT.Storage's quiet collapse left every drop on borrowed time.</h2>
+    </div>
+    <div class="pain-card" style="max-width: 56rem;">
+      <span class="corner">trust shock</span>
+      <div class="stat">ipfs-pain.md · §4</div>
+      <blockquote>
+        "Don't trust free decentralized storage to outlive your project. Bankless's Metaversal newsletter now routinely
+        frames IPFS as 'data must be pinned through services like ClubNFT or Pinata to be maintained.'"
+      </blockquote>
+      <cite>— 2026 builder-sentiment survey</cite>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · the shape</span>
+      <h2>One mint, two write paths, one read path.</h2>
+    </div>
+
+    <div class="thesis-grid">
+      <div>
+        <p>
+          The contract is an OpenZeppelin <code>ERC721 + ERC721URIStorage</code>. <code>mint(string)</code> assigns a
+          token id and stores the string verbatim. There is no Walrus-specific code on chain.
+        </p>
+        <p>
+          The browser uploads bytes to <strong>either</strong> a local Next.js API route that signs Sui transactions
+          with an operator keypair (default), <strong>or</strong> directly to the public Walrus testnet publisher
+          (set <code>NEXT_PUBLIC_WALRUS_UPLOAD_MODE=publisher</code>). Both paths return the same 32-byte
+          <code>blobId</code> and lead to the same aggregator URL.
+        </p>
+        <p class="callout">
+          The migration cost from IPFS is <em>changing one URL prefix</em>. The Solidity side does not move.
+        </p>
+      </div>
+      <div>
+<pre class="code"><span class="c">// the entire EVM-side contract surface</span>
+<span class="k">function</span> <span class="f">mint</span>(<span class="t">string</span> tokenURI_)
+  <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
+<span class="k">function</span> <span class="f">mintTo</span>(<span class="t">address</span> to, <span class="t">string</span> tokenURI_)
+  <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
+<span class="k">event</span> <span class="f">Minted</span>(
+  <span class="t">uint256</span> <span class="k">indexed</span> tokenId,
+  <span class="t">address</span> <span class="k">indexed</span> minter,
+  <span class="t">string</span> tokenURI_
+);</pre>
+        <div class="flow" style="margin-top: 18px;">
+          <div class="flow-row">
+            <div class="box">file picker</div>
+            <div class="arrow">→</div>
+            <div class="box accent">walrus write</div>
+            <div class="arrow">→</div>
+            <div class="box">mint(uri)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · try it locally</span>
+      <h2>Five terminal commands and a wallet popup.</h2>
+    </div>
+
+    <div class="step">
+      <span class="num">01</span>
+      <div>
+        <h3>Prerequisites</h3>
+        <p>Node 22, pnpm 10, Foundry, and an injected EVM wallet (MetaMask / Rabby / Coinbase Wallet extension). No real ETH needed — the deploy script funds itself from Anvil dev-0.</p>
+        <ul>
+          <li><code>nvm use</code> (or install <code>node@22</code> any other way)</li>
+          <li><code>corepack enable &amp;&amp; corepack prepare pnpm@10.32.1 --activate</code></li>
+          <li><code>curl -L https://foundry.paradigm.xyz | bash &amp;&amp; foundryup</code></li>
+        </ul>
+        <p>Backend (default) upload mode also needs a Sui testnet keypair plus <a href="https://faucet.sui.io/">testnet SUI</a> and <a href="https://docs.wal.app/usage/setup.html#testnet-wal-from-the-faucet">testnet WAL</a>. Publisher mode skips all Sui-side setup.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">02</span>
+      <div>
+        <h3>Clone and install</h3>
+<pre class="code"><span class="f">git</span> clone git@github.com:MystenLabs/evm-nft-wal.git
+<span class="f">cd</span> evm-nft-wal
+<span class="f">pnpm</span> install
+<span class="f">cp</span> showcases/01-evmwal-nft/web/.env.local.example showcases/01-evmwal-nft/web/.env.local</pre>
+        <p>Edit <code>web/.env.local</code>: paste <code>SUI_PRIVATE_KEY=suiprivkey…</code> for backend mode, or set <code>NEXT_PUBLIC_WALRUS_UPLOAD_MODE=publisher</code> to skip the Sui side entirely.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">03</span>
+      <div>
+        <h3>Start a local chain</h3>
+<pre class="code"><span class="c"># terminal A — repo root</span>
+<span class="f">pnpm</span> dev:chain    <span class="c"># anvil on 127.0.0.1:8545</span></pre>
+        <p>Anvil pre-funds 10 deterministic wallets; the first one is what <code>deploy:local</code> uses below.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">04</span>
+      <div>
+        <h3>Deploy + sync the ABI into the web app</h3>
+<pre class="code"><span class="c"># terminal B — inside showcase 01</span>
+<span class="f">cd</span> showcases/01-evmwal-nft
+<span class="f">pnpm</span> deploy:local
+<span class="c"># → forge script DeployEvmWalNFT.s.sol  → broadcast
+# → write-deployed-address.ts            → .deployed-address
+# → extract-abi.ts                       → web/lib/contract.ts + web/.env.local</span></pre>
+        <p>The script reads the Foundry broadcast artifact, captures the deployed address, and patches it into the web app's env + ABI. Re-run any time you redeploy.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="num">05</span>
+      <div>
+        <h3>Start the dev server, connect MetaMask, mint</h3>
+<pre class="code"><span class="f">pnpm</span> dev:web        <span class="c"># http://localhost:3000</span></pre>
+        <p>In MetaMask: add the <strong>Anvil</strong> network (chain id <code>31337</code>, RPC <code>http://127.0.0.1:8545</code>), switch to it, then open <a href="http://localhost:3000">http://localhost:3000</a>. Hit the <strong>Mint</strong> tab, pick an image, watch the upload + mint flow. The card appears in <strong>All NFTs</strong> and <strong>My NFTs</strong> within seconds of confirmation.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · verify</span>
+      <h2>What "good" looks like.</h2>
+    </div>
+    <ul>
+      <li>The post-mint success panel shows the <strong>tokenId</strong>, <strong>blobId</strong>, and (in backend mode) the <strong>on-Sui Blob object id</strong>.</li>
+      <li>Clicking any NFT card opens its blob on <a href="https://walruscan.com/testnet">Walruscan</a> — the canonical content-addressed view.</li>
+      <li>In backend mode, the Suiscan link on the success panel shows the <code>Blob</code> Move object you (the operator) own — you can extend its <code>end_epoch</code> or transfer it on chain.</li>
+      <li>Switch to <strong>publisher</strong> mode and repeat: same tokens, same aggregator URLs, but no Sui-side wallet involved.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · what this is NOT</span>
+      <h2>Limits to set expectations.</h2>
+    </div>
+    <div class="caveats">
+      <ul>
+        <li><strong>Not production-deployable as-is.</strong> The backend upload route at <code>/api/walrus/upload</code> is unauthenticated. It spends operator WAL on every successful request. Run on a local dev server only.</li>
+        <li><strong>Not a Walrus pricing oracle.</strong> <code>epochs: 5</code> (~14 days) is the default; operator picks the retention window and pays upfront.</li>
+        <li><strong>Not infinite scale.</strong> The gallery scans <code>1..totalSupply</code> on every render — snappy below ~100 tokens; for real scale you'd want a subgraph or a <code>Transfer</code> event indexer.</li>
+        <li><strong>Not a hash verifier.</strong> Trust in the bytes served by the aggregator is identical to trust in an IPFS gateway. For trustless retrieval, add a Reed-Solomon recompute via <code>@mysten/walrus</code> on top.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">06 · source files</span>
+      <h2>Where to look in the repo.</h2>
+    </div>
+    <div class="sources">
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/EvmWalNFT.sol"><strong>contracts/src/EvmWalNFT.sol</strong>OpenZeppelin ERC-721 + ERC721URIStorage; <code>mint</code>, <code>mintTo</code>, <code>Minted</code> event.</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/test/EvmWalNFT.t.sol"><strong>contracts/test/EvmWalNFT.t.sol</strong>7 Foundry tests, 100% line coverage.</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/script/DeployEvmWalNFT.s.sol"><strong>contracts/script/DeployEvmWalNFT.s.sol</strong>Foundry deploy script — Anvil-friendly defaults.</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/01-evmwal-nft/web/lib/walrus-upload.ts"><strong>web/lib/walrus-upload.ts</strong>Browser-side publisher PUT (fallback path).</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/01-evmwal-nft/web/lib/walrus-upload-backend.ts"><strong>web/lib/walrus-upload-backend.ts</strong>Browser-side POST to the local API route (default path).</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/01-evmwal-nft/web/app/api/walrus/upload/handler.ts"><strong>web/app/api/walrus/upload/handler.ts</strong>Server-side <code>writeBlob</code> via <code>@mysten/walrus</code>, ~30 lines, dep-injected for unit tests.</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/01-evmwal-nft/web/hooks/useMint.ts"><strong>web/hooks/useMint.ts</strong>Multi-stage mint state machine; dispatches publisher vs. backend at module load.</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/01-evmwal-nft/README.md"><strong>showcases/01-evmwal-nft/README.md</strong>Full walkthrough + comparison table with IPFS-backed NFTs.</a>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="shell">
+    <div class="siblings">
+      <a class="sibling disabled" aria-disabled="true">
+        <div class="label">← previous</div>
+        <div class="title">First in the series</div>
+      </a>
+      <a class="sibling next" href="02-walrus-sites.html">
+        <div class="label">next →</div>
+        <div class="title">02 · Walrus Sites for dApp frontend hosting</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <p style="margin: 0;">Part of the <a href="./">Walrus Low-Hanging Fruit</a> showcase set. <a href="https://github.com/MystenLabs/evm-nft-wal">Repo on GitHub</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>
