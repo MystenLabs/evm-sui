@@ -18,8 +18,10 @@ hundred lines of TypeScript — so the migration path from IPFS is obvious.
 | 06 | Quilted ERC-721 collection drop | [`06-quilted-collection/`](./06-quilted-collection/) + [`contracts/src/QuiltedCollection.sol`](./contracts/src/QuiltedCollection.sol) | implemented |
 
 The full design narrative — which IPFS quote each fruit addresses, the
-shape of each migration, the recommended sequencing — lives in
-[`../walrus-low-hanging-fruits.html`](../walrus-low-hanging-fruits.html).
+shape of each migration, the recommended sequencing — lives on the
+landing site at <https://mystenlabs.github.io/evm-nft-wal/>, with a
+per-showcase walkthrough linked from each card. The site's source is
+under [`../docs/`](../docs/).
 
 ## Repo shape
 
