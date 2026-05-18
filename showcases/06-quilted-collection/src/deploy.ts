@@ -63,7 +63,7 @@ function main(): void {
     process.env["DEPLOYER_PRIVATE_KEY"]!,
   ];
 
-  const dryRun = process.argv.slice(2)[0] === "--dry-run";
+  const dryRun = process.argv[2] === "--dry-run";
   if (dryRun) {
     console.log(`[dry-run] would invoke (cwd=${CONTRACTS_ROOT}):`);
     console.log(`  ${forgeBin} ${args.join(" ")}`);

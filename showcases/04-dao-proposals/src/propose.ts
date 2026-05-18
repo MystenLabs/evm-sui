@@ -26,37 +26,15 @@ import { readFileSync } from "node:fs";
 import {
   createPublicClient,
   createWalletClient,
-  defineChain,
   http,
   type Address,
-  type Chain,
   type Hex,
 } from "viem";
-import * as viemChains from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
+import { env, resolveChain } from "./lib/evm.js";
 import { GOVERNANCE_ABI } from "./lib/governance-abi.js";
 import { uploadToPublisher } from "./lib/walrus.js";
-
-function env(key: string, fallback?: string): string {
-  const v = process.env[key] ?? fallback;
-  if (v === undefined) throw new Error(`missing env: ${key}`);
-  return v;
-}
-
-function resolveChain(chainId: number, rpcUrl: string): Chain {
-  for (const c of Object.values(viemChains)) {
-    if (typeof c === "object" && c && "id" in c && (c as Chain).id === chainId) {
-      return c as Chain;
-    }
-  }
-  return defineChain({
-    id: chainId,
-    name: `chain-${chainId}`,
-    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    rpcUrls: { default: { http: [rpcUrl] } },
-  });
-}
 
 function parseDeadline(input: string): bigint {
   if (/^\d+$/.test(input)) return BigInt(input);

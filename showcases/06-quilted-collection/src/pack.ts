@@ -62,15 +62,11 @@ export function parseQuiltId(stdout: string): string {
   // JSON envelope first — most stable.
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     try {
-      const parsed = JSON.parse(trimmed) as unknown;
+      const parsed = JSON.parse(trimmed);
       if (parsed && typeof parsed === "object") {
-        const candidates = [
-          (parsed as Record<string, unknown>)["quiltId"],
-          (parsed as Record<string, unknown>)["quilt_id"],
-          (parsed as Record<string, unknown>)["id"],
-        ];
-        for (const c of candidates) {
-          if (typeof c === "string" && c.length > 0) return c;
+        for (const key of ["quiltId", "quilt_id", "id"]) {
+          const value = (parsed as Record<string, unknown>)[key];
+          if (typeof value === "string" && value.length > 0) return value;
         }
       }
     } catch {

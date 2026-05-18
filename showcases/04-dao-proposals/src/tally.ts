@@ -12,37 +12,11 @@
  *   tsx src/tally.ts <proposal-id>
  */
 
-import {
-  createPublicClient,
-  defineChain,
-  http,
-  type Address,
-  type Chain,
-} from "viem";
-import * as viemChains from "viem/chains";
+import { createPublicClient, http, type Address } from "viem";
 
+import { env, resolveChain } from "./lib/evm.js";
 import { GOVERNANCE_ABI } from "./lib/governance-abi.js";
 import { fetchBlob, hexToBase64Url } from "./lib/walrus.js";
-
-function env(key: string, fallback?: string): string {
-  const v = process.env[key] ?? fallback;
-  if (v === undefined) throw new Error(`missing env: ${key}`);
-  return v;
-}
-
-function resolveChain(chainId: number, rpcUrl: string): Chain {
-  for (const c of Object.values(viemChains)) {
-    if (typeof c === "object" && c && "id" in c && (c as Chain).id === chainId) {
-      return c as Chain;
-    }
-  }
-  return defineChain({
-    id: chainId,
-    name: `chain-${chainId}`,
-    nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    rpcUrls: { default: { http: [rpcUrl] } },
-  });
-}
 
 async function main() {
   const [idStr] = process.argv.slice(2);
@@ -56,7 +30,9 @@ async function main() {
 
   const client = createPublicClient({ chain, transport: http(rpcUrl) });
 
-  const [proposer, blobIdHex, deadline, yes, no] = await client.readContract({
+  // `proposals()` returns (proposer, blobId, deadline, yes, no) — the
+  // canonical yes/no come from `tally()` below, so we skip them here.
+  const [proposer, blobIdHex, deadline] = await client.readContract({
     address: governance,
     abi: GOVERNANCE_ABI,
     functionName: "proposals",
@@ -90,11 +66,6 @@ async function main() {
   console.log(`---- body (${body.length} bytes) ----`);
   process.stdout.write(body.toString("utf8"));
   if (body[body.length - 1] !== 0x0a) process.stdout.write("\n");
-
-  // Silence unused-import lint warnings — `yes`/`no` come from `proposals()`
-  // and `tally()` returns the canonical values used above.
-  void yes;
-  void no;
 }
 
 main().catch((err) => {
