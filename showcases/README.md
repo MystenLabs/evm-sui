@@ -1,12 +1,11 @@
-# Walrus Low-Hanging-Fruit Showcases
+# Walrus - EVM Integrations Showcases
 
-Six shippable dApps that map the IPFS pain points catalogued in
-[`../ipfs-pain.md`](../ipfs-pain.md) to concrete Walrus replacements. Showcase
-01 ([EvmWal NFT](./01-evmwal-nft/README.md)) is the reference template —
-every other fruit is a variation on it.
+Six small dApps showing how to put a Walrus blob behind an EVM smart
+contract. Showcase 01 ([EvmWal NFT](./01-evmwal-nft/README.md)) is the
+reference template — every other one is a variation on the same shape.
 
-Each showcase is intentionally small — a tiny Solidity contract plus a few
-hundred lines of TypeScript — so the migration path from IPFS is obvious.
+Each showcase is intentionally small — a tiny Solidity contract plus a
+few hundred lines of TypeScript.
 
 | # | Showcase | Layout | Status |
 |---|---|---|---|
@@ -17,11 +16,9 @@ hundred lines of TypeScript — so the migration path from IPFS is obvious.
 | 05 | Verifiable token list / dApp manifest | [`05-verifiable-manifest/`](./05-verifiable-manifest/) + [`contracts/src/WalrusResolver.sol`](./contracts/src/WalrusResolver.sol) | implemented |
 | 06 | Quilted ERC-721 collection drop | [`06-quilted-collection/`](./06-quilted-collection/) + [`contracts/src/QuiltedCollection.sol`](./contracts/src/QuiltedCollection.sol) | implemented |
 
-The full design narrative — which IPFS quote each fruit addresses, the
-shape of each migration, the recommended sequencing — lives on the
-landing site at <https://glowing-adventure-e483rqp.pages.github.io/>, with a
-per-showcase walkthrough linked from each card. The site's source is
-under [`../docs/`](../docs/).
+The landing site at <https://mystenlabs.github.io/evm-wal/> indexes the
+six examples, with a per-showcase walkthrough linked from each card.
+The site's source is under [`../docs/`](../docs/).
 
 ## Repo shape
 

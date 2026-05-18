@@ -1,17 +1,15 @@
 <p align="center">
-  <strong>Walrus Low-Hanging Fruit</strong> · six small dApps that demonstrate how<br>
-  <a href="https://docs.wal.app/">Walrus</a> answers the specific IPFS pain points web3 builders voice in 2026.
+  <strong>Walrus - EVM Integrations</strong> · six small dApps showing how to put a<br>
+  <a href="https://docs.wal.app/">Walrus</a> blob behind an EVM smart contract.
 </p>
 
 ---
 
-Web3 builders in 2026 don't dislike content addressing — they dislike the IPFS network. CIDs survive, ENS contenthash is non-negotiable, and verifiability is non-optional. What's collapsing is the operational promise: free public goods that get deprecated, pinning vendors that churn SDKs, and IPNS that quietly broke everyone's mutable pointers.
+Each example is a tiny Solidity contract plus a few hundred lines of TypeScript. Showcase 01 (the **EvmWal NFT** dApp) is the canonical template — every other one is a variation on the same shape: an EVM contract that stores a Walrus URL or blob id, and the browser / CLI code that puts the bytes there.
 
-This repo names six low-hanging fruits where Walrus answers a specific grievance with a small, opinionated example. Showcase 01 (the **EvmWal NFT** dApp) is the canonical template — every other fruit is a variation on it: one tiny Solidity contract, one or two fetch calls, one URL prefix.
+The landing site at <https://mystenlabs.github.io/evm-wal/> shows the six examples and links each one to its per-showcase walkthrough page. The source lives under [`docs/`](./docs/).
 
-The full design narrative — which IPFS quote each fruit addresses, the shape of each migration, the recommended sequencing — lives on the **landing site** at <https://glowing-adventure-e483rqp.pages.github.io/>, with per-showcase walkthrough pages linked from there. The 2026 builder-sentiment survey it was distilled from is [`ipfs-pain.md`](./ipfs-pain.md); the site's source lives under [`docs/`](./docs/).
-
-## The six fruits
+## The six examples
 
 | # | Showcase | Layout | Status |
 |---|---|---|---|

@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Showcase 04 — DAO governance proposals · Walrus Low-Hanging Fruit</title>
+<title>Showcase 04 — DAO governance proposals · Walrus - EVM Integrations</title>
 <meta name="description" content="The Snapshot pattern, off IPFS: proposer pays WAL via the public publisher, the contract holds only the 32-byte blobId + deadline + tallies, and tooling is two TS CLIs (propose + tally)." />
 <meta property="og:title" content="Showcase 04 — DAO governance proposals on Walrus" />
 <meta property="og:description" content="Proposer-pays Walrus storage; blobId stored on-chain; vote and tally with one EVM call each." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://glowing-adventure-e483rqp.pages.github.io/04-dao-proposals.html" />
-<link rel="canonical" href="https://glowing-adventure-e483rqp.pages.github.io/04-dao-proposals.html" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/04-dao-proposals.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/04-dao-proposals.html" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
         <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
         <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
       </svg>
-      <a href="./">Walrus · Low-Hanging Fruit</a>
+      <a href="./">Walrus - EVM Integrations</a>
     </span>
     <span class="crumbs">
       <span>showcase</span> <em>/</em> <strong>04 · DAO proposals</strong>
@@ -39,8 +39,8 @@
       the DAO contract never holds WAL. Anyone reads the proposal anonymously through any Walrus aggregator.
     </p>
     <div class="meta">
-      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
-      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/tree/main/showcases/04-dao-proposals">04-dao-proposals/</a></span>
+      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
+      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/showcases/04-dao-proposals">04-dao-proposals/</a></span>
       <span><strong>Stack:</strong> Solidity · viem · Walrus publisher API</span>
     </div>
   </div>
@@ -262,12 +262,12 @@
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
-      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
-      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
-      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
-      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
-      <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
     </div>
   </div>
 </section>
@@ -289,7 +289,7 @@
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">Walrus Low-Hanging Fruit</a> showcase set. <a href="https://github.com/MystenLabs/evm-nft-wal">Repo on GitHub</a>.</p>
+    <p style="margin: 0;">Part of the <a href="./">Walrus - EVM Integrations</a> showcase set. <a href="https://github.com/MystenLabs/evm-wal">Repo on GitHub</a>.</p>
   </div>
 </footer>
 
