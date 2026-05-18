@@ -350,7 +350,9 @@
     <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId, <span class="t">bytes8</span> contentType
   );
 
-  <span class="k">event</span> <span class="f">WalrusBlobSet</span>(<span class="t">bytes32</span> <span class="k">indexed</span> node, <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId);
+  <span class="k">event</span> <span class="f">WalrusBlobChanged</span>(
+    <span class="t">bytes32</span> <span class="k">indexed</span> node, <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId, <span class="t">bytes8</span> contentType, <span class="t">uint64</span> at
+  );
 }</pre>
           <div class="flow">
             <div class="flow-row">
