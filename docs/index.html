@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Walrus Low-Hanging Fruit · Six Showcases for Web3 Storage Pain Points</title>
+<meta name="description" content="Six small dApps demonstrating how Walrus replaces specific IPFS pain points web3 builders voice in 2026. Each showcase is a focused example — one tiny Solidity contract, one or two fetch calls, one URL prefix." />
+<meta property="og:title" content="Walrus Low-Hanging Fruit · Six Showcases" />
+<meta property="og:description" content="Six small dApps demonstrating how Walrus replaces specific IPFS pain points web3 builders voice in 2026." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-nft-wal/" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Walrus Low-Hanging Fruit · Six Showcases" />
+<meta name="twitter:description" content="Six small dApps demonstrating how Walrus replaces specific IPFS pain points web3 builders voice in 2026." />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-nft-wal/" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ─── top rail ─────────────────────────────────────────────── -->
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <a href="./">Walrus · Low-Hanging Fruit</a>
+    </span>
+    <span class="nav">
+      <a href="01-evmwal-nft.html">01 NFT</a>
+      <a href="02-walrus-sites.html">02 Sites</a>
+      <a href="03-walrus-resolver.html">03 IPNS</a>
+      <a href="04-dao-proposals.html">04 DAO</a>
+      <a href="05-verifiable-manifest.html">05 Manifest</a>
+      <a href="06-quilted-collection.html">06 Quilt</a>
+      <a href="https://github.com/MystenLabs/evm-nft-wal">GitHub</a>
+    </span>
+  </div>
+</div>
+
+<!-- ─── hero ─────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Builder report · 2026-05-14</span>
+    <h1>Six precise dApps Walrus can ship to <em>convert IPFS pain</em> into adoption.</h1>
+    <p class="lede">
+      Web3 builders in 2026 don't dislike content addressing — they dislike the IPFS network. CIDs survive,
+      ENS contenthash is non-negotiable, and verifiability is non-optional. What's collapsing is the operational
+      promise: free public goods that deprecated, pinning vendors that churn SDKs, and IPNS that quietly broke
+      everyone's mutable pointers. This site names six low-hanging fruits where Walrus can answer a specific,
+      already-voiced grievance with a small, opinionated example in the shape of <a href="https://github.com/MystenLabs/evm-nft-wal">EvmWal NFT</a>.
+    </p>
+    <div class="meta">
+      <span><strong>Source pain:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/ipfs-pain.md">ipfs-pain.md</a> · 2026-05-14 builder survey</span>
+      <span><strong>Template:</strong> <a href="https://github.com/MystenLabs/evm-nft-wal/tree/main/showcases/01-evmwal-nft">MystenLabs/evm-nft-wal</a> · ~200 LOC</span>
+      <span><strong>Status:</strong> all six implemented</span>
+    </div>
+  </div>
+</header>
+
+<!-- ─── pain anchor ──────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">01 · anchor</span>
+      <h2>What builders actually say in 2026</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      Three quotes set the temperature of the conversation. Every showcase below maps to one of these
+      verbatim grievances or a sibling cited in <code>ipfs-pain.md</code>.
+    </p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <span class="corner">trust shock</span>
+        <div class="stat">2024 · 75-day window</div>
+        <blockquote>Cloudflare gateway sunset, NFT.Storage Classic decommissioned, web3.storage rebranded to Storacha — shattering trust in the free-public-goods model.</blockquote>
+        <cite>— ipfs-pain.md, §1</cite>
+      </div>
+      <div class="pain-card">
+        <span class="corner">DX rot</span>
+        <div class="stat">w3up issue #1585</div>
+        <blockquote>This project's DX keeps going down as it ages like milk. Why CAN'T you keep using simple API keys and secret schemes as in the past?</blockquote>
+        <cite>— Storacha user, Nov 2024</cite>
+      </div>
+      <div class="pain-card">
+        <span class="corner">IPNS broken</span>
+        <div class="stat">Pinata blog · Jan 2025</div>
+        <blockquote>IPNS has been known to be slow and hard to work with. One of the biggest problems with IPNS is the speed.</blockquote>
+        <cite>— Pinata VP of Product</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── thesis ───────────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">02 · thesis</span>
+      <h2>Content addressing detached from the network</h2>
+    </div>
+    <div class="thesis-grid">
+      <div>
+        <p>
+          The crucial observation in the 2026 survey is that the conversation has <strong>detached "content addressing" from "IPFS the network."</strong>
+          Builders still want CIDs — for verifiability, ENS contenthash, on-chain references — but no longer want to participate in or trust the
+          public P2P substrate underneath. That detachment is exactly the surface Walrus is built for.
+        </p>
+        <p>
+          The EvmWal NFT example demonstrates this in 200 lines: a vanilla OpenZeppelin ERC-721 storing a plain <code>tokenURI</code> string —
+          identical in shape to an IPFS-backed NFT — pointing at a Walrus aggregator URL. The Solidity side is unchanged.
+          The migration cost is one URL prefix.
+        </p>
+        <p class="callout">
+          Every fruit on this tree shares the same shape: <em>keep the contract that builders already know, swap the storage layer behind a single fetch.</em>
+        </p>
+      </div>
+      <div class="pillars">
+        <div class="pillar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10 L9 15 L17 5" stroke="#4da2ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <h4>Verifiable retrieval, native</h4>
+            <p>Walrus aggregators serve content-addressed blobs over plain HTTPS — verifiability without P2P plumbing in the browser.</p>
+          </div>
+        </div>
+        <div class="pillar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="#4da2ff" stroke-width="1.6"/><circle cx="10" cy="10" r="2" fill="#4da2ff"/></svg>
+          <div>
+            <h4>On-Sui Blob objects</h4>
+            <p>Each blob is a Sui object an operator can extend, delete, or transfer — replacing fragile pinning-service state with on-chain truth.</p>
+          </div>
+        </div>
+        <div class="pillar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 6 L16 6 M4 10 L16 10 M4 14 L11 14" stroke="#4da2ff" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <div>
+            <h4>Two write paths, one read path</h4>
+            <p>Public publisher PUT for zero-infra prototypes; SDK-backed operator path for production. Reads are the same anonymous aggregator GET either way.</p>
+          </div>
+        </div>
+        <div class="pillar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3 L10 17 M3 10 L17 10" stroke="#4da2ff" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="10" r="3" stroke="#4da2ff" stroke-width="1.6"/></svg>
+          <div>
+            <h4>Deterministic node assignment</h4>
+            <p>Walrus's Red Stuff erasure coding fixes the "random walk" provider-discovery problem Shipyard itself cites as IPFS's structural retrieval flaw.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── template recap ──────────────────────────────────────── -->
+<section class="tight">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">03 · template</span>
+      <h2>The shape of a Walrus showcase</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      The EvmWal NFT example, already shipped in this repo, is the canonical template. Each of the six fruits
+      below is a variation on it: one tiny Solidity contract, one or two fetch calls, one URL prefix.
+    </p>
+
+    <div class="template">
+      <div>
+        <h3>Browser write — one fetch, either mode</h3>
+        <p>Default mode posts to a local Next.js route that signs Sui transactions with an env-keyed operator wallet. Publisher mode PUTs directly to the public publisher and the EVM mint still works.</p>
+<pre class="code"><span class="c">// from web/lib/walrus-upload.ts — fallback (publisher) path</span>
+<span class="k">const</span> res = <span class="k">await</span> <span class="f">fetch</span>(<span class="s">`${WALRUS_PUBLISHER}/v1/blobs?epochs=5`</span>, {
+  method: <span class="s">'PUT'</span>,
+  headers: { <span class="s">'Content-Type'</span>: mime },
+  body: bytes,
+});
+<span class="k">const</span> { blobId } = <span class="k">await</span> res.<span class="f">json</span>();
+
+<span class="c">// from web/app/api/walrus/upload/handler.ts — operator (backend) path</span>
+<span class="k">const</span> { blobId, blobObject } = <span class="k">await</span> deps.walrusClient.walrus.<span class="f">writeBlob</span>({
+  blob: bytes,
+  deletable: <span class="k">false</span>,
+  epochs: <span class="n">5</span>,
+  signer: deps.keypair,
+});</pre>
+      </div>
+      <div>
+        <h3>EVM contract — unchanged from IPFS</h3>
+        <p>OpenZeppelin ERC-721 + ERC721URIStorage. The contract has no Walrus knowledge — it just holds a string. The migration from IPFS is changing what your frontend uploads to and which URL prefix it reads from.</p>
+<pre class="code"><span class="c">// from contracts/src/EvmWalNFT.sol — same shape an IPFS NFT uses</span>
+<span class="k">function</span> <span class="f">mint</span>(<span class="t">string</span> <span class="k">memory</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> tokenId) {
+    tokenId = <span class="f">_nextId</span>();
+    <span class="f">_safeMint</span>(<span class="n">msg.sender</span>, tokenId);
+    <span class="f">_setTokenURI</span>(tokenId, tokenURI_);
+    <span class="k">emit</span> <span class="f">Minted</span>(tokenId, <span class="n">msg.sender</span>, tokenURI_);
+}
+
+<span class="c">// tokenURI_ ends up as:
+// https://aggregator.walrus-testnet.walrus.space/v1/blobs/&lt;blobId&gt;</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── the six showcases ───────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">04 · the six</span>
+      <h2>Six showcases, six grievances, six tiny dApps</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 40px;">
+      Each card maps a verbatim 2026 builder complaint to a Walrus-shaped reply that fits in roughly
+      the same code budget as the NFT example. Click any title for a step-by-step walkthrough.
+    </p>
+
+    <!-- 01 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">01</span>
+        <h3><a href="01-evmwal-nft.html">EvmWal NFT — image + metadata</a></h3>
+        <span class="tag">implemented · 01-evmwal-nft/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "Don't trust free decentralized storage to outlive your project. Bankless's Metaversal newsletter now routinely
+            frames IPFS as 'data must be pinned through services like ClubNFT or Pinata to be maintained.'"
+            <em>ipfs-pain.md §4 — NFT.Storage collapse fallout</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            Vanilla ERC-721 + ERC721URIStorage; Walrus aggregator URL in <code>tokenURI</code>;
+            dual write paths (operator-pays SDK or public publisher) that converge on the same anonymous aggregator GET.
+            The Solidity side is identical to an IPFS NFT.
+          </p>
+          <div class="effort">
+            <span class="pill good">ready</span>
+            <span class="pill">~200 LOC</span>
+            <span class="pill accent">migration: 1 URL prefix</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape</div>
+<pre class="code"><span class="c">// the entire EVM-side contract surface</span>
+<span class="k">function</span> <span class="f">mint</span>(<span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
+<span class="k">function</span> <span class="f">mintTo</span>(<span class="t">address</span> to, <span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
+<span class="k">event</span> <span class="f">Minted</span>(<span class="t">uint256</span> <span class="k">indexed</span> tokenId, <span class="t">address</span> <span class="k">indexed</span> minter, <span class="t">string</span> tokenURI_);</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">picker</div>
+              <div class="arrow">→</div>
+              <div class="box accent">walrus PUT</div>
+              <div class="arrow">→</div>
+              <div class="box">mint(uri)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">02</span>
+        <h3><a href="02-walrus-sites.html">Walrus Sites for dApp frontend hosting</a></h3>
+        <span class="tag">implemented · 02-walrus-sites/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "ENS contenthash is non-negotiable; pay Pinata or Filebase rather than trusting any free gateway;
+            treat IPNS as broken." — and Uniswap interface #7753 had to rewrite "all references to Cloudflare's IPFS gateway."
+            <em>ipfs-pain.md §10 — the 2026 newcomer vibe</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            Publish a Next.js or SPA build with <code>site-builder publish</code>; a Sui object holds the site, a <strong>SuiNS</strong> name
+            points at it, and the public <a href="https://wal.app">wal.app</a> portal resolves it for any visitor. Updates land via one Sui transaction —
+            no IPNS, no DNSLink. The ENS bridge is a single CNAME or DNSLink record from your <code>.eth</code> name to the portal host.
+          </p>
+          <div class="effort">
+            <span class="pill good">trivial</span>
+            <span class="pill">~10 LOC config</span>
+            <span class="pill accent">migration: SuiNS link + optional CNAME</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · CLI + SuiNS link</div>
+<pre class="code"><span class="c"># build once, publish to Walrus Sites</span>
+<span class="f">pnpm</span> build
+<span class="f">site-builder</span> publish ./out \
+  --epochs <span class="n">200</span>
+
+<span class="c"># → site_object_id: 0xa1b2…
+# → resolves at &lt;base36-of-id&gt;.wal.app
+#   (or yourdapp.wal.app once linked to a SuiNS name)</span>
+
+<span class="c"># link a SuiNS name → site object_id (single Sui tx),
+# then point yourdapp.eth at yourdapp.wal.app via CNAME / DNSLink.</span></pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">build/</div>
+              <div class="arrow">→</div>
+              <div class="box accent">site-builder</div>
+              <div class="arrow">→</div>
+              <div class="box">SuiNS · wal.app</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">03</span>
+        <h3><a href="03-walrus-resolver.html">Mutable pointer — the IPNS replacement</a></h3>
+        <span class="tag">implemented · WalrusResolver.sol + keeper</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "Pinata is now openly pitching its smart-contract-based IPCM (IPFS CID Mapping) as a <em>replacement</em> for IPNS —
+            a remarkable position from inside the IPFS commercial ecosystem."
+            <em>ipfs-pain.md §6 — IPNS broken</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            A 35-line Solidity registry: <strong>ENS name → current blobId + Sui object id</strong>, ENS-gated update, full event log for
+            verifiable history. Replaces IPNS with one EVM read and one aggregator GET. A small TS keeper
+            extends the underlying Sui Blob object whenever its epoch retention drops.
+          </p>
+          <div class="effort">
+            <span class="pill good">trivial</span>
+            <span class="pill">~50 LOC total</span>
+            <span class="pill accent">migration: replace ipns:// with one contract read</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · Solidity registry</div>
+<pre class="code"><span class="c">// WalrusResolver.sol — IPNS-shaped, on-chain, no random walk</span>
+<span class="k">contract</span> WalrusResolver {
+  <span class="k">function</span> <span class="f">setWalrusBlob</span>(
+    <span class="t">bytes32</span> node, <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId, <span class="t">bytes8</span> ct
+  ) <span class="k">external</span>;
+
+  <span class="k">function</span> <span class="f">walrusBlob</span>(<span class="t">bytes32</span> node) <span class="k">external view</span> <span class="k">returns</span> (
+    <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId, <span class="t">bytes8</span> contentType
+  );
+
+  <span class="k">event</span> <span class="f">WalrusBlobChanged</span>(
+    <span class="t">bytes32</span> <span class="k">indexed</span> node, <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId, <span class="t">bytes8</span> contentType, <span class="t">uint64</span> at
+  );
+}</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">EVM read</div>
+              <div class="arrow">→</div>
+              <div class="box accent">aggregator GET</div>
+              <div class="arrow">→</div>
+              <div class="box">verified bytes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">04</span>
+        <h3><a href="04-dao-proposals.html">DAO governance proposals — Snapshot pattern</a></h3>
+        <span class="tag">implemented · 04-dao-proposals/ + Governance.sol</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "4Everland is used by Snapshot governance for Aave and Uniswap DAO votes" — bundled into the same hosted-IPFS tier
+            that absorbs the operational pain because public gateways can't be trusted.
+            <em>ipfs-pain.md §9 — hosted IPFS providers</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            One contract storing <strong>proposalId → (proposer, blobId, deadline, yes, no)</strong>. Proposal body uploaded to Walrus
+            in publisher mode (so the proposer pays, not the DAO operator); contract stores the 32-byte blobId.
+            Anyone reads the proposal anonymously via the aggregator. No pinning-vendor dependency, no rate-limit surprise on vote day.
+          </p>
+          <div class="effort">
+            <span class="pill good">straightforward</span>
+            <span class="pill">~100 LOC</span>
+            <span class="pill warn">showcase-only voting surface</span>
+            <span class="pill accent">migration: store blobId, not CID</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · proposer-pays write + DAO-readable bytes</div>
+<pre class="code"><span class="c">// Governance.sol — proposal body lives on Walrus, weight on-chain</span>
+<span class="k">struct</span> Proposal {
+  <span class="t">address</span> proposer;
+  <span class="t">bytes32</span> blobId;       <span class="c">// Walrus blob holding the proposal markdown</span>
+  <span class="t">uint64</span>  deadline;
+  <span class="t">uint128</span> yes;
+  <span class="t">uint128</span> no;
+}
+<span class="k">function</span> <span class="f">propose</span>(<span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> id);
+<span class="k">function</span> <span class="f">vote</span>(<span class="t">uint256</span> id, <span class="t">bool</span> support) <span class="k">external</span>;
+
+<span class="c">// readers fetch the body from: aggregator/v1/blobs/&lt;blobId&gt;</span></pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">proposer</div>
+              <div class="arrow">→</div>
+              <div class="box accent">walrus PUT</div>
+              <div class="arrow">→</div>
+              <div class="box">propose(blobId)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">05</span>
+        <h3><a href="05-verifiable-manifest.html">Verifiable token list / dApp manifest</a></h3>
+        <span class="tag">implemented · 05-verifiable-manifest/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "ipfs.io 85–90% of the time, it resolves … sometimes takes 5 min" — and Uniswap's interface release notes
+            broke because public gateways flake. Token lists and dApp manifests are exactly the small, high-read,
+            cache-friendly artifact that public-gateway flakiness ruins.
+            <em>ipfs-pain.md §2 — gateways</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            Combine showcase 03's mutable pointer with a strict JSON schema. Frontend resolves the pointer in one <code>eth_call</code> and fetches the manifest from a Walrus aggregator
+            by its content-addressed blob id. The aggregator is the trust boundary — same model as fetching by CID from an IPFS gateway — but the *pointer* lookup is now deterministic instead of an IPNS lottery,
+            which is the actual leverage over the Uniswap token-list pattern. Add Reed-Solomon-backed client-side hash verification on top with <code>@mysten/walrus</code> if your threat model needs it.
+          </p>
+          <div class="effort">
+            <span class="pill good">straightforward</span>
+            <span class="pill">~80 LOC</span>
+            <span class="pill accent">migration: swap ipfs:// for blobId lookup</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · one fetch + one verification</div>
+<pre class="code"><span class="c">// resolve "tokens.uniswap.eth" → current blobId → manifest JSON</span>
+<span class="k">const</span> { manifest, blobId, contentType } = <span class="k">await</span> <span class="f">resolveTokenList</span>(<span class="s">"tokens.uniswap.eth"</span>, {
+  rpcUrl: <span class="n">EVM_RPC_URL</span>,
+  resolverAddress: <span class="n">RESOLVER_ADDRESS</span>,
+  aggregator: <span class="s">"https://aggregator.walrus-testnet.walrus.space"</span>,
+});
+
+<span class="c">// manifest is a typed Uniswap TokenList; blobId is the 32-byte source of truth.</span></pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">pointer.call</div>
+              <div class="arrow">→</div>
+              <div class="box accent">aggregator GET</div>
+              <div class="arrow">→</div>
+              <div class="box">JSON.parse</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 06 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">06</span>
+        <h3><a href="06-quilted-collection.html">NFT collection drop — one Walrus Quilt, 10 000 tokens</a></h3>
+        <span class="tag">implemented · 06-quilted-collection/ + QuiltedCollection.sol</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The pain</h4>
+          <p class="pain-quote">
+            "OpenSea actually improved their NFT metadata reliability by 99.2% when they switched to Pinata's infrastructure" —
+            i.e. the centralization tax for collection drops is enormous because each token needs its own pin.
+            <em>ipfs-pain.md §8 — decentralization theater</em>
+          </p>
+          <h4>The Walrus fix</h4>
+          <p class="fix">
+            Pack every image + metadata file from the drop into <strong>two Walrus Quilts</strong> (images then metadata, so the
+            metadata can reference the images' quiltId without a circular dependency). The contract stores one
+            <code>quiltId</code>; <code>tokenURI(id)</code> deterministically returns the aggregator URL for that token's metadata. One upload per
+            layer, 10 000 retrievable blobs, no pin-management surface.
+          </p>
+          <div class="effort">
+            <span class="pill good">solid</span>
+            <span class="pill">~120 LOC</span>
+            <span class="pill warn">requires walrus CLI</span>
+            <span class="pill accent">migration: two-quilt packer + 1-line tokenURI</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · quilt + deterministic tokenURI</div>
+<pre class="code"><span class="c"># pack images first, then metadata referencing them</span>
+<span class="f">pnpm</span> pack:quilt ./images    <span class="c"># → QID_IMAGES</span>
+<span class="c"># generate meta/N.json with image=&lt;agg&gt;/by-quilt-id/&lt;QID_IMAGES&gt;/N.png</span>
+<span class="f">pnpm</span> pack:quilt ./meta      <span class="c"># → QID_METADATA</span>
+
+<span class="c">// QuiltedCollection.tokenURI</span>
+<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> id) <span class="k">public</span> <span class="k">view</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
+    <span class="k">return</span> <span class="f">string.concat</span>(aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, id.<span class="f">toString</span>(), <span class="s">".json"</span>);
+}</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">drop/</div>
+              <div class="arrow">→</div>
+              <div class="box accent">store-quilt ×2</div>
+              <div class="arrow">→</div>
+              <div class="box">contract(QID_META)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ─── matrix ──────────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">05 · matrix</span>
+      <h2>The six showcases against the IPFS baseline</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 28px;">
+      Same axes as the comparison table in the EvmWal NFT README, extended across all six fruits.
+    </p>
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Showcase</th>
+            <th>IPFS today</th>
+            <th>Walrus replacement</th>
+            <th>Migration cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="01-evmwal-nft.html">01 · NFT image + metadata</a></td>
+            <td class="pain">Pinata SDK churn, gateway flakiness, pin-lifetime anxiety</td>
+            <td class="fix">Aggregator URL in <code>tokenURI</code>, dual write paths</td>
+            <td>1 URL prefix</td>
+          </tr>
+          <tr>
+            <td><a href="02-walrus-sites.html">02 · dApp frontend hosting</a></td>
+            <td class="pain">IPNS broken; Cloudflare/eth.limo SPOFs; DNSLink fragility</td>
+            <td class="fix">Walrus Sites + SuiNS + wal.app portal; Sui-backed updates</td>
+            <td>SuiNS link + optional CNAME</td>
+          </tr>
+          <tr>
+            <td><a href="03-walrus-resolver.html">03 · Mutable pointer (IPNS replacement)</a></td>
+            <td class="pain">"IPNS is the most loudly broken primitive"</td>
+            <td class="fix">35-line EVM registry + aggregator GET + keeper</td>
+            <td>1 contract deploy + keeper cron</td>
+          </tr>
+          <tr>
+            <td><a href="04-dao-proposals.html">04 · DAO governance proposals</a></td>
+            <td class="pain">4Everland-pinned IPFS; rate-limit risk on vote day</td>
+            <td class="fix">Proposer-pays publisher PUT; blobId stored on-chain</td>
+            <td>Snapshot adapter, ~100 LOC</td>
+          </tr>
+          <tr>
+            <td><a href="05-verifiable-manifest.html">05 · Token list / dApp manifest</a></td>
+            <td class="pain">Public gateway tail latency; Uniswap interface #7753</td>
+            <td class="fix">Mutable pointer + JSON manifest, hash-verified</td>
+            <td>One pointer entry per manifest</td>
+          </tr>
+          <tr>
+            <td><a href="06-quilted-collection.html">06 · 10 000-token collection drop</a></td>
+            <td class="pain">10 000 separate pins; OpenSea-only reliability tax</td>
+            <td class="fix">Two Quilts; deterministic per-token URL</td>
+            <td>Bulk packer + 1-line tokenURI</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ─── sequencing ──────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">06 · sequencing</span>
+      <h2>What to ship, in what order</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 32px;">
+      Ordered by leverage-per-week-of-engineering. The first three are stand-alone repos in the shape of
+      <code>MystenLabs/evm-nft-wal</code>. The last three reuse infrastructure from earlier showcases.
+    </p>
+
+    <div class="ladder">
+      <div class="rung">
+        <div>
+          <h4><a href="03-walrus-resolver.html">Mutable pointer demo (showcase 03)</a></h4>
+          <p>Smallest possible repo. Directly answers the IPNS grievance — the single most-cited structural complaint in the report. Becomes a dependency for showcases 05 and parts of 04.</p>
+        </div>
+        <span class="estimate">≈ 1 dev-week</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4><a href="02-walrus-sites.html">Walrus Sites + SuiNS frontend how-to (showcase 02)</a></h4>
+          <p>Mostly a focused tutorial repo: a tiny Next.js app, one publish script, a SuiNS-link walkthrough, and an optional CNAME from a .eth name to wal.app. Closes the Cloudflare-gateway-sunset wound with a path Uniswap-class projects can follow.</p>
+        </div>
+        <span class="estimate">≈ 1 dev-week</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4><a href="05-verifiable-manifest.html">Verifiable token list (showcase 05)</a></h4>
+          <p>Fork the mutable-pointer repo and add the manifest schema + a viewer. Speaks directly to the wallet / DEX teams already maintaining IPFS-pinned token lists.</p>
+        </div>
+        <span class="estimate">≈ 1 dev-week</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4><a href="04-dao-proposals.html">DAO proposals (showcase 04)</a></h4>
+          <p>Larger surface — a proposer UI plus a vote-tally view. Best landed as a Snapshot adapter rather than a full Snapshot replacement; reuse the EvmWal NFT publisher path so proposers pay their own WAL.</p>
+        </div>
+        <span class="estimate">≈ 2 dev-weeks</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4><a href="06-quilted-collection.html">Quilted collection drop (showcase 06)</a></h4>
+          <p>Pairs naturally with an NFT studio partner — Magic Eden, Sound.xyz, or a launchpad. Requires polish on the bulk packer and the patch-id URL helper, but every other piece is reused from showcase 01.</p>
+        </div>
+        <span class="estimate">≈ 2 dev-weeks</span>
+      </div>
+      <div class="rung">
+        <div>
+          <h4>Composite: dApp frontend reference stack</h4>
+          <p>Once 02–05 exist, bundle them as a "Walrus reference dApp": Walrus Sites for hosting, mutable pointer for manifests, NFT example for tokens, DAO module for governance. This is the canonical "what does a Walrus-native dApp look like" answer.</p>
+        </div>
+        <span class="estimate">≈ 1 sprint of integration</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── footer ─────────────────────────────────────────────── -->
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>Methodology</h5>
+        <p>
+          Each showcase is anchored to at least one verbatim builder quote in
+          <a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/ipfs-pain.md">ipfs-pain.md</a>
+          (the 2026 builder-sentiment survey checked into the repo).
+          Code sketches assume the same stack as <code>MystenLabs/evm-nft-wal</code>:
+          OpenZeppelin ERC-721 + ERC721URIStorage, Next.js 16 App Router, viem + wagmi, and either
+          <code>@mysten/walrus</code> in a local Next.js route or the public Walrus publisher.
+          LOC estimates are total lines for a self-contained demo repo, not just net-new code.
+        </p>
+        <p>
+          The report is intentionally narrow: every fruit listed is one a small DevRel team can ship in 1–2
+          weeks and which a mid-sized EVM dApp can adopt in days. Larger Walrus-native designs
+          (data marketplaces, Walrus Relays, Nautilus-attested uploads) are out of scope on purpose — they're
+          the next tree, not the low-hanging fruit.
+        </p>
+      </div>
+      <div>
+        <h5>Sources in repo</h5>
+        <ul>
+          <li><a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/ipfs-pain.md">ipfs-pain.md</a> <code>· 2026-05-14 survey</code></li>
+          <li><a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/01-evmwal-nft/README.md">EvmWal NFT README</a> <code>· template</code></li>
+          <li><a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/01-evmwal-nft/web/lib/walrus-upload.ts"><code>web/lib/walrus-upload.ts</code></a></li>
+          <li><a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/01-evmwal-nft/web/app/api/walrus/upload/handler.ts"><code>web/app/api/walrus/upload/handler.ts</code></a></li>
+          <li><a href="https://github.com/MystenLabs/evm-nft-wal/blob/main/showcases/contracts/src/EvmWalNFT.sol"><code>contracts/src/EvmWalNFT.sol</code></a></li>
+        </ul>
+        <h5 style="margin-top: 22px;">External anchors</h5>
+        <ul>
+          <li><a href="https://docs.wal.app/">docs.wal.app</a></li>
+          <li><a href="https://docs.wal.app/walrus-client/quilts.html">Walrus Quilts</a></li>
+          <li><a href="https://docs.wal.app/sites/">Walrus Sites</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
