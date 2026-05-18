@@ -19,7 +19,7 @@ hundred lines of TypeScript — so the migration path from IPFS is obvious.
 
 The full design narrative — which IPFS quote each fruit addresses, the
 shape of each migration, the recommended sequencing — lives on the
-landing site at <https://mystenlabs.github.io/evm-nft-wal/>, with a
+landing site at <https://glowing-adventure-e483rqp.pages.github.io/>, with a
 per-showcase walkthrough linked from each card. The site's source is
 under [`../docs/`](../docs/).
 

@@ -9,7 +9,7 @@ Web3 builders in 2026 don't dislike content addressing — they dislike the IPFS
 
 This repo names six low-hanging fruits where Walrus answers a specific grievance with a small, opinionated example. Showcase 01 (the **EvmWal NFT** dApp) is the canonical template — every other fruit is a variation on it: one tiny Solidity contract, one or two fetch calls, one URL prefix.
 
-The full design narrative — which IPFS quote each fruit addresses, the shape of each migration, the recommended sequencing — lives on the **landing site** at <https://mystenlabs.github.io/evm-nft-wal/>, with per-showcase walkthrough pages linked from there. The 2026 builder-sentiment survey it was distilled from is [`ipfs-pain.md`](./ipfs-pain.md); the site's source lives under [`docs/`](./docs/).
+The full design narrative — which IPFS quote each fruit addresses, the shape of each migration, the recommended sequencing — lives on the **landing site** at <https://glowing-adventure-e483rqp.pages.github.io/>, with per-showcase walkthrough pages linked from there. The 2026 builder-sentiment survey it was distilled from is [`ipfs-pain.md`](./ipfs-pain.md); the site's source lives under [`docs/`](./docs/).
 
 ## The six fruits
 
