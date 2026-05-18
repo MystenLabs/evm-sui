@@ -9,7 +9,6 @@ manifest.json
 .env
 .env.local
 .env.*.local
-web/.env.local
 
 # Build orchestration state and per-session notes — not part of the product.
 .forge/

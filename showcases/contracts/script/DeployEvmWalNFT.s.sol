@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {EvmWalNFT} from "../src/EvmWalNFT.sol";
 
-contract Deploy is Script {
+contract DeployEvmWalNFT is Script {
     function run() external {
         vm.startBroadcast();
         EvmWalNFT nft = new EvmWalNFT(msg.sender);

@@ -1,17 +1,15 @@
 // Parses Foundry's broadcast artifact and writes the deployed address to
-// repo-root .deployed-address. Cycle 5.
-//
-// Deliberately writes ONLY to .deployed-address at the repo root. The
-// frontend package directory is NOT touched here; Cycle 6 owns that.
+// the showcase root's .deployed-address file.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(__dirname, '..');
-const BROADCAST = path.join(REPO_ROOT, 'contracts', 'broadcast', 'Deploy.s.sol', '31337', 'run-latest.json');
-const OUT = path.join(REPO_ROOT, '.deployed-address');
+const SHOWCASE_ROOT = path.resolve(__dirname, '..');
+const CONTRACTS_ROOT = path.resolve(SHOWCASE_ROOT, '..', 'contracts');
+const BROADCAST = path.join(CONTRACTS_ROOT, 'broadcast', 'DeployEvmWalNFT.s.sol', '31337', 'run-latest.json');
+const OUT = path.join(SHOWCASE_ROOT, '.deployed-address');
 
 function main() {
   const raw = readFileSync(BROADCAST, 'utf8');

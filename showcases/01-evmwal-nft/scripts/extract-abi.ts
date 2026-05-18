@@ -1,16 +1,18 @@
-// Cycle 6. Reads .deployed-address + contracts/out/EvmWalNFT.sol/EvmWalNFT.json
-// and produces web/.env.local + an updated web/lib/contract.ts with the live ABI.
+// Reads .deployed-address + ../../contracts/out/EvmWalNFT.sol/EvmWalNFT.json (shared
+// showcases Foundry package) and produces web/.env.local + an updated web/lib/contract.ts
+// with the live ABI.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(__dirname, '..');
-const DEPLOYED_ADDRESS = path.join(REPO_ROOT, '.deployed-address');
-const FORGE_ARTIFACT = path.join(REPO_ROOT, 'contracts', 'out', 'EvmWalNFT.sol', 'EvmWalNFT.json');
-const ENV_LOCAL = path.join(REPO_ROOT, 'web', '.env.local');
-const CONTRACT_TS = path.join(REPO_ROOT, 'web', 'lib', 'contract.ts');
+const SHOWCASE_ROOT = path.resolve(__dirname, '..');
+const CONTRACTS_ROOT = path.resolve(SHOWCASE_ROOT, '..', 'contracts');
+const DEPLOYED_ADDRESS = path.join(SHOWCASE_ROOT, '.deployed-address');
+const FORGE_ARTIFACT = path.join(CONTRACTS_ROOT, 'out', 'EvmWalNFT.sol', 'EvmWalNFT.json');
+const ENV_LOCAL = path.join(SHOWCASE_ROOT, 'web', '.env.local');
+const CONTRACT_TS = path.join(SHOWCASE_ROOT, 'web', 'lib', 'contract.ts');
 
 function syncEnvLocal(): void {
   if (!existsSync(DEPLOYED_ADDRESS)) {
@@ -39,7 +41,7 @@ function syncEnvLocal(): void {
 
 function syncContractTs(): void {
   if (!existsSync(FORGE_ARTIFACT)) {
-    throw new Error(`forge artifact not found at ${FORGE_ARTIFACT}. Run forge build in contracts/ first.`);
+    throw new Error(`forge artifact not found at ${FORGE_ARTIFACT}. Run forge build in showcases/contracts/ first.`);
   }
   const artifact = JSON.parse(readFileSync(FORGE_ARTIFACT, 'utf8'));
   if (!Array.isArray(artifact.abi)) {
