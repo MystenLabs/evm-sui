@@ -11,11 +11,11 @@ hundred lines of TypeScript — so the migration path from IPFS is obvious.
 | # | Showcase | Layout | Status |
 |---|---|---|---|
 | 01 | NFT image + metadata | [`01-evmwal-nft/`](./01-evmwal-nft/) + [`contracts/src/EvmWalNFT.sol`](./contracts/src/EvmWalNFT.sol) | shipped |
-| 02 | Walrus Sites for dApp frontend hosting | [`02-walrus-sites/`](./02-walrus-sites/) | scaffold |
+| 02 | Walrus Sites for dApp frontend hosting | [`02-walrus-sites/`](./02-walrus-sites/) | implemented |
 | 03 | WalrusResolver — IPNS replacement | [`03-walrus-resolver/`](./03-walrus-resolver/) + [`contracts/src/WalrusResolver.sol`](./contracts/src/WalrusResolver.sol) | implemented |
-| 04 | DAO governance proposals on Walrus | [`contracts/src/Governance.sol`](./contracts/src/Governance.sol) | contract only |
+| 04 | DAO governance proposals on Walrus | [`04-dao-proposals/`](./04-dao-proposals/) + [`contracts/src/Governance.sol`](./contracts/src/Governance.sol) | implemented |
 | 05 | Verifiable token list / dApp manifest | [`05-verifiable-manifest/`](./05-verifiable-manifest/) + [`contracts/src/WalrusResolver.sol`](./contracts/src/WalrusResolver.sol) | implemented |
-| 06 | Quilted ERC-721 collection drop | [`contracts/src/QuiltedCollection.sol`](./contracts/src/QuiltedCollection.sol) | contract only |
+| 06 | Quilted ERC-721 collection drop | [`06-quilted-collection/`](./06-quilted-collection/) + [`contracts/src/QuiltedCollection.sol`](./contracts/src/QuiltedCollection.sol) | implemented |
 
 The full design narrative — which IPFS quote each fruit addresses, the
 shape of each migration, the recommended sequencing — lives in
@@ -37,12 +37,15 @@ showcases/
 │   │   ├── Governance.t.sol
 │   │   └── QuiltedCollection.t.sol
 │   └── script/
-│       └── DeployEvmWalNFT.s.sol    (showcase 01)
+│       ├── DeployEvmWalNFT.s.sol         (showcase 01)
+│       └── DeployQuiltedCollection.s.sol (showcase 06)
 ├── 01-evmwal-nft/          Next.js dApp + scripts + assets + tests
-├── 02-walrus-sites/        publish.sh + example-site/ (no contract)
+├── 02-walrus-sites/        publish.sh + example-site/ + walkthrough README
 ├── 03-walrus-resolver/
 │   └── keeper/             TS keeper that extends Sui Blob objects
+├── 04-dao-proposals/       TS propose + tally CLIs (publisher PUT + viem)
 ├── 05-verifiable-manifest/ TS client; resolves token lists through WalrusResolver
+├── 06-quilted-collection/  TS pack + deploy + url helpers (walrus store-quilt)
 └── README.md               this file
 ```
 
@@ -141,10 +144,11 @@ See `publish.sh` for the SuiNS link + optional ENS bridge follow-up steps.
 
 ## Notes
 
-- Showcase 01 is wired into the repo-root `pnpm-workspace.yaml` (two packages:
-  `01-evmwal-nft` and `01-evmwal-nft/web`). The keeper (03) and manifest (05)
-  clients still expect `pnpm install` in their respective directories — they
-  are not workspace members yet.
+- Showcase 01, 04, and 06 are wired into the repo-root `pnpm-workspace.yaml`
+  (packages: `01-evmwal-nft`, `01-evmwal-nft/web`, `04-dao-proposals`,
+  `06-quilted-collection`). The keeper (03) and manifest (05) clients still
+  expect `pnpm install` in their respective directories — they are not
+  workspace members yet.
 - `WalrusResolver` takes the ENS Registry address in its constructor; tests
   use an in-process `MockENS`. For mainnet, pass the real ENS registry at
   `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`.

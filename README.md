@@ -16,11 +16,11 @@ The full design narrative — which IPFS quote each fruit addresses, the shape o
 | # | Showcase | Layout | Status |
 |---|---|---|---|
 | 01 | NFT image + metadata | [`showcases/01-evmwal-nft/`](./showcases/01-evmwal-nft/) + [`showcases/contracts/src/EvmWalNFT.sol`](./showcases/contracts/src/EvmWalNFT.sol) | shipped |
-| 02 | Walrus Sites for dApp frontend hosting | [`showcases/02-walrus-sites/`](./showcases/02-walrus-sites/) | scaffold |
+| 02 | Walrus Sites for dApp frontend hosting | [`showcases/02-walrus-sites/`](./showcases/02-walrus-sites/) | implemented |
 | 03 | WalrusResolver — IPNS replacement | [`showcases/03-walrus-resolver/`](./showcases/03-walrus-resolver/) + [`showcases/contracts/src/WalrusResolver.sol`](./showcases/contracts/src/WalrusResolver.sol) | implemented |
-| 04 | DAO governance proposals on Walrus | [`showcases/contracts/src/Governance.sol`](./showcases/contracts/src/Governance.sol) | contract only |
+| 04 | DAO governance proposals on Walrus | [`showcases/04-dao-proposals/`](./showcases/04-dao-proposals/) + [`showcases/contracts/src/Governance.sol`](./showcases/contracts/src/Governance.sol) | implemented |
 | 05 | Verifiable token list / dApp manifest | [`showcases/05-verifiable-manifest/`](./showcases/05-verifiable-manifest/) + [`showcases/contracts/src/WalrusResolver.sol`](./showcases/contracts/src/WalrusResolver.sol) | implemented |
-| 06 | Quilted ERC-721 collection drop | [`showcases/contracts/src/QuiltedCollection.sol`](./showcases/contracts/src/QuiltedCollection.sol) | contract only |
+| 06 | Quilted ERC-721 collection drop | [`showcases/06-quilted-collection/`](./showcases/06-quilted-collection/) + [`showcases/contracts/src/QuiltedCollection.sol`](./showcases/contracts/src/QuiltedCollection.sol) | implemented |
 
 Pick a showcase under [`showcases/<n>-*`](./showcases/) and read its README — each one stands alone.
 
