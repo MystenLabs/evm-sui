@@ -1,6 +1,6 @@
 # Showcase 03 — WalrusResolver, the IPNS replacement
 
-A ~35-line Solidity contract that lets the owner of an ENS name park a
+A compact Solidity contract that lets the owner of an ENS name park a
 Walrus blob pointer on-chain, plus a TypeScript keeper that keeps the
 underlying blob alive forever.
 
