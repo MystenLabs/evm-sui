@@ -1,10 +1,16 @@
 # Showcase 06 — Quilted ERC-721 collection drop
 
-A 10 000-token NFT collection where the entire drop — every image and
-every metadata JSON — lives inside **one Walrus Quilt**. The contract
-stores a single quiltId; `tokenURI(id)` deterministically returns the
-aggregator URL for that token's slice. No per-token pin, no per-token
-state, no OpenSea-only reliability tier.
+A 10 000-token NFT collection backed by **two Walrus Quilts** — one for
+images, one for metadata — instead of 10 000 IPFS pins. The contract
+stores the metadata quilt's id; `tokenURI(id)` deterministically returns
+the aggregator URL for that token's JSON, whose `image` field in turn
+points at the matching slice of the images quilt. No per-token pin, no
+per-token state, no OpenSea-only reliability tier.
+
+The two-quilt split is what breaks the circular dependency between
+metadata content and content-addressed quilt ids — see [_Prepare two drop
+directories_](#1-prepare-two-drop-directories--images-first-then-metadata)
+for the reason in detail.
 
 > **Source files**
 >
@@ -23,8 +29,8 @@ state, no OpenSea-only reliability tier.
 > *(ipfs-pain.md §8 — decentralization theater)*
 
 A 10 000-token drop on IPFS is 10 000 pinning operations, 10 000 things
-that can drop off, and (in practice) a pinning vendor contract. A Quilt
-packs the whole drop into one Walrus operation with deterministic
+that can drop off, and (in practice) a pinning vendor contract. Two
+Walrus Quilts collapse that into two store operations with deterministic
 per-file identifiers.
 
 ## The shape

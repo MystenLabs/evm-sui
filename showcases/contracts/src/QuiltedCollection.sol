@@ -5,19 +5,30 @@ import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-/// 10 000-token NFT collection where every token's metadata + image lives
-/// inside ONE Walrus Quilt.
+/// 10 000-token NFT collection whose metadata lives in a Walrus Quilt.
+/// `tokenURI(id)` deterministically returns the public Walrus aggregator
+/// URL for that token's metadata JSON — no per-token pin, no per-token
+/// state.
 ///
-/// Migration story vs. classic IPFS-pinned drops: pack the whole drop with
-/// `walrus store-quilt --paths ./drop/**/*.{json,png}` (each file's name
-/// becomes its quilt identifier), grab the resulting quiltId, and deploy this
-/// contract with that quiltId + the canonical aggregator base + total supply.
-/// `tokenURI(id)` deterministically returns the public Walrus aggregator URL
-/// for that token's metadata JSON — no per-token pin, no per-token state.
+/// Migration story vs. classic IPFS-pinned drops: pack the drop's images
+/// into one Walrus Quilt (`walrus store-quilt --paths ./images`, each
+/// file's name becomes its quilt identifier), generate per-token metadata
+/// JSONs whose `image` field is the aggregator URL into that images quilt
+/// (`<aggregator>/v1/blobs/by-quilt-id/<images_quilt_id>/<tokenId>.png`),
+/// then pack the metadata directory into a SECOND Quilt and deploy this
+/// contract with the metadata quilt's id + the canonical aggregator base
+/// + total supply.
 ///
-/// The identifier inside the quilt is expected to be `<tokenId>.json` for
-/// metadata (and `<tokenId>.png` for the matching image, referenced from the
-/// metadata's `image` field). The collection's quiltId is immutable.
+/// The two-quilt split avoids the circular dependency that would arise if
+/// metadata and images shared one quilt (metadata content would depend on
+/// the quilt's id, which is content-addressed from the metadata). For
+/// purely on-chain renders with no images, skip the images quilt and
+/// deploy against a single metadata quilt directly.
+///
+/// The identifier inside the metadata quilt is expected to be
+/// `<tokenId>.json`. The collection's `quiltId` is immutable; only the
+/// resolver `aggregator` host can change, owner-only via `setAggregator`,
+/// for sunset migration.
 contract QuiltedCollection is ERC721, Ownable {
     using Strings for uint256;
 
