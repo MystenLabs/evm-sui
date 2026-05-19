@@ -34,7 +34,7 @@
     <span class="eyebrow">Showcase 03 · implemented</span>
     <h1>An on-chain IPNS replacement, <em>ENS-gated</em> and kept alive by anyone.</h1>
     <p class="lede">
-      A 35-line Solidity registry maps an ENS name to a Walrus blob pointer (blobId + Sui object id + content-type
+      A compact Solidity registry maps an ENS name to a Walrus blob pointer (blobId + Sui object id + content-type
       shortcode). Updates are authorized by the ENS registry's <code>owner</code> or an ENSIP-1 operator. A small
       TypeScript keeper extends the underlying Sui Blob object's <code>end_epoch</code> on a cron so the bytes
       survive indefinitely — and anyone can run a keeper for any name they're willing to pay WAL for.

@@ -164,7 +164,7 @@
         <div class="showcase-prose">
           <h4>What it shows</h4>
           <p class="fix">
-            A 35-line Solidity registry mapping <strong>ENS name → current blobId + Sui object id</strong>, gated
+            A compact Solidity registry mapping <strong>ENS name → current blobId + Sui object id</strong>, gated
             on ENS ownership. One <code>eth_call</code> resolves the pointer; one aggregator GET returns the bytes.
             A small TS keeper extends the underlying Sui Blob's epoch retention on a cron — and anyone can run a
             keeper for any name they're willing to pay WAL for.
