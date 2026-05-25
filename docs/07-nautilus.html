@@ -8,8 +8,8 @@
 <meta property="og:title" content="Showcase 07 — Nautilus price oracle" />
 <meta property="og:description" content="Verifiable off-chain compute when EVM hits its wall." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/07-nautilus.html" />
-<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/07-nautilus.html" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/07-nautilus.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/07-nautilus.html" />
 <style>
 /* ─── design tokens ────────────────────────────────────────────────────── */
 :root {
@@ -542,7 +542,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     <span class="nav">
       <a href="walrus.html">Walrus</a>
       <a href="nautilus.html" style="color: var(--text);">Nautilus</a>
-      <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
 </div>
@@ -558,7 +558,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       no Marlin Oyster, free.
     </p>
     <div class="meta">
-      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/showcases/07-nautilus">showcases/07-nautilus/</a></span>
+      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/07-nautilus">showcases/07-nautilus/</a></span>
       <span><strong>Stack:</strong> Rust · axum · ed25519-dalek · Sui Move 2024 · BCS</span>
       <span><strong>Upstream:</strong> <a href="https://github.com/MystenLabs/nautilus">MystenLabs/nautilus</a></span>
     </div>
@@ -588,7 +588,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       2026 LayerZero/KelpDAO exploit drained <strong>$293M</strong> because a 1-of-1 DVN read from internal RPCs an
       attacker had poisoned. The pattern is the same: a smart contract trusts an off-chain value or signer set, the
       off-chain side has no cryptographic attestation, the attacker rewrites the value or the signers. The investigation
-      under <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/notes/NAUTILUS_EVM.md">notes/NAUTILUS_EVM.md</a>
+      under <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/notes/NAUTILUS_EVM.md">notes/NAUTILUS_EVM.md</a>
       walks twelve such categories with direct dev voices.
     </p>
   </div>
@@ -818,14 +818,14 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/enclave/src/apps/price_oracle/mod.rs"><strong>enclave/src/apps/price_oracle/mod.rs</strong>The Rust app: PriceRequest/PriceResponse, the CoinGecko fetch, the BCS-pinning test.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/enclave/src/common.rs"><strong>enclave/src/common.rs</strong>Vendored Nautilus core: IntentMessage, to_signed_response, health_check, attestation gating.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/enclave/src/main.rs"><strong>enclave/src/main.rs</strong>Server boot, deterministic key injection (feature-gated), axum routing.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/move/price-oracle/sources/oracle.move"><strong>move/price-oracle/sources/oracle.move</strong>The Move app: ~70 lines. PricePayload, update_price, all-zero PCR init.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/move/enclave/sources/enclave.move"><strong>move/enclave/sources/enclave.move</strong>Vendored verbatim from upstream MystenLabs/nautilus — the generic verifier package.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/scripts/post-price.sh"><strong>scripts/post-price.sh</strong>End-to-end loop closer: curl /process_data, then sui client call update_price.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/notes/NAUTILUS_EVM.md"><strong>notes/NAUTILUS_EVM.md</strong>The 289-line field report — twelve EVM trust-failure categories, mapped to Nautilus and to alternatives.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/notes/NAUTILUS_LOCAL_DEV.md"><strong>notes/NAUTILUS_LOCAL_DEV.md</strong>The 534-line local-dev recipe this showcase implements.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/enclave/src/apps/price_oracle/mod.rs"><strong>enclave/src/apps/price_oracle/mod.rs</strong>The Rust app: PriceRequest/PriceResponse, the CoinGecko fetch, the BCS-pinning test.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/enclave/src/common.rs"><strong>enclave/src/common.rs</strong>Vendored Nautilus core: IntentMessage, to_signed_response, health_check, attestation gating.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/enclave/src/main.rs"><strong>enclave/src/main.rs</strong>Server boot, deterministic key injection (feature-gated), axum routing.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/move/price-oracle/sources/oracle.move"><strong>move/price-oracle/sources/oracle.move</strong>The Move app: ~70 lines. PricePayload, update_price, all-zero PCR init.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/move/enclave/sources/enclave.move"><strong>move/enclave/sources/enclave.move</strong>Vendored verbatim from upstream MystenLabs/nautilus — the generic verifier package.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/scripts/post-price.sh"><strong>scripts/post-price.sh</strong>End-to-end loop closer: curl /process_data, then sui client call update_price.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/notes/NAUTILUS_EVM.md"><strong>notes/NAUTILUS_EVM.md</strong>The 289-line field report — twelve EVM trust-failure categories, mapped to Nautilus and to alternatives.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/notes/NAUTILUS_LOCAL_DEV.md"><strong>notes/NAUTILUS_LOCAL_DEV.md</strong>The 534-line local-dev recipe this showcase implements.</a>
     </div>
   </div>
 </section>
@@ -847,7 +847,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="nautilus.html">Nautilus hub</a> · <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>.</p>
+    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="nautilus.html">Nautilus hub</a> · <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>.</p>
   </div>
 </footer>
 

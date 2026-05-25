@@ -8,8 +8,8 @@
 <meta property="og:title" content="Showcase 04 — DAO governance proposals on Walrus" />
 <meta property="og:description" content="Proposer-pays Walrus storage; blobId stored on-chain; vote and tally with one EVM call each." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/04-dao-proposals.html" />
-<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/04-dao-proposals.html" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/04-dao-proposals.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/04-dao-proposals.html" />
 <style>
 /* ─── design tokens ────────────────────────────────────────────────────── */
 :root {
@@ -542,7 +542,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     <span class="nav">
       <a href="walrus.html" style="color: var(--text);">Walrus</a>
       <a href="nautilus.html">Nautilus</a>
-      <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
 </div>
@@ -557,8 +557,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       the DAO contract never holds WAL. Anyone reads the proposal anonymously through any Walrus aggregator.
     </p>
     <div class="meta">
-      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
-      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/showcases/04-dao-proposals">04-dao-proposals/</a></span>
+      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
+      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/04-dao-proposals">04-dao-proposals/</a></span>
       <span><strong>Stack:</strong> Solidity · viem · Walrus publisher API</span>
     </div>
   </div>
@@ -780,12 +780,12 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
     </div>
   </div>
 </section>
@@ -807,7 +807,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>.</p>
+    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>.</p>
   </div>
 </footer>
 

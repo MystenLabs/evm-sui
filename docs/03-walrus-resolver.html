@@ -8,8 +8,8 @@
 <meta property="og:title" content="Showcase 03 — WalrusResolver (IPNS replacement)" />
 <meta property="og:description" content="An on-chain IPNS replacement gated on ENS ownership, with a keeper that keeps blobs alive forever." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/03-walrus-resolver.html" />
-<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/03-walrus-resolver.html" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/03-walrus-resolver.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/03-walrus-resolver.html" />
 <style>
 /* ─── design tokens ────────────────────────────────────────────────────── */
 :root {
@@ -542,7 +542,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     <span class="nav">
       <a href="walrus.html" style="color: var(--text);">Walrus</a>
       <a href="nautilus.html">Nautilus</a>
-      <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
 </div>
@@ -558,8 +558,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       survive indefinitely — and anyone can run a keeper for any name they're willing to pay WAL for.
     </p>
     <div class="meta">
-      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/WalrusResolver.sol">WalrusResolver.sol</a></span>
-      <span><strong>Keeper:</strong> <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/03-walrus-resolver/keeper/keeper.ts">03-walrus-resolver/keeper/</a></span>
+      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/WalrusResolver.sol">WalrusResolver.sol</a></span>
+      <span><strong>Keeper:</strong> <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/03-walrus-resolver/keeper/keeper.ts">03-walrus-resolver/keeper/</a></span>
       <span><strong>Stack:</strong> Solidity · viem · @mysten/sui · @mysten/walrus</span>
     </div>
   </div>
@@ -775,10 +775,10 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/WalrusResolver.sol"><strong>contracts/src/WalrusResolver.sol</strong>Compact ENS-gated registry; <code>setWalrusBlob</code> / <code>clearWalrusBlob</code> / <code>walrusBlob</code> / <code>WalrusBlobChanged</code> event.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/test/WalrusResolver.t.sol"><strong>contracts/test/WalrusResolver.t.sol</strong>8 Foundry tests covering ownership, operator approval, ENS-owner-transfer, ERC-165.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/03-walrus-resolver/keeper/keeper.ts"><strong>03-walrus-resolver/keeper/keeper.ts</strong>~150 lines; per-name extension loop with per-name error isolation.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/03-walrus-resolver/README.md"><strong>showcases/03-walrus-resolver/README.md</strong>Full deployment walkthrough + IPNS-vs-WalrusResolver comparison table.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/WalrusResolver.sol"><strong>contracts/src/WalrusResolver.sol</strong>Compact ENS-gated registry; <code>setWalrusBlob</code> / <code>clearWalrusBlob</code> / <code>walrusBlob</code> / <code>WalrusBlobChanged</code> event.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/WalrusResolver.t.sol"><strong>contracts/test/WalrusResolver.t.sol</strong>8 Foundry tests covering ownership, operator approval, ENS-owner-transfer, ERC-165.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/03-walrus-resolver/keeper/keeper.ts"><strong>03-walrus-resolver/keeper/keeper.ts</strong>~150 lines; per-name extension loop with per-name error isolation.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/03-walrus-resolver/README.md"><strong>showcases/03-walrus-resolver/README.md</strong>Full deployment walkthrough + IPNS-vs-WalrusResolver comparison table.</a>
     </div>
   </div>
 </section>
@@ -800,7 +800,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>.</p>
+    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>.</p>
   </div>
 </footer>
 

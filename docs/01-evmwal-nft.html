@@ -8,8 +8,8 @@
 <meta property="og:title" content="Showcase 01 — EvmWal NFT" />
 <meta property="og:description" content="Mint an ERC-721 whose image and metadata live on Walrus." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/01-evmwal-nft.html" />
-<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/01-evmwal-nft.html" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/01-evmwal-nft.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/01-evmwal-nft.html" />
 <style>
 /* ─── design tokens ────────────────────────────────────────────────────── */
 :root {
@@ -542,7 +542,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     <span class="nav">
       <a href="walrus.html" style="color: var(--text);">Walrus</a>
       <a href="nautilus.html">Nautilus</a>
-      <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
 </div>
@@ -557,7 +557,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       same kind of string in; the EVM side never knows which one was used.
     </p>
     <div class="meta">
-      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/showcases/01-evmwal-nft">showcases/01-evmwal-nft/</a></span>
+      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/01-evmwal-nft">showcases/01-evmwal-nft/</a></span>
       <span><strong>Stack:</strong> Foundry · Next.js 16 · viem · wagmi · @mysten/walrus</span>
       <span><strong>Local chain:</strong> Anvil 31337</span>
     </div>
@@ -655,8 +655,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <span class="num">02</span>
       <div>
         <h3>Clone and install</h3>
-<pre class="code"><span class="f">git</span> clone git@github.com:MystenLabs/evm-wal.git
-<span class="f">cd</span> evm-wal
+<pre class="code"><span class="f">git</span> clone git@github.com:MystenLabs/evm-sui.git
+<span class="f">cd</span> evm-sui
 <span class="f">pnpm</span> install
 <span class="f">cp</span> showcases/01-evmwal-nft/web/.env.local.example showcases/01-evmwal-nft/web/.env.local</pre>
         <p>Edit <code>web/.env.local</code>: paste <code>SUI_PRIVATE_KEY=suiprivkey…</code> for backend mode, or set <code>NEXT_PUBLIC_WALRUS_UPLOAD_MODE=publisher</code> to skip the Sui side entirely.</p>
@@ -737,14 +737,14 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/EvmWalNFT.sol"><strong>contracts/src/EvmWalNFT.sol</strong>OpenZeppelin ERC-721 + ERC721URIStorage; <code>mint</code>, <code>mintTo</code>, <code>Minted</code> event.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/test/EvmWalNFT.t.sol"><strong>contracts/test/EvmWalNFT.t.sol</strong>7 Foundry tests, 100% line coverage.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/script/DeployEvmWalNFT.s.sol"><strong>contracts/script/DeployEvmWalNFT.s.sol</strong>Foundry deploy script — Anvil-friendly defaults.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/01-evmwal-nft/web/lib/walrus-upload.ts"><strong>web/lib/walrus-upload.ts</strong>Browser-side publisher PUT (fallback path).</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/01-evmwal-nft/web/lib/walrus-upload-backend.ts"><strong>web/lib/walrus-upload-backend.ts</strong>Browser-side POST to the local API route (default path).</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/01-evmwal-nft/web/app/api/walrus/upload/handler.ts"><strong>web/app/api/walrus/upload/handler.ts</strong>Server-side <code>writeBlob</code> via <code>@mysten/walrus</code>, ~30 lines, dep-injected for unit tests.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/01-evmwal-nft/web/hooks/useMint.ts"><strong>web/hooks/useMint.ts</strong>Multi-stage mint state machine; dispatches publisher vs. backend at module load.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/01-evmwal-nft/README.md"><strong>showcases/01-evmwal-nft/README.md</strong>Full walkthrough + comparison table with IPFS-backed NFTs.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/EvmWalNFT.sol"><strong>contracts/src/EvmWalNFT.sol</strong>OpenZeppelin ERC-721 + ERC721URIStorage; <code>mint</code>, <code>mintTo</code>, <code>Minted</code> event.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/EvmWalNFT.t.sol"><strong>contracts/test/EvmWalNFT.t.sol</strong>7 Foundry tests, 100% line coverage.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/script/DeployEvmWalNFT.s.sol"><strong>contracts/script/DeployEvmWalNFT.s.sol</strong>Foundry deploy script — Anvil-friendly defaults.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/01-evmwal-nft/web/lib/walrus-upload.ts"><strong>web/lib/walrus-upload.ts</strong>Browser-side publisher PUT (fallback path).</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/01-evmwal-nft/web/lib/walrus-upload-backend.ts"><strong>web/lib/walrus-upload-backend.ts</strong>Browser-side POST to the local API route (default path).</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/01-evmwal-nft/web/app/api/walrus/upload/handler.ts"><strong>web/app/api/walrus/upload/handler.ts</strong>Server-side <code>writeBlob</code> via <code>@mysten/walrus</code>, ~30 lines, dep-injected for unit tests.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/01-evmwal-nft/web/hooks/useMint.ts"><strong>web/hooks/useMint.ts</strong>Multi-stage mint state machine; dispatches publisher vs. backend at module load.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/01-evmwal-nft/README.md"><strong>showcases/01-evmwal-nft/README.md</strong>Full walkthrough + comparison table with IPFS-backed NFTs.</a>
     </div>
   </div>
 </section>
@@ -766,7 +766,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>.</p>
+    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>.</p>
   </div>
 </footer>
 

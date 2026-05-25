@@ -7,7 +7,7 @@
 
 Two pillars, one repo. **Walrus** showcases (01–06) each pair a Solidity contract with a few hundred lines of TypeScript — same EVM surface, storage swapped to Walrus. **Nautilus** showcases start at 07 and leave EVM entirely — Rust enclaves sign data inside a TEE, Sui Move contracts verify the signatures on-chain.
 
-The landing site at <https://mystenlabs.github.io/evm-wal/> links to the [Walrus hub](https://mystenlabs.github.io/evm-wal/walrus.html) and [Nautilus hub](https://mystenlabs.github.io/evm-wal/nautilus.html), each with per-showcase walkthrough pages. Source lives under [`docs/`](./docs/).
+The landing site at <https://mystenlabs.github.io/evm-sui/> links to the [Walrus hub](https://mystenlabs.github.io/evm-sui/walrus.html) and [Nautilus hub](https://mystenlabs.github.io/evm-sui/nautilus.html), each with per-showcase walkthrough pages. Source lives under [`docs/`](./docs/).
 
 ## Walrus showcases — decentralized storage for EVM
 

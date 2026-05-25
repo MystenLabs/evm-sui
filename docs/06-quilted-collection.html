@@ -8,8 +8,8 @@
 <meta property="og:title" content="Showcase 06 — Quilted ERC-721 collection drop" />
 <meta property="og:description" content="One Walrus Quilt per layer, deterministic tokenURI, no per-token pinning." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/06-quilted-collection.html" />
-<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/06-quilted-collection.html" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/06-quilted-collection.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/06-quilted-collection.html" />
 <style>
 /* ─── design tokens ────────────────────────────────────────────────────── */
 :root {
@@ -542,7 +542,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     <span class="nav">
       <a href="walrus.html" style="color: var(--text);">Walrus</a>
       <a href="nautilus.html">Nautilus</a>
-      <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
 </div>
@@ -558,8 +558,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       metadata). No 10 000 pins, no OpenSea-only reliability tier, no per-token state.
     </p>
     <div class="meta">
-      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/QuiltedCollection.sol">QuiltedCollection.sol</a></span>
-      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/showcases/06-quilted-collection">06-quilted-collection/</a></span>
+      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/QuiltedCollection.sol">QuiltedCollection.sol</a></span>
+      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/06-quilted-collection">06-quilted-collection/</a></span>
       <span><strong>Tools:</strong> <code>walrus</code> CLI · Foundry · TypeScript</span>
     </div>
   </div>
@@ -784,13 +784,13 @@ meta/
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/QuiltedCollection.sol"><strong>contracts/src/QuiltedCollection.sol</strong>~120 lines: ERC-721 + Ownable + immutable <code>maxSupply</code> + mutable <code>aggregator</code>.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/test/QuiltedCollection.t.sol"><strong>contracts/test/QuiltedCollection.t.sol</strong>10 Foundry tests covering constructor validation, sold-out cap, tokenURI shape, setAggregator authorization.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/script/DeployQuiltedCollection.s.sol"><strong>contracts/script/DeployQuiltedCollection.s.sol</strong>Env-driven forge script — <code>QC_*</code> vars become constructor args.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/06-quilted-collection/src/pack.ts"><strong>06-quilted-collection/src/pack.ts</strong>Wraps <code>walrus store-quilt --paths &lt;dir&gt;</code>; tolerant stdout parser for the quiltId.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/06-quilted-collection/src/deploy.ts"><strong>06-quilted-collection/src/deploy.ts</strong>Forge-script wrapper that forwards <code>QC_*</code> env vars; redacts the private key in <code>--dry-run</code> output.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/06-quilted-collection/src/url.ts"><strong>06-quilted-collection/src/url.ts</strong>TS port of the on-chain <code>tokenURI</code> — for off-chain consumers.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/06-quilted-collection/README.md"><strong>showcases/06-quilted-collection/README.md</strong>Full walkthrough including the two-quilt rationale.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/QuiltedCollection.sol"><strong>contracts/src/QuiltedCollection.sol</strong>~120 lines: ERC-721 + Ownable + immutable <code>maxSupply</code> + mutable <code>aggregator</code>.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/QuiltedCollection.t.sol"><strong>contracts/test/QuiltedCollection.t.sol</strong>10 Foundry tests covering constructor validation, sold-out cap, tokenURI shape, setAggregator authorization.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/script/DeployQuiltedCollection.s.sol"><strong>contracts/script/DeployQuiltedCollection.s.sol</strong>Env-driven forge script — <code>QC_*</code> vars become constructor args.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/src/pack.ts"><strong>06-quilted-collection/src/pack.ts</strong>Wraps <code>walrus store-quilt --paths &lt;dir&gt;</code>; tolerant stdout parser for the quiltId.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/src/deploy.ts"><strong>06-quilted-collection/src/deploy.ts</strong>Forge-script wrapper that forwards <code>QC_*</code> env vars; redacts the private key in <code>--dry-run</code> output.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/src/url.ts"><strong>06-quilted-collection/src/url.ts</strong>TS port of the on-chain <code>tokenURI</code> — for off-chain consumers.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/README.md"><strong>showcases/06-quilted-collection/README.md</strong>Full walkthrough including the two-quilt rationale.</a>
     </div>
   </div>
 </section>
@@ -812,7 +812,7 @@ meta/
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>.</p>
+    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>.</p>
   </div>
 </footer>
 
