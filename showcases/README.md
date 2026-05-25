@@ -16,7 +16,7 @@ few hundred lines of TypeScript.
 | 05 | Verifiable token list / dApp manifest | [`05-verifiable-manifest/`](./05-verifiable-manifest/) + [`contracts/src/WalrusResolver.sol`](./contracts/src/WalrusResolver.sol) | implemented |
 | 06 | Quilted ERC-721 collection drop | [`06-quilted-collection/`](./06-quilted-collection/) + [`contracts/src/QuiltedCollection.sol`](./contracts/src/QuiltedCollection.sol) | implemented |
 
-The landing site at <https://mystenlabs.github.io/evm-wal/> indexes the
+The landing site at <https://mystenlabs.github.io/evm-sui/> indexes the
 six examples, with a per-showcase walkthrough linked from each card.
 The site's source is under [`../docs/`](../docs/).
 

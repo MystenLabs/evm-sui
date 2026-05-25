@@ -1,26 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Walrus on EVM — Six storage integrations · EVM × Sui</title>
+<meta name="description" content="Six Solidity contracts showing how to put a Walrus blob behind an EVM smart contract. Each example is a tiny contract plus TypeScript, with a step-by-step walkthrough." />
+<meta property="og:title" content="Walrus on EVM — Six storage integrations" />
+<meta property="og:description" content="Six Solidity contracts with Walrus blob storage." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/walrus.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/walrus.html" />
+<style>
 /* ─── design tokens ────────────────────────────────────────────────────── */
 :root {
-  --bg: #07080b;
-  --bg-soft: #0d1015;
-  --bg-card: #11151b;
-  --bg-elev: #161b22;
-  --line: #1f2630;
-  --line-soft: #161c25;
-  --text: #e6edf3;
-  --text-soft: #9aa6b2;
-  --text-dim: #5e6a78;
-  --accent: #4da2ff;
-  --accent-soft: rgba(77, 162, 255, 0.12);
-  --accent-line: rgba(77, 162, 255, 0.35);
-  --warn: #f0b429;
-  --warn-soft: rgba(240, 180, 41, 0.1);
-  --good: #4ade80;
-  --good-soft: rgba(74, 222, 128, 0.1);
-  --bad: #f87171;
-  --bad-soft: rgba(248, 113, 113, 0.1);
+  color-scheme: light dark;
+  /* light (default) */
+  --bg: #ffffff;
+  --bg-soft: #f6f8fa;
+  --bg-card: #ffffff;
+  --bg-elev: #f0f2f5;
+  --line: #d1d9e0;
+  --line-soft: #e8ecf0;
+  --text: #1f2328;
+  --text-soft: #656d76;
+  --text-dim: #8b949e;
+  --accent: #0969da;
+  --accent-soft: rgba(9, 105, 218, 0.08);
+  --accent-line: rgba(9, 105, 218, 0.25);
+  --warn: #9a6700;
+  --warn-soft: rgba(154, 103, 0, 0.08);
+  --good: #1a7f37;
+  --good-soft: rgba(26, 127, 55, 0.08);
+  --bad: #cf222e;
+  --bad-soft: rgba(207, 34, 46, 0.08);
   --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
   --sans: ui-sans-serif, system-ui, -apple-system, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --maxw: 1120px;
+  /* syntax highlighting */
+  --syn-kw: #a626a4;
+  --syn-str: #50a14f;
+  --syn-num: #4078f2;
+  --syn-fn: #c18401;
+  --syn-type: #0184bc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #07080b;
+    --bg-soft: #0d1015;
+    --bg-card: #11151b;
+    --bg-elev: #161b22;
+    --line: #1f2630;
+    --line-soft: #161c25;
+    --text: #e6edf3;
+    --text-soft: #9aa6b2;
+    --text-dim: #5e6a78;
+    --accent: #4da2ff;
+    --accent-soft: rgba(77, 162, 255, 0.12);
+    --accent-line: rgba(77, 162, 255, 0.35);
+    --warn: #f0b429;
+    --warn-soft: rgba(240, 180, 41, 0.1);
+    --good: #4ade80;
+    --good-soft: rgba(74, 222, 128, 0.1);
+    --bad: #f87171;
+    --bad-soft: rgba(248, 113, 113, 0.1);
+    --syn-kw: #c792ea;
+    --syn-str: #c3e88d;
+    --syn-num: #82aaff;
+    --syn-fn: #ffcb6b;
+    --syn-type: #89ddff;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -226,12 +274,12 @@ pre.code {
   margin: 0;
 }
 pre.code code { background: transparent; border: 0; padding: 0; }
-pre.code .k { color: #c792ea; }    /* keyword */
-pre.code .s { color: #c3e88d; }    /* string */
-pre.code .n { color: #82aaff; }    /* number */
+pre.code .k { color: var(--syn-kw); }
+pre.code .s { color: var(--syn-str); }
+pre.code .n { color: var(--syn-num); }
 pre.code .c { color: var(--text-dim); font-style: italic; }
-pre.code .f { color: #ffcb6b; }    /* function */
-pre.code .t { color: #89ddff; }    /* type */
+pre.code .f { color: var(--syn-fn); }
+pre.code .t { color: var(--syn-type); }
 
 /* ─── showcase cards (used on landing) ─────────────────────────────────── */
 .showcase {
@@ -478,3 +526,360 @@ footer li { padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
 footer li:last-child { border-bottom: none; }
 footer code { font-size: 12px; color: var(--text-dim); background: transparent; border: 0; padding: 0; }
 
+</style>
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="var(--accent)" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="var(--accent)" fill-opacity="0.85" />
+      </svg>
+      <a href="./">EVM × Sui</a>
+    </span>
+    <span class="nav">
+      <a href="walrus.html" style="color: var(--text);">Walrus</a>
+      <a href="nautilus.html">Nautilus</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Six examples · all implemented</span>
+    <h1>Put a <em>Walrus blob</em> behind an EVM contract.</h1>
+    <p class="lede">
+      Six small dApps showing the integration shape: an EVM contract that stores a Walrus URL or blob id, and the
+      browser / CLI code that puts the bytes there. Each example is a tiny Solidity contract plus a few hundred
+      lines of TypeScript. Click any title for a step-by-step walkthrough you can run locally.
+    </p>
+    <div class="meta">
+      <span><strong>Repo:</strong> <a href="https://github.com/MystenLabs/evm-sui">MystenLabs/evm-sui</a></span>
+      <span><strong>Stack:</strong> OZ ERC-721 · Foundry · Next.js · viem · wagmi · @mysten/walrus</span>
+      <span><strong>Networks:</strong> Anvil (local) · Walrus testnet</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">the six</span>
+      <h2>Six examples, six contract shapes.</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 40px;">
+      Click any title for the per-example walkthrough.
+    </p>
+
+    <!-- 01 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">01</span>
+        <h3><a href="01-evmwal-nft.html">EvmWal NFT — image + metadata</a></h3>
+        <span class="tag">implemented · 01-evmwal-nft/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            A vanilla OpenZeppelin <code>ERC-721 + ERC721URIStorage</code> whose <code>tokenURI</code> points at a
+            Walrus aggregator URL. Two write paths drop the same kind of string into the same contract: an operator
+            backend route signing with <code>@mysten/walrus</code>, or the public Walrus testnet publisher PUT.
+          </p>
+          <div class="effort">
+            <span class="pill good">ready</span>
+            <span class="pill">~200 LOC</span>
+            <span class="pill accent">1 URL prefix from an IPFS NFT</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape</div>
+<pre class="code"><span class="c">// the entire EVM-side contract surface</span>
+<span class="k">function</span> <span class="f">mint</span>(<span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
+<span class="k">function</span> <span class="f">mintTo</span>(<span class="t">address</span> to, <span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
+<span class="k">event</span> <span class="f">Minted</span>(<span class="t">uint256</span> <span class="k">indexed</span> tokenId, <span class="t">address</span> <span class="k">indexed</span> minter, <span class="t">string</span> tokenURI_);</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">picker</div>
+              <div class="arrow">→</div>
+              <div class="box accent">walrus PUT</div>
+              <div class="arrow">→</div>
+              <div class="box">mint(uri)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">02</span>
+        <h3><a href="02-walrus-sites.html">Walrus Sites for dApp frontend hosting</a></h3>
+        <span class="tag">implemented · 02-walrus-sites/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            Publish a Next.js or SPA build with <code>site-builder publish</code>; a Sui object holds the site, a
+            <strong>SuiNS</strong> name points at it, and the public <a href="https://wal.app">wal.app</a> portal
+            resolves it for any visitor. Updates land via one Sui transaction. Optional ENS bridge via DNSLink or
+            a CNAME to the portal host.
+          </p>
+          <div class="effort">
+            <span class="pill good">trivial</span>
+            <span class="pill">~10 LOC config</span>
+            <span class="pill accent">SuiNS link + optional CNAME</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · CLI + SuiNS link</div>
+<pre class="code"><span class="c"># build once, publish to Walrus Sites</span>
+<span class="f">pnpm</span> build
+<span class="f">site-builder</span> publish ./out \
+  --epochs <span class="n">200</span>
+
+<span class="c"># → site_object_id: 0xa1b2…
+# → resolves at &lt;base36-of-id&gt;.wal.app
+#   (or yourdapp.wal.app once linked to a SuiNS name)</span></pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">build/</div>
+              <div class="arrow">→</div>
+              <div class="box accent">site-builder</div>
+              <div class="arrow">→</div>
+              <div class="box">SuiNS · wal.app</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">03</span>
+        <h3><a href="03-walrus-resolver.html">WalrusResolver — mutable pointer</a></h3>
+        <span class="tag">implemented · WalrusResolver.sol + keeper</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            A compact Solidity registry mapping <strong>ENS name → current blobId + Sui object id</strong>, gated
+            on ENS ownership. One <code>eth_call</code> resolves the pointer; one aggregator GET returns the bytes.
+            A small TS keeper extends the underlying Sui Blob's epoch retention on a cron — and anyone can run a
+            keeper for any name they're willing to pay WAL for.
+          </p>
+          <div class="effort">
+            <span class="pill good">trivial</span>
+            <span class="pill">~50 LOC total</span>
+            <span class="pill accent">1 contract deploy + keeper cron</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · Solidity registry</div>
+<pre class="code"><span class="c">// WalrusResolver.sol — ENS-gated pointer registry</span>
+<span class="k">contract</span> WalrusResolver {
+  <span class="k">function</span> <span class="f">setWalrusBlob</span>(
+    <span class="t">bytes32</span> node, <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId, <span class="t">bytes8</span> ct
+  ) <span class="k">external</span>;
+
+  <span class="k">function</span> <span class="f">walrusBlob</span>(<span class="t">bytes32</span> node) <span class="k">external view</span> <span class="k">returns</span> (
+    <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId, <span class="t">bytes8</span> contentType
+  );
+
+  <span class="k">event</span> <span class="f">WalrusBlobChanged</span>(
+    <span class="t">bytes32</span> <span class="k">indexed</span> node, <span class="t">bytes32</span> blobId, <span class="t">bytes32</span> suiObjectId, <span class="t">bytes8</span> contentType, <span class="t">uint64</span> at
+  );
+}</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">EVM read</div>
+              <div class="arrow">→</div>
+              <div class="box accent">aggregator GET</div>
+              <div class="arrow">→</div>
+              <div class="box">verified bytes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">04</span>
+        <h3><a href="04-dao-proposals.html">DAO governance proposals</a></h3>
+        <span class="tag">implemented · 04-dao-proposals/ + Governance.sol</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            One contract storing <strong>proposalId → (proposer, blobId, deadline, yes, no)</strong>. Proposal body
+            uploaded to Walrus via the public publisher (so the proposer pays, not the DAO operator); contract
+            stores the 32-byte blobId. Two CLIs (<code>propose</code> + <code>tally</code>) drive the end-to-end
+            flow.
+          </p>
+          <div class="effort">
+            <span class="pill good">straightforward</span>
+            <span class="pill">~100 LOC</span>
+            <span class="pill warn">showcase-only voting surface</span>
+            <span class="pill accent">store blobId, not CID</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · proposer-pays write + DAO-readable bytes</div>
+<pre class="code"><span class="c">// Governance.sol — body lives on Walrus, weight on-chain</span>
+<span class="k">struct</span> Proposal {
+  <span class="t">address</span> proposer;
+  <span class="t">bytes32</span> blobId;       <span class="c">// Walrus blob holding the proposal markdown</span>
+  <span class="t">uint64</span>  deadline;
+  <span class="t">uint128</span> yes;
+  <span class="t">uint128</span> no;
+}
+<span class="k">function</span> <span class="f">propose</span>(<span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> id);
+<span class="k">function</span> <span class="f">vote</span>(<span class="t">uint256</span> id, <span class="t">bool</span> support) <span class="k">external</span>;</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">proposer</div>
+              <div class="arrow">→</div>
+              <div class="box accent">walrus PUT</div>
+              <div class="arrow">→</div>
+              <div class="box">propose(blobId)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">05</span>
+        <h3><a href="05-verifiable-manifest.html">Verifiable token list / dApp manifest</a></h3>
+        <span class="tag">implemented · 05-verifiable-manifest/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            An 80-line TS client that combines showcase 03's mutable pointer with a strict JSON schema. Resolves an
+            ENS name in one <code>eth_call</code>, fetches the manifest by content-addressed blob id, and returns
+            a typed object. Optional Reed-Solomon hash verification via <code>@mysten/walrus</code> for trustless
+            retrieval.
+          </p>
+          <div class="effort">
+            <span class="pill good">straightforward</span>
+            <span class="pill">~80 LOC</span>
+            <span class="pill accent">swap CID lookup for blobId lookup</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · one fetch + one verification</div>
+<pre class="code"><span class="c">// resolve "tokens.uniswap.eth" → current blobId → manifest JSON</span>
+<span class="k">const</span> { manifest, blobId, contentType } = <span class="k">await</span> <span class="f">resolveTokenList</span>(<span class="s">"tokens.uniswap.eth"</span>, {
+  rpcUrl: <span class="n">EVM_RPC_URL</span>,
+  resolverAddress: <span class="n">RESOLVER_ADDRESS</span>,
+  aggregator: <span class="s">"https://aggregator.walrus-testnet.walrus.space"</span>,
+});
+
+<span class="c">// manifest is a typed Uniswap TokenList; blobId is the 32-byte source of truth.</span></pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">pointer.call</div>
+              <div class="arrow">→</div>
+              <div class="box accent">aggregator GET</div>
+              <div class="arrow">→</div>
+              <div class="box">JSON.parse</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 06 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">06</span>
+        <h3><a href="06-quilted-collection.html">Quilted ERC-721 collection drop</a></h3>
+        <span class="tag">implemented · 06-quilted-collection/ + QuiltedCollection.sol</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            A 10 000-token ERC-721 backed by <strong>two Walrus Quilts</strong> (images first, then metadata, so the
+            metadata can reference the images' quiltId without a circular dep). The contract stores one
+            <code>quiltId</code>; <code>tokenURI(id)</code> deterministically returns the aggregator URL for that
+            token's metadata. One Walrus upload per layer, 10 000 retrievable tokens.
+          </p>
+          <div class="effort">
+            <span class="pill good">solid</span>
+            <span class="pill">~120 LOC</span>
+            <span class="pill warn">requires walrus CLI</span>
+            <span class="pill accent">two-quilt packer + 1-line tokenURI</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · quilt + deterministic tokenURI</div>
+<pre class="code"><span class="c"># pack images first, then metadata referencing them</span>
+<span class="f">pnpm</span> pack:quilt ./images    <span class="c"># → QID_IMAGES</span>
+<span class="c"># generate meta/N.json with image=&lt;agg&gt;/by-quilt-id/&lt;QID_IMAGES&gt;/N.png</span>
+<span class="f">pnpm</span> pack:quilt ./meta      <span class="c"># → QID_METADATA</span>
+
+<span class="c">// QuiltedCollection.tokenURI</span>
+<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> id) <span class="k">public</span> <span class="k">view</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
+    <span class="k">return</span> <span class="f">string.concat</span>(aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, id.<span class="f">toString</span>(), <span class="s">".json"</span>);
+}</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">drop/</div>
+              <div class="arrow">→</div>
+              <div class="box accent">store-quilt ×2</div>
+              <div class="arrow">→</div>
+              <div class="box">contract(QID_META)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <div class="foot-grid">
+      <div>
+        <h5>Run them locally</h5>
+        <p>
+          Each example has a <strong>per-page walkthrough</strong> with prerequisites, copy-pasteable commands,
+          env tables, and a verify checklist. The shared Foundry package at
+          <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/contracts"><code>showcases/contracts</code></a>
+          builds and tests all four contracts together: <code>forge build &amp;&amp; forge test -vv</code> from that
+          directory runs 37 tests across <code>EvmWalNFT</code>, <code>Governance</code>,
+          <code>QuiltedCollection</code>, and <code>WalrusResolver</code>.
+        </p>
+      </div>
+      <div>
+        <h5>Links</h5>
+        <ul>
+          <li><a href="https://github.com/MystenLabs/evm-sui">Repo on GitHub</a></li>
+          <li><a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases">showcases/ directory</a></li>
+          <li><a href="https://docs.wal.app/">docs.wal.app</a></li>
+          <li><a href="https://docs.wal.app/walrus-client/quilts.html">Walrus Quilts</a></li>
+          <li><a href="https://docs.wal.app/sites/">Walrus Sites</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

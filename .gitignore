@@ -10,6 +10,13 @@ manifest.json
 .env.local
 .env.*.local
 
+# Rust (showcase 07)
+target/
+Cargo.lock
+
+# Sui Move build artifacts (showcase 07)
+showcases/**/move/**/build/
+
 # Build orchestration state and per-session notes — not part of the product.
 .forge/
 .forge-v1/

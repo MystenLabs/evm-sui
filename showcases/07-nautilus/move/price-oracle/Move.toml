@@ -1,0 +1,9 @@
+[package]
+name = "price_oracle"
+edition = "2024"
+
+[dependencies]
+enclave = { local = "../enclave" }
+
+[addresses]
+price_oracle = "0x0"

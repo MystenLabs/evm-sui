@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Showcase 06 — Quilted ERC-721 collection drop · EVM × Sui</title>
-<meta name="description" content="Pack a 10 000-token NFT drop into two Walrus Quilts (images, then metadata) and deploy a contract whose tokenURI is deterministic. No per-token pin, no OpenSea-only reliability tier." />
-<meta property="og:title" content="Showcase 06 — Quilted ERC-721 collection drop" />
-<meta property="og:description" content="One Walrus Quilt per layer, deterministic tokenURI, no per-token pinning." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/06-quilted-collection.html" />
-<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/06-quilted-collection.html" />
+<title>Nautilus on EVM — Verifiable off-chain compute · EVM × Sui</title>
+<meta name="description" content="When an EVM contract can't verify the off-chain part, a Rust enclave signs and a Sui Move package verifies. TEE-attested compute for the twelve trust-failure categories where EVM hits its wall." />
+<meta property="og:title" content="Nautilus on EVM — Verifiable off-chain compute" />
+<meta property="og:description" content="TEE-attested compute for when EVM contracts can't verify the off-chain part." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/nautilus.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/nautilus.html" />
 <style>
 /* ─── design tokens ────────────────────────────────────────────────────── */
 :root {
@@ -540,8 +540,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <a href="./">EVM × Sui</a>
     </span>
     <span class="nav">
-      <a href="walrus.html" style="color: var(--text);">Walrus</a>
-      <a href="nautilus.html">Nautilus</a>
+      <a href="walrus.html">Walrus</a>
+      <a href="nautilus.html" style="color: var(--text);">Nautilus</a>
       <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
@@ -549,18 +549,18 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 
 <header class="hero">
   <div class="shell hero-inner">
-    <span class="eyebrow">Showcase 06 · implemented</span>
-    <h1>10 000 NFTs in <em>two Walrus Quilts</em>. No per-token pinning.</h1>
+    <span class="eyebrow">twelve categories · one pattern</span>
+    <h1>When an EVM contract can't verify the <em>off-chain</em> part.</h1>
     <p class="lede">
-      A vanilla OpenZeppelin ERC-721 whose <code>tokenURI(id)</code> deterministically returns
-      <code>&lt;aggregator&gt;/v1/blobs/by-quilt-id/&lt;quiltId&gt;/&lt;id&gt;.json</code>. The contract stores one quiltId;
-      a small TypeScript packer turns a drop directory into one Walrus operation per layer (images, then
-      metadata). No 10 000 pins, no OpenSea-only reliability tier, no per-token state.
+      Showcases 01–06 swap the storage layer behind a Solidity contract. These swap the <em>computation</em>
+      layer. A Rust enclave fetches external data, signs the result with an ephemeral ed25519 key; a Sui Move
+      package verifies the signature. One pattern — <code>IntentMessage</code> + BCS + <code>verify_signature</code> —
+      applied to twelve trust-failure categories where EVM developers keep hitting a wall.
     </p>
     <div class="meta">
-      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/QuiltedCollection.sol">QuiltedCollection.sol</a></span>
-      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/06-quilted-collection">06-quilted-collection/</a></span>
-      <span><strong>Tools:</strong> <code>walrus</code> CLI · Foundry · TypeScript</span>
+      <span><strong>Repo:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/07-nautilus">showcases/07-nautilus/</a></span>
+      <span><strong>Stack:</strong> Rust · axum · ed25519-dalek · Sui Move 2024 · BCS</span>
+      <span><strong>Upstream:</strong> <a href="https://github.com/MystenLabs/nautilus">MystenLabs/nautilus</a></span>
     </div>
   </div>
 </header>
@@ -568,65 +568,46 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <section>
   <div class="shell">
     <div class="section-head">
-      <span class="section-num">01 · the pain</span>
-      <h2>OpenSea's 99.2% reliability bump came from centralizing on Pinata.</h2>
-    </div>
-    <div class="pain-card" style="max-width: 56rem;">
-      <span class="corner">decentralization theater</span>
-      <div class="stat">ipfs-pain.md · §8</div>
-      <blockquote>
-        "OpenSea actually improved their NFT metadata reliability by 99.2% when they switched to Pinata's infrastructure" —
-        i.e. the centralization tax for collection drops is enormous because each token needs its own pin.
-      </blockquote>
-      <cite>— 2026 builder-sentiment survey</cite>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="shell">
-    <div class="section-head">
-      <span class="section-num">02 · the shape</span>
-      <h2>Two quilts, one contract, deterministic per-token URL.</h2>
+      <span class="section-num">the pattern</span>
+      <h2>One Rust binary signs. One Move package verifies. BCS in the middle.</h2>
     </div>
     <div class="thesis-grid">
       <div>
         <p>
-          A metadata JSON's <code>image</code> field has to be a fully-qualified aggregator URL, which has to
-          include the quiltId of the quilt it points at. If you put images and metadata in the
-          <strong>same</strong> quilt, the metadata's content depends on the quilt's id, but the quilt's id is
-          content-addressed from the metadata — circular.
+          Every Nautilus showcase follows the same shape. The enclave (Rust + axum) exposes
+          <code>POST /process_data</code>. It does the sensitive work — fetching a price, running ML inference,
+          matching sealed bids — wraps the result in an <code>IntentMessage&lt;T&gt;</code>, BCS-encodes it, and
+          signs with its ephemeral ed25519 key.
         </p>
         <p>
-          The clean fix is <strong>two quilts</strong>: one for images (<code>QID_IMAGES</code>), one for metadata
-          (<code>QID_METADATA</code>). Each metadata JSON references the images quilt's id (known after pass one);
-          the contract holds the metadata quilt's id (known after pass two).
+          The Move package mirrors the payload struct field-for-field and calls <code>verify_signature</code>
+          against the enclave's registered pubkey. Intent bytes separate domains so signatures from one app
+          can't be replayed against another.
         </p>
         <p class="callout">
-          On-chain tokenURI shape is fully deterministic from <code>(aggregator, quiltId, tokenId)</code> — indexers
-          and marketplaces can resolve tokens off-chain without an EVM RPC call.
+          All examples run locally — deterministic signing key, all-zero PCRs, no AWS, no Marlin Oyster, free.
+          The on-chain verifier is the same one that ships to production.
         </p>
       </div>
       <div>
-<pre class="code"><span class="c">// QuiltedCollection.sol</span>
-<span class="t">string</span> <span class="k">public</span> quiltId;       <span class="c">// base64url, set in constructor</span>
-<span class="t">string</span> <span class="k">public</span> aggregator;    <span class="c">// owner-mutable for sunset migration</span>
-<span class="t">uint256</span> <span class="k">public</span> <span class="k">immutable</span> maxSupply;
+<pre class="code"><span class="c">// shared shape across all twelve categories</span>
 
-<span class="k">function</span> <span class="f">mint</span>() <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> tokenId);
-<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> id) <span class="k">public</span> <span class="k">view</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
-    <span class="f">_requireOwned</span>(id);
-    <span class="k">return</span> <span class="f">string.concat</span>(
-      aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, id.<span class="f">toString</span>(), <span class="s">".json"</span>
-    );
-}</pre>
+<span class="c">// Rust: sign the payload</span>
+<span class="k">let</span> resp = MyPayload { field_a, field_b, ... };
+<span class="k">return</span> <span class="f">to_signed_response</span>(&kp, resp, ts, MY_INTENT);
+
+<span class="c">// Move: verify the same BCS bytes</span>
+<span class="k">let</span> payload = MyPayload { field_a, field_b, ... };
+<span class="k">assert</span>!(enclave.<span class="f">verify_signature</span>(
+    MY_INTENT, ts, payload, sig
+), EInvalidSignature);</pre>
         <div class="flow" style="margin-top: 18px;">
           <div class="flow-row">
-            <div class="box">drop/</div>
+            <div class="box">external data</div>
             <div class="arrow">→</div>
-            <div class="box accent">store-quilt ×2</div>
+            <div class="box accent">enclave sign</div>
             <div class="arrow">→</div>
-            <div class="box">contract(QID_META)</div>
+            <div class="box">Move verify</div>
           </div>
         </div>
       </div>
@@ -637,182 +618,415 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <section>
   <div class="shell">
     <div class="section-head">
-      <span class="section-num">03 · try it locally</span>
-      <h2>From a drop directory to a deployed contract in six commands.</h2>
+      <span class="section-num">showcases</span>
+      <h2>Twelve categories, one at a time.</h2>
     </div>
+    <p class="section-sub" style="margin-bottom: 40px;">
+      Each category maps to a trust-failure class from the
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/notes/NAUTILUS_EVM.md">field report</a>.
+      Implemented showcases link to a walkthrough; the rest have local-dev recipes in
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/notes/NAUTILUS_LOCAL_DEV.md">NAUTILUS_LOCAL_DEV.md</a>.
+    </p>
 
-    <div class="step">
-      <span class="num">01</span>
-      <div>
-        <h3>Prepare two drop directories</h3>
-<pre class="code">images/
-├── 1.png
-├── 2.png
-└── ... up to maxSupply.png
-
-meta/
-├── 1.json   <span class="c"># image = "&lt;AGG&gt;/v1/blobs/by-quilt-id/&lt;QID_IMAGES&gt;/1.png"</span>
-├── 2.json
-└── ...</pre>
-        <p>For purely on-chain rendering (no images), skip the images quilt entirely and just pack the metadata.</p>
+    <!-- Cat 1 — Price oracle -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">01</span>
+        <h3><a href="07-nautilus.html">Price oracle — oracle trust & feed manipulation</a></h3>
+        <span class="tag">implemented · price-oracle</span>
       </div>
-    </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            A vendored Nautilus subset: Rust enclave fetches a CoinGecko price, BCS-encodes
+            <code>IntentMessage&lt;PriceResponse&gt;</code>, signs with an ephemeral ed25519 key; a ~70-line Sui
+            Move package verifies. The full loop runs on a laptop — no AWS, no Marlin, free.
+          </p>
+          <div class="effort">
+            <span class="pill good">implemented</span>
+            <span class="pill">~400 LOC</span>
+            <span class="pill accent">intent 0x00</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape · Rust signs, Move verifies</div>
+<pre class="code"><span class="c">// Rust enclave</span>
+<span class="k">let</span> resp = PriceResponse { coin_id, vs, price_micro };
+<span class="k">return</span> <span class="f">to_signed_response</span>(&kp, resp, ts, INTENT_PRICE);
 
-    <div class="step">
-      <span class="num">02</span>
-      <div>
-        <h3>Install + pack the images quilt</h3>
-<pre class="code"><span class="f">cd</span> showcases/06-quilted-collection
-<span class="f">pnpm</span> install
-
-<span class="c"># long-lived collection — bump from the default 200 epochs if needed</span>
-<span class="k">export</span> <span class="n">WALRUS_EPOCHS</span>=200
-
-<span class="f">pnpm</span> pack:quilt --dry-run ./images   <span class="c"># dry run prints the CLI invocation</span>
-<span class="f">pnpm</span> pack:quilt ./images
-<span class="c"># → quiltId: &lt;base64url&gt;    (this is QID_IMAGES)</span></pre>
-        <p>Requires the <code>walrus</code> CLI on PATH. Install per <a href="https://docs.wal.app/usage/setup.html">docs.wal.app/usage/setup.html</a>.</p>
+<span class="c">// Move contract</span>
+<span class="k">let</span> payload = PricePayload { coin_id, vs, price_micro };
+<span class="k">assert</span>!(enclave.<span class="f">verify_signature</span>(PRICE_INTENT, ts, payload, sig), <span class="n">1</span>);</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">CoinGecko</div>
+              <div class="arrow">→</div>
+              <div class="box accent">enclave sign</div>
+              <div class="arrow">→</div>
+              <div class="box">Move verify</div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </article>
 
-    <div class="step">
-      <span class="num">03</span>
-      <div>
-        <h3>Generate metadata JSONs with the images quilt's URL baked in</h3>
-        <p>Write each <code>meta/&lt;id&gt;.json</code> so its <code>image</code> field is the aggregator URL for the matching PNG:</p>
-<pre class="code">{
-  <span class="s">"name"</span>: <span class="s">"Walrus Quilted #1"</span>,
-  <span class="s">"description"</span>: <span class="s">"..."</span>,
-  <span class="s">"image"</span>: <span class="s">"https://aggregator.walrus-testnet.walrus.space/v1/blobs/by-quilt-id/&lt;QID_IMAGES&gt;/1.png"</span>
+    <!-- Cat 2 — ML inference -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">02</span>
+        <h3>Verifiable off-chain compute — ML inference</h3>
+        <span class="tag">planned · ml-inference</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">ML inference is too expensive for on-chain execution. The EVM workaround is "trust our backend." With Nautilus, the model runs inside attested code; PCRs commit to which exact binary + weights produced the result.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x01</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust</span>
+<span class="k">pub struct</span> InferenceResponse {
+    input_hash: Vec&lt;u8&gt;,   <span class="c">// sha256(input)</span>
+    model_id: String,
+    label: String,
+    confidence_micro: u64, <span class="c">// 0.92 → 920_000</span>
 }</pre>
-        <p>How you author these is up to you — a 20-line script, a templating engine, or a one-off <code>sed</code>. The key is that <strong>the metadata files are written exactly once</strong>, with the final image URLs already baked in.</p>
+        </div>
       </div>
-    </div>
+    </article>
 
-    <div class="step">
-      <span class="num">04</span>
-      <div>
-        <h3>Pack the metadata quilt</h3>
-<pre class="code"><span class="f">pnpm</span> pack:quilt ./meta
-<span class="c"># → quiltId: &lt;base64url&gt;    (this is QID_METADATA)</span></pre>
+    <!-- Cat 3 — Secret management -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">03</span>
+        <h3>Secret management — API key proxy</h3>
+        <span class="tag">planned · secret-proxy</span>
       </div>
-    </div>
-
-    <div class="step">
-      <span class="num">05</span>
-      <div>
-        <h3>Deploy the contract against <code>QID_METADATA</code></h3>
-<pre class="code"><span class="c"># constructor args (forwarded to DeployQuiltedCollection.s.sol via env)</span>
-<span class="k">export</span> <span class="n">QC_NAME</span>=<span class="s">"Walrus Quilted #01"</span>
-<span class="k">export</span> <span class="n">QC_SYMBOL</span>=<span class="s">"WQ01"</span>
-<span class="k">export</span> <span class="n">QC_QUILT_ID</span>=<span class="n">&lt;QID_METADATA from step 4&gt;</span>
-<span class="k">export</span> <span class="n">QC_AGGREGATOR</span>=<span class="s">"https://aggregator.walrus-testnet.walrus.space"</span>
-<span class="k">export</span> <span class="n">QC_MAX_SUPPLY</span>=10000
-
-<span class="k">export</span> <span class="n">EVM_RPC_URL</span>=<span class="s">"http://127.0.0.1:8545"</span>
-<span class="k">export</span> <span class="n">DEPLOYER_PRIVATE_KEY</span>=<span class="s">"0xac0974…"</span>   <span class="c"># anvil dev-0</span>
-
-<span class="f">pnpm</span> deploy:contract --dry-run   <span class="c"># prints the forge command, private key redacted</span>
-<span class="f">pnpm</span> deploy:contract             <span class="c"># real broadcast</span></pre>
-        <table class="env">
-          <thead><tr><th>Env</th><th>Required?</th><th>Purpose</th></tr></thead>
-          <tbody>
-            <tr><td>QC_NAME / QC_SYMBOL</td><td>yes</td><td>ERC-721 metadata.</td></tr>
-            <tr><td>QC_QUILT_ID</td><td>yes</td><td>The metadata quilt id from step 4.</td></tr>
-            <tr><td>QC_AGGREGATOR</td><td>yes</td><td>Canonical aggregator host; can be migrated via <code>setAggregator</code>.</td></tr>
-            <tr><td>QC_MAX_SUPPLY</td><td>yes</td><td>Positive integer; mint caps at this.</td></tr>
-            <tr><td>EVM_RPC_URL / DEPLOYER_PRIVATE_KEY</td><td>yes</td><td>Standard forge-script args.</td></tr>
-          </tbody>
-        </table>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">API keys can't live on-chain. Chainlink Functions' own docs stamp every secrets page with "BETA — may reveal the secret." The enclave holds keys in sealed memory; the Move contract verifies signed receipts.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x02</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust</span>
+<span class="k">pub struct</span> ProxyResponse {
+    action: String,
+    params_hash: Vec&lt;u8&gt;,
+    result_hash: Vec&lt;u8&gt;,
+    success: bool,
+}</pre>
+        </div>
       </div>
-    </div>
+    </article>
 
-    <div class="step">
-      <span class="num">06</span>
-      <div>
-        <h3>Resolve token URLs off-chain</h3>
-<pre class="code"><span class="k">export</span> <span class="n">AGGREGATOR</span>=<span class="s">"https://aggregator.walrus-testnet.walrus.space"</span>
-<span class="k">export</span> <span class="n">QUILT_ID</span>=<span class="n">&lt;QID_METADATA&gt;</span>
-
-<span class="f">pnpm</span> url 42
-<span class="c"># → https://aggregator.walrus-testnet.walrus.space/v1/blobs/by-quilt-id/&lt;...&gt;/42.json</span></pre>
-        <p>Or as a library — useful for marketplaces and indexers that don't want an EVM RPC round-trip per token:</p>
-<pre class="code"><span class="k">import</span> { <span class="f">tokenURI</span> } <span class="k">from</span> <span class="s">"./src/url"</span>;
-<span class="f">tokenURI</span>({ aggregator, quiltId, tokenId: <span class="n">42n</span> });</pre>
+    <!-- Cat 4 — Sealed auction -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">04</span>
+        <h3>MEV / sealed-bid auction</h3>
+        <span class="tag">planned · sealed-auction</span>
       </div>
-    </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">The EVM mempool is public; commit-reveal leaks bid amounts at reveal time. Users submit encrypted bids to the enclave's TLS endpoint; the enclave matches at deadline and signs the settlement.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x03</span><span class="pill">stateful</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust — signed at auction close</span>
+<span class="k">pub struct</span> AuctionResult {
+    auction_id: String,
+    winner: String,
+    winning_bid_micro: u64,
+    total_bids: u64,
+    bids_hash: Vec&lt;u8&gt;,
+}</pre>
+        </div>
+      </div>
+    </article>
+
+    <!-- Cat 5 — Bridge relay -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">05</span>
+        <h3>Cross-chain bridge relay</h3>
+        <span class="tag">planned · bridge-relay</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">Bridge relayers can forge events. Ronin lost $624M to compromised validator keys. With Nautilus, PCRs commit to which light-client code and RPC endpoints the relayer uses.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x04</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust</span>
+<span class="k">pub struct</span> BridgeAttestation {
+    source_chain: String,
+    tx_hash: Vec&lt;u8&gt;,
+    log_index: u64,
+    block_number: u64,
+    event_data_hash: Vec&lt;u8&gt;,
+}</pre>
+        </div>
+      </div>
+    </article>
+
+    <!-- Cat 6 — Card dealer -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">06</span>
+        <h3>Game logic — card dealer</h3>
+        <span class="tag">planned · card-dealer</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">All EVM storage is publicly readable. Card games need hidden state — the deck order, each player's hand. The deck lives inside the enclave; player-specific reveals are signed to session keys.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x05</span><span class="pill">stateful</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust — signed at game creation</span>
+<span class="k">pub struct</span> GameCommitment {
+    game_id: String,
+    deck_hash: Vec&lt;u8&gt;,
+    player_count: u8,
+    seed_hash: Vec&lt;u8&gt;,
+}</pre>
+        </div>
+      </div>
+    </article>
+
+    <!-- Cat 7 — KYC -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">07</span>
+        <h3>KYC / identity attestation</h3>
+        <span class="tag">planned · kyc-attestation</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">Compliance data (names, document scans, sanctions hits) can't live on-chain. The enclave receives identity data, checks against a sanctions list, signs an eligibility attestation without persisting PII.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x06</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust</span>
+<span class="k">pub struct</span> KycResponse {
+    user_address: String,
+    eligibility_tier: u8,
+    country_code: String,
+    expiry_ms: u64,
+}</pre>
+        </div>
+      </div>
+    </article>
+
+    <!-- Cat 8 — AI agent -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">08</span>
+        <h3>AI agent with on-chain footprint</h3>
+        <span class="tag">planned · ai-agent</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">AI agents need paid API keys and spending authority. PCRs commit to which exact binary (model, strategy, safety rails) holds the wallet key and makes decisions.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x07</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust</span>
+<span class="k">pub struct</span> AgentAction {
+    action_type: String,
+    target: String,
+    amount_micro: u64,
+    reasoning_hash: Vec&lt;u8&gt;,
+    policy_id: String,
+}</pre>
+        </div>
+      </div>
+    </article>
+
+    <!-- Cat 9 — Hybrid RNG -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">09</span>
+        <h3>Hybrid randomness — external + on-chain</h3>
+        <span class="tag">planned · hybrid-rng</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">When the threat model requires external entropy (drand beacons, hardware RNG) combined with on-chain randomness. Sui's native <code>Random</code> is usually enough; this is for when it isn't.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x08</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust</span>
+<span class="k">pub struct</span> RngResponse {
+    round_id: u64,
+    domain: String,
+    random_bytes: Vec&lt;u8&gt;,
+    drand_round: u64,
+    drand_signature: Vec&lt;u8&gt;,
+}</pre>
+        </div>
+      </div>
+    </article>
+
+    <!-- Cat 10 — Social attestation -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">10</span>
+        <h3>Social / real-world data attestation</h3>
+        <span class="tag">planned · social-attestation</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">Proving a tweet exists, a weather event occurred, or a sports score is real. The enclave fetches via TLS from the source API, verifies the claim, and signs an attestation. Same shape as upstream Nautilus-Twitter.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x09</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust</span>
+<span class="k">pub struct</span> AttestationResponse {
+    platform: String,
+    username: String,
+    post_id: String,
+    content_hash: Vec&lt;u8&gt;,
+    verified: bool,
+}</pre>
+        </div>
+      </div>
+    </article>
+
+    <!-- Cat 11 — Dark pool -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">11</span>
+        <h3>Confidential DeFi — dark pool</h3>
+        <span class="tag">planned · dark-pool</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">EVM order books are fully transparent. The enclave matches buy/sell orders privately; only the settlement is public. Sui's parallel object model lets multiple pools run without contention.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x0A</span><span class="pill">stateful</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust — signed per matched trade</span>
+<span class="k">pub struct</span> TradeSettlement {
+    pool_id: String,
+    maker: String,
+    taker: String,
+    asset: String,
+    amount_micro: u64,
+    price_micro: u64,
+    trade_hash: Vec&lt;u8&gt;,
+}</pre>
+        </div>
+      </div>
+    </article>
+
+    <!-- Cat 12 — TEE signer -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">12</span>
+        <h3>TEE-backed signer — account abstraction</h3>
+        <span class="tag">planned · tee-signer</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>The trust failure</h4>
+          <p class="fix">The signer key lives in a server you have to trust. With Nautilus, the key is generated inside the enclave, never exported, and PCRs prove which policy code governs its use. Rotation = redeploy + re-register.</p>
+          <div class="effort"><span class="pill warn">planned</span><span class="pill accent">intent 0x0B</span></div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Payload shape</div>
+<pre class="code"><span class="c">// Rust</span>
+<span class="k">pub struct</span> SignerResponse {
+    action: String,
+    params_hash: Vec&lt;u8&gt;,
+    nonce: u64,
+    policy_id: String,
+    approved: bool,
+}</pre>
+        </div>
+      </div>
+    </article>
+
   </div>
 </section>
 
 <section>
   <div class="shell">
     <div class="section-head">
-      <span class="section-num">04 · verify</span>
-      <h2>What "good" looks like.</h2>
+      <span class="section-num">field report</span>
+      <h2>Honest contrast — where Nautilus wins and where it doesn't.</h2>
     </div>
-    <ul>
-      <li><code>cast call $CONTRACT "quiltId()(string)"</code> returns the base64url id from step 4.</li>
-      <li><code>cast call $CONTRACT "tokenURI(uint256)(string)" 1</code> matches the <code>pnpm url 1</code> output.</li>
-      <li>Hitting that URL returns the metadata JSON byte-for-byte.</li>
-      <li>The <code>image</code> field inside the metadata JSON resolves to the matching PNG (the images quilt URL).</li>
-      <li>If the deployed aggregator host needs to change (e.g. sunset migration), the owner calls <code>setAggregator</code>; the on-chain <code>quiltId</code> stays the same.</li>
-    </ul>
-  </div>
-</section>
-
-<section>
-  <div class="shell">
-    <div class="section-head">
-      <span class="section-num">05 · what this is NOT</span>
-      <h2>Limits to set expectations.</h2>
+    <div class="thesis-grid">
+      <div>
+        <h4 style="margin-top: 0;">Wins outright</h4>
+        <ul>
+          <li>Greenfield Sui apps that need verifiable off-chain compute.</li>
+          <li>App-specific oracles (social, sports, niche feeds) — cleaner than Chainlink Functions' BETA path.</li>
+          <li>Confidential matching engines on Sui with public settlement.</li>
+          <li>AI agents whose code identity matters: PCRs commit to which binary holds the key.</li>
+          <li>Reproducible-build audit story — the PCR is a function of the source.</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="margin-top: 0;">Wrong tool for the job</h4>
+        <ul>
+          <li>Must remain on EVM for liquidity — use Phala, Marlin Oyster, Oasis Sapphire.</li>
+          <li>Fully confidential EVM by default — Oasis Sapphire is purpose-built.</li>
+          <li>MEV infrastructure for Ethereum — Flashbots SUAVE owns this lane.</li>
+          <li>Multi-vendor TEE diversity — Phala's roadmap is broader.</li>
+          <li>Pure VRF or timestamping — Sui has native primitives; Nautilus is overkill.</li>
+        </ul>
+      </div>
     </div>
-    <div class="caveats">
-      <ul>
-        <li><strong>Not a launchpad.</strong> No allowlist, no reveal mechanic, no royalty enforcement, no merkle airdrop. Mint is open and self-mint, capped at <code>maxSupply</code>.</li>
-        <li><strong>Not a metadata authoring tool.</strong> The drop directory layout (<code>&lt;id&gt;.json</code> + <code>&lt;id&gt;.png</code>) is your responsibility.</li>
-        <li><strong>Not a re-uploader.</strong> Once a Quilt is sealed, the contents are immutable. Bug in a metadata JSON? Pack a new Quilt and either redeploy or use <code>setAggregator</code> to point at a different resolver that serves the fixed Quilt.</li>
-        <li><strong>Not a hash verifier.</strong> Aggregator-served bytes are gateway-trust-equivalent. For trustless retrieval add a Reed-Solomon recompute via <code>@mysten/walrus</code> on top.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="shell">
-    <div class="section-head">
-      <span class="section-num">06 · source files</span>
-      <h2>Where to look in the repo.</h2>
-    </div>
-    <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/QuiltedCollection.sol"><strong>contracts/src/QuiltedCollection.sol</strong>~120 lines: ERC-721 + Ownable + immutable <code>maxSupply</code> + mutable <code>aggregator</code>.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/QuiltedCollection.t.sol"><strong>contracts/test/QuiltedCollection.t.sol</strong>10 Foundry tests covering constructor validation, sold-out cap, tokenURI shape, setAggregator authorization.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/script/DeployQuiltedCollection.s.sol"><strong>contracts/script/DeployQuiltedCollection.s.sol</strong>Env-driven forge script — <code>QC_*</code> vars become constructor args.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/src/pack.ts"><strong>06-quilted-collection/src/pack.ts</strong>Wraps <code>walrus store-quilt --paths &lt;dir&gt;</code>; tolerant stdout parser for the quiltId.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/src/deploy.ts"><strong>06-quilted-collection/src/deploy.ts</strong>Forge-script wrapper that forwards <code>QC_*</code> env vars; redacts the private key in <code>--dry-run</code> output.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/src/url.ts"><strong>06-quilted-collection/src/url.ts</strong>TS port of the on-chain <code>tokenURI</code> — for off-chain consumers.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/README.md"><strong>showcases/06-quilted-collection/README.md</strong>Full walkthrough including the two-quilt rationale.</a>
-    </div>
-  </div>
-</section>
-
-<section class="tight">
-  <div class="shell">
-    <div class="siblings">
-      <a class="sibling" href="05-verifiable-manifest.html">
-        <div class="label">← previous</div>
-        <div class="title">05 · Verifiable token list / dApp manifest</div>
-      </a>
-      <a class="sibling next disabled" aria-disabled="true">
-        <div class="label">next →</div>
-        <div class="title">Last in the Walrus series</div>
-      </a>
-    </div>
+    <p class="section-sub" style="margin-top: 24px;">
+      The full investigation — twelve categories with developer voices, incident data, and alternative mapping — is at
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/notes/NAUTILUS_EVM.md">notes/NAUTILUS_EVM.md</a>.
+    </p>
   </div>
 </section>
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>.</p>
+    <div class="foot-grid">
+      <div>
+        <h5>Run it locally</h5>
+        <p>
+          The price oracle showcase runs end-to-end on a laptop — no AWS, no Marlin, free.
+          <code>cargo run</code> in <code>07-nautilus/enclave/</code> and <code>sui move build</code> in the
+          two Move packages. Full recipe in
+          <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/07-nautilus/notes/NAUTILUS_LOCAL_DEV.md">NAUTILUS_LOCAL_DEV.md</a>.
+        </p>
+      </div>
+      <div>
+        <h5>Links</h5>
+        <ul>
+          <li><a href="https://github.com/MystenLabs/evm-sui">Repo on GitHub</a></li>
+          <li><a href="https://docs.sui.io/sui-stack/nautilus">Nautilus docs</a></li>
+          <li><a href="https://github.com/MystenLabs/nautilus">MystenLabs/nautilus</a></li>
+          <li><a href="https://github.com/MystenLabs/nautilus-twitter">Nautilus-Twitter example</a></li>
+          <li><a href="https://docs.marlin.org/oyster/introduction-to-marlin/">Marlin Oyster</a></li>
+        </ul>
+      </div>
+    </div>
   </div>
 </footer>
 
