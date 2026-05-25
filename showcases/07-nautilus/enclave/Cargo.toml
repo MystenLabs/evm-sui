@@ -1,0 +1,45 @@
+[package]
+name = "nautilus-price-oracle"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Vendored Nautilus enclave subset showcasing a Sui price oracle (showcase 07)."
+
+[[bin]]
+name = "nautilus-price-oracle"
+path = "src/main.rs"
+
+[lib]
+name = "nautilus_price_oracle"
+path = "src/lib.rs"
+
+[features]
+# Default = local-dev: deterministic signing key, no NSM driver, compiles on macOS.
+default = ["dev-key"]
+# Replaces the random ephemeral key with a fixed 32-byte seed so the registered
+# enclave pubkey is stable across server restarts. NEVER ship to production.
+dev-key = []
+# Enables the Nitro Secure Module driver and /get_attestation endpoint. Only
+# meaningful when running inside a real AWS Nitro Enclave.
+nitro = ["dep:nsm-api"]
+
+[dependencies]
+anyhow = "1.0"
+axum = { version = "0.7", features = ["macros"] }
+bcs = "0.1"
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+hex = "0.4"
+rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_bytes = "0.11"
+serde_json = "1.0"
+serde_repr = "0.1"
+serde_yaml = "0.9"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Nitro-only. Skipped by default; pulled in by the `nitro` feature.
+nsm-api = { package = "aws-nitro-enclaves-nsm-api", git = "https://github.com/aws/aws-nitro-enclaves-nsm-api.git", rev = "8ec7eac72bbb2097f1058ee32c13e1ff232f13e8", optional = true }

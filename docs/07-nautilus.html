@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Showcase 04 — DAO governance proposals · EVM × Sui</title>
-<meta name="description" content="The Snapshot pattern, off IPFS: proposer pays WAL via the public publisher, the contract holds only the 32-byte blobId + deadline + tallies, and tooling is two TS CLIs (propose + tally)." />
-<meta property="og:title" content="Showcase 04 — DAO governance proposals on Walrus" />
-<meta property="og:description" content="Proposer-pays Walrus storage; blobId stored on-chain; vote and tally with one EVM call each." />
+<title>Showcase 07 — Nautilus price oracle · EVM × Sui</title>
+<meta name="description" content="A vendored Nautilus subset: Rust enclave signs a CoinGecko price, Move contract verifies the signature. The honest path forward when an EVM contract can't verify off-chain compute." />
+<meta property="og:title" content="Showcase 07 — Nautilus price oracle" />
+<meta property="og:description" content="Verifiable off-chain compute when EVM hits its wall." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/04-dao-proposals.html" />
-<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/04-dao-proposals.html" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/07-nautilus.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/07-nautilus.html" />
 <style>
 /* ─── design tokens ────────────────────────────────────────────────────── */
 :root {
@@ -540,8 +540,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <a href="./">EVM × Sui</a>
     </span>
     <span class="nav">
-      <a href="walrus.html" style="color: var(--text);">Walrus</a>
-      <a href="nautilus.html">Nautilus</a>
+      <a href="walrus.html">Walrus</a>
+      <a href="nautilus.html" style="color: var(--text);">Nautilus</a>
       <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
     </span>
   </div>
@@ -549,17 +549,18 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 
 <header class="hero">
   <div class="shell hero-inner">
-    <span class="eyebrow">Showcase 04 · implemented</span>
-    <h1>Snapshot's pattern, the <em>proposer pays WAL</em>, the contract holds 32 bytes.</h1>
+    <span class="eyebrow">Showcase 07 · implemented · the path past EVM</span>
+    <h1>When an EVM contract can't verify the off-chain part, leave EVM.</h1>
     <p class="lede">
-      A 100-line Solidity contract holds the on-chain skeleton of a vote — proposer, deadline, yes/no tallies —
-      while the human-readable proposal body lives on Walrus. The proposer pays WAL once via the public publisher;
-      the DAO contract never holds WAL. Anyone reads the proposal anonymously through any Walrus aggregator.
+      Showcases 01–06 swap the storage layer behind a Solidity contract. This one swaps the <em>computation</em>
+      layer behind it. A Rust enclave fetches a CoinGecko price, BCS-encodes it, signs it with an ephemeral
+      ed25519 key; a 60-line Sui Move package verifies the signature. The full loop runs on a laptop — no AWS,
+      no Marlin Oyster, free.
     </p>
     <div class="meta">
-      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
-      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/showcases/04-dao-proposals">04-dao-proposals/</a></span>
-      <span><strong>Stack:</strong> Solidity · viem · Walrus publisher API</span>
+      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/showcases/07-nautilus">showcases/07-nautilus/</a></span>
+      <span><strong>Stack:</strong> Rust · axum · ed25519-dalek · Sui Move 2024 · BCS</span>
+      <span><strong>Upstream:</strong> <a href="https://github.com/MystenLabs/nautilus">MystenLabs/nautilus</a></span>
     </div>
   </div>
 </header>
@@ -568,17 +569,28 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   <div class="shell">
     <div class="section-head">
       <span class="section-num">01 · the pain</span>
-      <h2>Snapshot ships every Aave / Uniswap proposal through hosted IPFS.</h2>
+      <h2>The leading EVM solution for this is in BETA — and the vendor says so on every page.</h2>
     </div>
-    <div class="pain-card" style="max-width: 56rem;">
-      <span class="corner">hosted IPFS</span>
-      <div class="stat">ipfs-pain.md · §9</div>
+    <div class="pain-card" style="max-width: 60rem;">
+      <span class="corner">vendor disclaimer</span>
+      <div class="stat">notes/NAUTILUS_EVM.md · §3 — Secret management</div>
       <blockquote>
-        "4Everland is used by Snapshot governance for Aave and Uniswap DAO votes" — bundled into the same hosted-IPFS tier
-        that absorbs the operational pain because public gateways can't be trusted.
+        "Chainlink Functions is still in BETA. The use of secrets in your requests is an experimental feature that
+        may not operate as expected and is subject to change. Use of this feature is at your own risk and may
+        result in <em>unexpected errors, possible revealing of the secret as new versions are released</em>, or other issues."
       </blockquote>
-      <cite>— 2026 builder-sentiment survey</cite>
+      <cite>— Chainlink Functions docs, every secrets-related page</cite>
     </div>
+    <p class="section-sub" style="margin-top: 20px;">
+      That's not the only one. samczsun published the canonical price-oracle essay in 2020 and the same mistakes kept
+      shipping: <strong>$403.2M lost across 41 oracle attacks in 2022 alone</strong>, $117M of it Mango Markets. Ronin lost
+      <strong>$624M</strong> because five-of-nine validator keys lived on infrastructure one operator controlled. The April
+      2026 LayerZero/KelpDAO exploit drained <strong>$293M</strong> because a 1-of-1 DVN read from internal RPCs an
+      attacker had poisoned. The pattern is the same: a smart contract trusts an off-chain value or signer set, the
+      off-chain side has no cryptographic attestation, the attacker rewrites the value or the signers. The investigation
+      under <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/notes/NAUTILUS_EVM.md">notes/NAUTILUS_EVM.md</a>
+      walks twelve such categories with direct dev voices.
+    </p>
   </div>
 </section>
 
@@ -586,57 +598,52 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   <div class="shell">
     <div class="section-head">
       <span class="section-num">02 · the shape</span>
-      <h2>The DAO never touches WAL. Voters never touch IPFS.</h2>
+      <h2>One Rust binary signs. One Move package verifies. BCS in the middle.</h2>
     </div>
-
-    <div class="notice bad">
-      <strong>Showcase-only voting surface.</strong> <code>Governance.vote()</code> reads
-      <code>voteToken.balanceOf(msg.sender)</code> at the instant of the call. Against any ERC-20 with a flash-mint
-      or flash-borrow integration, this is exploitable: an attacker can borrow tokens, vote, and repay in a single
-      transaction. For production, pair with an OpenZeppelin <code>ERC20Votes</code> token and switch
-      <code>vote()</code> to <code>IVotes(voteToken).getPastVotes(msg.sender, proposalStartBlock)</code>.
-    </div>
-
     <div class="thesis-grid">
       <div>
         <p>
-          <code>propose(blobId, deadline)</code> takes a 32-byte Walrus blob id and a unix-seconds deadline. The
-          contract reverts on past deadlines and zero blob ids, then stores the
-          <code>Proposal(proposer, blobId, deadline, yes, no)</code> struct and emits <code>Proposed</code>.
+          The enclave (Rust + axum) exposes <code>POST /process_data</code>. It fetches a price from CoinGecko,
+          builds a <code>PriceResponse</code>, wraps it in an <code>IntentMessage&lt;PriceResponse&gt;</code>
+          (intent byte + timestamp + payload), BCS-encodes the whole thing, signs with its ephemeral ed25519
+          key, and returns <code>{ response, signature }</code>.
         </p>
         <p>
-          <code>vote(id, support)</code> reads the caller's voteToken balance, gates on
-          <code>!hasVoted &amp;&amp; block.timestamp &lt; deadline</code>, and accumulates the weight on <code>yes</code> or
-          <code>no</code>.
+          The Move package mirrors the payload struct field-for-field. <code>update_price</code> rebuilds the
+          same <code>IntentMessage</code>, BCS-encodes it, and calls <code>ed25519_verify</code> against the
+          enclave's registered pubkey. The pubkey was pinned upfront when <code>register_enclave</code> consumed
+          a Nitro attestation document whose PCRs match the registered <code>EnclaveConfig</code>.
         </p>
-        <p>
-          <code>tally(id)</code> is the canonical read for <code>(yes, no, passed, closed)</code>. The proposal
-          body is fetched from <code>&lt;aggregator&gt;/v1/blobs/&lt;blobIdBase64Url&gt;</code> — no Snapshot adapter,
-          no pinning vendor.
+        <p class="callout">
+          Locally the attestation half is bypassed (all-zero PCRs + deterministic key). The BCS + signature half
+          stays real, so the on-chain verifier is the same one that ships to production.
         </p>
       </div>
       <div>
-<pre class="code"><span class="c">// Governance.sol</span>
-<span class="k">struct</span> Proposal {
-  <span class="t">address</span> proposer;
-  <span class="t">bytes32</span> blobId;
-  <span class="t">uint64</span>  deadline;
-  <span class="t">uint128</span> yes;
-  <span class="t">uint128</span> no;
-}
-
-<span class="k">function</span> <span class="f">propose</span>(<span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline)
-  <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> id);
-<span class="k">function</span> <span class="f">vote</span>(<span class="t">uint256</span> id, <span class="t">bool</span> support) <span class="k">external</span>;
-<span class="k">function</span> <span class="f">tally</span>(<span class="t">uint256</span> id) <span class="k">external view</span>
-  <span class="k">returns</span> (<span class="t">uint128</span>, <span class="t">uint128</span>, <span class="t">bool</span> passed, <span class="t">bool</span> closed);</pre>
+<pre class="code"><span class="c">// move/price-oracle/sources/oracle.move</span>
+<span class="k">public fun</span> <span class="f">update_price</span>&lt;T&gt;(
+    coin_id: String,
+    vs: String,
+    price_micro: <span class="t">u64</span>,
+    timestamp_ms: <span class="t">u64</span>,
+    sig: &<span class="k">vector</span>&lt;<span class="t">u8</span>&gt;,
+    enclave: &<span class="t">Enclave</span>&lt;T&gt;,
+    ctx: &<span class="k">mut</span> TxContext,
+): PriceFeed {
+    <span class="k">let</span> payload = PricePayload { coin_id, vs, price_micro };
+    <span class="k">let</span> ok = enclave.<span class="f">verify_signature</span>(
+        PRICE_INTENT, timestamp_ms, payload, sig
+    );
+    <span class="k">assert</span>!(ok, EInvalidSignature);
+    PriceFeed { id: <span class="f">object::new</span>(ctx), coin_id, vs, price_micro, timestamp_ms }
+}</pre>
         <div class="flow" style="margin-top: 18px;">
           <div class="flow-row">
-            <div class="box">proposer</div>
+            <div class="box">CoinGecko</div>
             <div class="arrow">→</div>
-            <div class="box accent">walrus PUT</div>
+            <div class="box accent">enclave sign</div>
             <div class="arrow">→</div>
-            <div class="box">propose(blobId)</div>
+            <div class="box">Move verify</div>
           </div>
         </div>
       </div>
@@ -648,94 +655,93 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   <div class="shell">
     <div class="section-head">
       <span class="section-num">03 · try it locally</span>
-      <h2>Two CLIs, four env vars per CLI, end-to-end in five minutes.</h2>
+      <h2>From `cargo run` to a PriceFeed on testnet in five steps.</h2>
     </div>
 
     <div class="step">
       <span class="num">01</span>
       <div>
-        <h3>Deploy the contract</h3>
-<pre class="code"><span class="f">cd</span> showcases/contracts
-<span class="f">forge</span> create src/Governance.sol:Governance \
-  --rpc-url <span class="n">$EVM_RPC_URL</span> \
-  --private-key <span class="n">$DEPLOYER_PRIVATE_KEY</span> \
-  --constructor-args <span class="n">$VOTE_TOKEN_ADDRESS</span>
-
-<span class="c"># local: anvil + a dummy ERC-20 you already control work fine.</span></pre>
+        <h3>Compile and run the enclave</h3>
+<pre class="code"><span class="f">cd</span> showcases/07-nautilus/enclave
+<span class="f">cargo</span> run
+<span class="c"># → ENCLAVE_PUBKEY_HEX=4cb19c0bb37b1f1b95a3...   ← save this
+# → listening on http://0.0.0.0:3000</span></pre>
+        <p>
+          Default features include <code>dev-key</code>, which replaces the per-boot random ed25519 key with a fixed
+          seed (<code>[42u8; 32]</code>). The printed pubkey is stable across restarts so you can register it once
+          and reuse forever. The <code>nitro</code> feature is off — no AWS Nitro driver dep, compiles clean on macOS.
+        </p>
       </div>
     </div>
 
     <div class="step">
       <span class="num">02</span>
       <div>
-        <h3>Install the CLIs</h3>
-<pre class="code"><span class="f">cd</span> showcases/04-dao-proposals
-<span class="f">pnpm</span> install</pre>
-        <table class="env">
-          <thead><tr><th>Env</th><th>Required?</th><th>Purpose</th></tr></thead>
-          <tbody>
-            <tr><td>EVM_RPC_URL</td><td>yes</td><td>JSON-RPC for the chain holding Governance.</td></tr>
-            <tr><td>EVM_CHAIN_ID</td><td>default 31337</td><td>Anvil; mainnet=1, sepolia=11155111.</td></tr>
-            <tr><td>GOVERNANCE_ADDRESS</td><td>yes</td><td>Deployed Governance address.</td></tr>
-            <tr><td>PROPOSER_PRIVATE_KEY</td><td>propose only</td><td>Signer for the propose() tx.</td></tr>
-            <tr><td>WALRUS_PUBLISHER</td><td>default testnet</td><td>Public Walrus publisher URL.</td></tr>
-            <tr><td>WALRUS_AGGREGATOR</td><td>default testnet</td><td>Walrus aggregator URL.</td></tr>
-            <tr><td>WALRUS_EPOCHS</td><td>default <code>5</code></td><td>Blob retention window (≈14 days at 5 epochs).</td></tr>
-          </tbody>
-        </table>
+        <h3>Confirm signing works</h3>
+<pre class="code"><span class="f">curl</span> -fsS -H <span class="s">'Content-Type: application/json'</span> \
+     -d <span class="s">'{"payload":{"coin_id":"sui","vs":"usd"}}'</span> \
+     http://localhost:3000/process_data | <span class="f">jq</span> .</pre>
+<pre class="code">{
+  <span class="s">"response"</span>: {
+    <span class="s">"intent"</span>: <span class="n">0</span>,
+    <span class="s">"timestamp_ms"</span>: <span class="n">1747948923174</span>,
+    <span class="s">"data"</span>: { <span class="s">"coin_id"</span>: <span class="s">"sui"</span>, <span class="s">"vs"</span>: <span class="s">"usd"</span>, <span class="s">"price_micro"</span>: <span class="n">3450000</span> }
+  },
+  <span class="s">"signature"</span>: <span class="s">"b75d2d44...0a"</span>
+}</pre>
+        <p><code>/get_attestation</code> intentionally returns 400 locally — it needs the NSM driver, which exists only inside a real Nitro Enclave.</p>
       </div>
     </div>
 
     <div class="step">
       <span class="num">03</span>
       <div>
-        <h3>Submit a proposal — dry run first</h3>
-<pre class="code"><span class="c"># dry-run prints the calldata but skips the EVM tx (the Walrus upload still happens)</span>
-<span class="f">pnpm</span> propose --dry-run ./fixtures/sample-proposal.md 2027-01-15T00:00:00Z
+        <h3>Publish both Move packages</h3>
+<pre class="code"><span class="f">sui</span> client switch --env testnet
+<span class="f">sui</span> client faucet
 
-<span class="c"># real run</span>
-<span class="f">pnpm</span> propose ./fixtures/sample-proposal.md 2027-01-15T00:00:00Z
-<span class="c"># → [walrus] PUT publisher/v1/blobs?epochs=5  (1234 bytes)
-# → [walrus] blobId (base64url): xT4f...
-# → [walrus] blobId (bytes32):  0x...
-# → [evm] tx submitted: 0xabc...
-# → [evm] tx mined in block 1234 (status=success)
-# → [evm] lastProposalId: 1
-# → [ok] proposal stored — re-fetch the body with:
-#        pnpm tally 1</span></pre>
-        <p>The deadline accepts either a unix-seconds integer or an ISO-8601 string. The contract stores it as <code>uint64</code>.</p>
+<span class="f">cd</span> ../move/enclave   && <span class="f">sui</span> move build && <span class="f">sui</span> client publish
+<span class="c"># → record ENCLAVE_PACKAGE_ID</span>
+
+<span class="f">cd</span> ../price-oracle  && <span class="f">sui</span> move build && <span class="f">sui</span> client publish
+<span class="c"># → record APP_PACKAGE_ID, CAP_ID, ENCLAVE_CONFIG_ID</span></pre>
+        <p>The vendored <code>enclave</code> package is the generic Nautilus verifier — same source as upstream, do not modify. The <code>price-oracle</code> package is the app surface; its <code>init</code> creates an <code>EnclaveConfig</code> with all-zero PCRs for local dev.</p>
       </div>
     </div>
 
     <div class="step">
       <span class="num">04</span>
       <div>
-        <h3>Read the tally (and the body)</h3>
-<pre class="code"><span class="f">pnpm</span> tally 1
-<span class="c"># → proposal #1
-#     proposer:  0x...
-#     deadline:  1768435200  (2027-01-15T00:00:00.000Z)
-#     blobId:    0x...
-#     aggregator: https://aggregator.walrus-testnet.walrus.space/v1/blobs/xT4f...
-#     yes: 0
-#     no:  0
-#     closed: false
-#     passed: false
-#     ---- body (1234 bytes) ----
-#     # [Proposal] ...</span></pre>
-        <p>No signer is required for the read — anyone can verify the body matches the on-chain pointer.</p>
+        <h3>Register the deterministic pubkey on-chain</h3>
+        <p>Two paths — pick whichever your fork of <code>enclave</code> exposes:</p>
+        <table class="env">
+          <thead><tr><th>Path</th><th>When</th><th>How</th></tr></thead>
+          <tbody>
+            <tr><td><strong>A — dev entrypoint</strong></td><td>Forks that ship a <code>register_enclave_dev(pubkey)</code> bypass</td><td>One <code>sui client call</code> with the printed <code>ENCLAVE_PUBKEY_HEX</code>.</td></tr>
+            <tr><td><strong>B — local entry func</strong></td><td>Strict upstream <code>enclave</code></td><td>Add a <code>#[test_only]</code> or feature-flagged <code>register_pubkey_unattested</code> function. The signature verifier path stays unchanged — only the pk is supplied differently.</td></tr>
+          </tbody>
+        </table>
+<pre class="code"><span class="c"># option A — sketch</span>
+<span class="f">sui</span> client call --package $ENCLAVE_PACKAGE_ID --module enclave \
+  --function register_enclave_dev \
+  --type-args <span class="s">"$APP_PACKAGE_ID::oracle::ORACLE"</span> \
+  --args $ENCLAVE_CONFIG_ID <span class="s">"0x$ENCLAVE_PUBKEY_HEX"</span>
+<span class="c"># → record ENCLAVE_OBJECT_ID</span></pre>
       </div>
     </div>
 
     <div class="step">
       <span class="num">05</span>
       <div>
-        <h3>(Optional) cast a vote</h3>
-<pre class="code"><span class="f">cast</span> send <span class="n">$GOVERNANCE_ADDRESS</span> <span class="s">"vote(uint256,bool)"</span> 1 true \
-  --rpc-url <span class="n">$EVM_RPC_URL</span> \
-  --private-key <span class="n">$VOTER_PRIVATE_KEY</span>
+        <h3>Close the loop</h3>
+<pre class="code"><span class="k">export</span> APP_PACKAGE_ID=<span class="n">0x...</span>
+<span class="k">export</span> ENCLAVE_OBJECT_ID=<span class="n">0x...</span>
 
-<span class="c"># then re-run `pnpm tally 1` and the yes count reflects voteToken.balanceOf(voter).</span></pre>
+<span class="f">cd</span> showcases/07-nautilus
+./scripts/post-price.sh sui usd</pre>
+        <p>
+          The script <code>curl</code>s <code>/process_data</code>, extracts the signature + timestamp + price, and submits to <code>update_price</code>. If Rust and Move agree on BCS field order, and the pubkey on-chain matches the one signing, a <code>PriceFeed</code> shared object lands on testnet. View it on <a href="https://testnet.suivision.xyz/">suivision.xyz</a>.
+        </p>
       </div>
     </div>
   </div>
@@ -748,10 +754,11 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>What "good" looks like.</h2>
     </div>
     <ul>
-      <li><code>cast call $GOVERNANCE_ADDRESS "lastProposalId()(uint256)"</code> matches the id <code>propose</code> printed.</li>
-      <li>Fetching the aggregator URL the CLI prints returns the markdown body byte-for-byte.</li>
-      <li><code>pnpm tally 1</code> shows the tally; <code>passed</code> stays false until <code>block.timestamp &gt;= deadline</code>.</li>
-      <li>Any duplicate <code>vote()</code> from the same address reverts with <code>Governance: already voted</code>.</li>
+      <li><code>cargo test --lib</code> passes — the pinned BCS hex <code>0x000068e5cf8b010000037375690375736490a4340000000000</code> matches.</li>
+      <li><code>sui move test</code> in <code>move/price-oracle/</code> passes — Move emits the same hex.</li>
+      <li>If you reorder a field in <em>either</em> <code>PriceResponse</code> or <code>PricePayload</code>, both tests fail loud. That's the entire point.</li>
+      <li>The signed response's <code>response.data</code> matches what <code>curl</code>ing CoinGecko directly returns (modulo the <code>*1_000_000</code> integer scaling).</li>
+      <li>The on-chain <code>PriceFeed</code> object's fields match the values the script passed in.</li>
     </ul>
   </div>
 </section>
@@ -764,10 +771,10 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </div>
     <div class="caveats">
       <ul>
-        <li><strong>Not production governance.</strong> The flash-loan attack vector on live <code>balanceOf</code> reads is real. Use <code>ERC20Votes</code> + <code>getPastVotes</code> in any real DAO.</li>
-        <li><strong>Not a Snapshot replacement.</strong> No off-chain signature aggregation, no EIP-712 envelope, no delegate weight, no quorum logic. The contract is a demonstration of <em>where the body lives</em>, not a full vote envelope.</li>
-        <li><strong>Not a Walrus pricing oracle.</strong> <code>epochs</code> is a number the proposer picks. WAL cost is paid by the proposer's wallet to the publisher upfront — neither the DAO contract nor the voters touch WAL.</li>
-        <li><strong><code>--dry-run</code> still spends WAL.</strong> The Walrus upload runs <em>before</em> the dry-run gate so the CLI can preview the real <code>blobId</code>; only the EVM tx is skipped. Rename to <code>--no-broadcast</code> in your fork if the literal "dry-run = no side effects" reading matters.</li>
+        <li><strong>Not real attestation.</strong> All-zero PCRs prove nothing about which binary signed. Production needs a Nitro instance, a reproducible build, and the standard <code>register_enclave.sh</code> flow that consumes the NSM document.</li>
+        <li><strong>Not production-safe.</strong> The deterministic seed <code>[42u8; 32]</code> is a development convenience — anyone who reads the source can recover the signing key. Strip <code>--features=dev-key</code> before shipping.</li>
+        <li><strong>Not an EVM showcase.</strong> Verifying a Nitro attestation in Solidity costs ~70M gas after two rounds of optimization (Marlin's numbers). The Sui-Move ed25519 primitive makes per-payload verify trivial; that asymmetry is why this showcase lives on Sui. EVM developers wanting the same shape should look at <a href="https://github.com/marlinprotocol/sui-oyster-demo">Marlin Oyster's EVM-side verifier</a>.</li>
+        <li><strong>Not a complete framework port.</strong> This vendors only what's needed for one app. The full Nautilus repo includes Twitter, Weather, and Seal-policy examples; the reproducible-build pipeline; the host-init protocol for sealed secrets; the official scripts. Use <a href="https://github.com/MystenLabs/nautilus">MystenLabs/nautilus</a> upstream when you've outgrown this scaffold.</li>
       </ul>
     </div>
   </div>
@@ -776,16 +783,49 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <section>
   <div class="shell">
     <div class="section-head">
-      <span class="section-num">06 · source files</span>
+      <span class="section-num">06 · honest contrast</span>
+      <h2>Where Nautilus wins — and where it doesn't.</h2>
+    </div>
+    <div class="thesis-grid">
+      <div>
+        <h4 style="margin-top: 0;">Wins outright</h4>
+        <ul>
+          <li>Greenfield Sui apps that need verifiable off-chain compute. First-party Mysten tooling, tightest BCS↔Move handshake of any TEE platform.</li>
+          <li>App-specific oracles where the fetch logic is yours (social, sports, niche feeds). Cleaner than Chainlink Functions' BETA secrets path.</li>
+          <li>Confidential matching engines on Sui — public ledger, private matching, settlement enforced by Move.</li>
+          <li>AI agents whose code identity matters: PCRs commit to which binary holds the agent's wallet key.</li>
+          <li>Reproducible-build audit story. The PCR is a function of the source.</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="margin-top: 0;">Wrong tool for the job</h4>
+        <ul>
+          <li>You must remain on Ethereum or an EVM L2 for liquidity. Pick Phala, Marlin Oyster (EVM-side), Oasis Sapphire, or — accepting the BETA caveat — Chainlink Functions.</li>
+          <li>Fully confidential EVM by default. Oasis Sapphire is purpose-built; Solidity ports cleanly.</li>
+          <li>MEV infrastructure for Ethereum. Flashbots SUAVE / BuilderNet owns this lane.</li>
+          <li>Multi-vendor TEE diversity (AWS + GCP + Intel + AMD). Nautilus is AWS Nitro–first; Phala's roadmap is broader.</li>
+          <li>Pure VRF or pure timestamping. Sui has native primitives; Nautilus is overkill.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">07 · source files</span>
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/enclave/src/apps/price_oracle/mod.rs"><strong>enclave/src/apps/price_oracle/mod.rs</strong>The Rust app: PriceRequest/PriceResponse, the CoinGecko fetch, the BCS-pinning test.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/enclave/src/common.rs"><strong>enclave/src/common.rs</strong>Vendored Nautilus core: IntentMessage, to_signed_response, health_check, attestation gating.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/enclave/src/main.rs"><strong>enclave/src/main.rs</strong>Server boot, deterministic key injection (feature-gated), axum routing.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/move/price-oracle/sources/oracle.move"><strong>move/price-oracle/sources/oracle.move</strong>The Move app: ~70 lines. PricePayload, update_price, all-zero PCR init.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/move/enclave/sources/enclave.move"><strong>move/enclave/sources/enclave.move</strong>Vendored verbatim from upstream MystenLabs/nautilus — the generic verifier package.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/scripts/post-price.sh"><strong>scripts/post-price.sh</strong>End-to-end loop closer: curl /process_data, then sui client call update_price.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/notes/NAUTILUS_EVM.md"><strong>notes/NAUTILUS_EVM.md</strong>The 289-line field report — twelve EVM trust-failure categories, mapped to Nautilus and to alternatives.</a>
+      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/07-nautilus/notes/NAUTILUS_LOCAL_DEV.md"><strong>notes/NAUTILUS_LOCAL_DEV.md</strong>The 534-line local-dev recipe this showcase implements.</a>
     </div>
   </div>
 </section>
@@ -793,13 +833,13 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <section class="tight">
   <div class="shell">
     <div class="siblings">
-      <a class="sibling" href="03-walrus-resolver.html">
+      <a class="sibling disabled" aria-disabled="true">
         <div class="label">← previous</div>
-        <div class="title">03 · WalrusResolver — IPNS replacement</div>
+        <div class="title">First in the Nautilus series</div>
       </a>
-      <a class="sibling next" href="05-verifiable-manifest.html">
+      <a class="sibling next disabled" aria-disabled="true">
         <div class="label">next →</div>
-        <div class="title">05 · Verifiable token list / dApp manifest</div>
+        <div class="title">Last in the Nautilus series</div>
       </a>
     </div>
   </div>
@@ -807,7 +847,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>.</p>
+    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="nautilus.html">Nautilus hub</a> · <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>.</p>
   </div>
 </footer>
 
