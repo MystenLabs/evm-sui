@@ -479,20 +479,21 @@ RESP=$(curl -s -H 'Content-Type: application/json' \
 
 SIG=$(echo $RESP | jq -r .signature)
 TS=$(echo $RESP | jq -r .response.timestamp_ms)
-COIN=$(echo $RESP | jq -r .response.data.coin_id)
-VS=$(echo $RESP   | jq -r .response.data.vs)
-PRICE=$(echo $RESP | jq -r .response.data.price_micro)
+COIN=$(echo $RESP | jq -r .response.payload.coin_id)
+VS=$(echo $RESP   | jq -r .response.payload.vs)
+PRICE=$(echo $RESP | jq -r .response.payload.price_micro)
 
 # 2. Submit to Sui — convert "sui" and "usd" strings to byte vectors
 sui client call --function update_price \
   --module $MODULE_NAME --package $APP_PACKAGE_ID \
   --type-args "$APP_PACKAGE_ID::$MODULE_NAME::$OTW_NAME" \
-  --args $ENCLAVE_OBJECT_ID \
-         "0x$SIG" \
-         $TS \
-         "[0x73,0x75,0x69]" \
+  --args "[0x73,0x75,0x69]" \
          "[0x75,0x73,0x64]" \
-         $PRICE
+         $PRICE \
+         $TS \
+         "0x$SIG" \
+         $ENCLAVE_OBJECT_ID \
+         "0x6"
 ```
 
 If everything lines up — Rust and Move BCS structs match, the registered pubkey is the one signing — you'll see a `PriceData` shared object on testnet. View it on [suivision.xyz](https://testnet.suivision.xyz/) using the object ID from the transaction output.

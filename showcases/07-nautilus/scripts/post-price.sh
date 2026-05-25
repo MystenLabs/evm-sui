@@ -16,22 +16,22 @@ COIN_ID=${1:-sui}
 VS=${2:-usd}
 
 resp=$(curl -fsS -H 'Content-Type: application/json' \
-  -d "{\"payload\":{\"coin_id\":\"$COIN_ID\",\"vs\":\"$VS\"}}" \
+  -d "$(jq -n --arg c "$COIN_ID" --arg v "$VS" '{payload:{coin_id:$c,vs:$v}}')" \
   http://localhost:3000/process_data)
 
 sig=$(echo "$resp" | jq -r .signature)
 ts=$(echo "$resp" | jq -r .response.timestamp_ms)
-price=$(echo "$resp" | jq -r .response.data.price_micro)
+price=$(echo "$resp" | jq -r .response.payload.price_micro)
 
 echo "got signed quote: $COIN_ID/$VS = $price (micro), ts=$ts"
 
 # Move expects vector<u8> for the strings. Encode as JSON byte arrays.
-coin_bytes=$(python3 -c "import sys; print('[' + ','.join(str(b) for b in '$COIN_ID'.encode()) + ']')")
-vs_bytes=$(python3 -c "import sys; print('[' + ','.join(str(b) for b in '$VS'.encode()) + ']')")
+coin_bytes=$(python3 -c "import sys; print('[' + ','.join(str(b) for b in sys.argv[1].encode()) + ']')" "$COIN_ID")
+vs_bytes=$(python3 -c "import sys; print('[' + ','.join(str(b) for b in sys.argv[1].encode()) + ']')" "$VS")
 
 sui client call \
   --package "$APP_PACKAGE_ID" \
   --module oracle \
   --function update_price \
   --type-args "$APP_PACKAGE_ID::oracle::ORACLE" \
-  --args "$coin_bytes" "$vs_bytes" "$price" "$ts" "0x$sig" "$ENCLAVE_OBJECT_ID"
+  --args "$coin_bytes" "$vs_bytes" "$price" "$ts" "0x$sig" "$ENCLAVE_OBJECT_ID" "0x6"

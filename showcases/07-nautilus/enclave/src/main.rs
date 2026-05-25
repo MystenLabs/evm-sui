@@ -22,9 +22,17 @@ async fn main() -> Result<()> {
     info!("enclave pubkey (hex): {pk_hex}");
     println!("ENCLAVE_PUBKEY_HEX={pk_hex}");
 
-    let state = Arc::new(AppState { signing_key });
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .expect("http client");
 
-    let cors = CorsLayer::new().allow_methods(Any).allow_headers(Any);
+    let state = Arc::new(AppState { signing_key, http_client });
+
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
 
     let app = Router::new()
         .route("/", get(|| async { "Pong!" }))

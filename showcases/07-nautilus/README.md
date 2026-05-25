@@ -57,8 +57,8 @@ sequenceDiagram
     CG-->>E: { sui: { usd: 3.45 } }
     Note over E: build PriceResponse, wrap in IntentMessage,<br/>BCS-encode, ed25519 sign
     E-->>U: { response: IntentMessage<PriceResponse>, signature }
-    U->>S: update_price(payload..., sig, &enclave)
-    Note over S: rebuild same IntentMessage,<br/>BCS-encode, ed25519_verify(pk)
+    U->>S: update_price(payload..., sig, &enclave, &clock)
+    Note over S: assert staleness, rebuild same IntentMessage,<br/>BCS-encode, ed25519_verify(pk)
     S-->>U: PriceFeed object (or revert)
 ```
 
@@ -75,7 +75,7 @@ Prerequisites: `rustc` ≥ 1.81, `sui` CLI, `jq`, `python3`. No Docker, no AWS C
 ```bash
 # 1. Compile + run the enclave (local-dev features by default).
 cd showcases/07-nautilus/enclave
-cargo run
+cargo run --features dev-key
 # → prints: ENCLAVE_PUBKEY_HEX=<save this>
 # → listens on http://0.0.0.0:3000
 
@@ -107,7 +107,7 @@ The local-dev shortcuts each map to one production step:
 
 | Local-dev | Production |
 |---|---|
-| `cargo run` with `dev-key` feature | `make ENCLAVE_APP=price-oracle` builds the EIF inside a reproducible container; ephemeral key is random per-boot |
+| `cargo run --features dev-key` | `make ENCLAVE_APP=price-oracle` builds the EIF inside a reproducible container; ephemeral key is random per-boot |
 | All-zero PCRs in `init` | `cat out/nitro.pcrs` after the build, pass real PCR0/PCR1/PCR2 into `update_pcrs` (or set them at `create_enclave_config` time) |
 | Hand-call `register_enclave_dev` | Standard `register_enclave.sh`, which calls `/get_attestation` on the live Nitro instance and submits the COSE_Sign1 doc |
 | `cargo` features `dev-key` (default) | `cargo` features `nitro`; remove `dev-key` |

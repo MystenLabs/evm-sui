@@ -1,5 +1,10 @@
 // Copyright (c), Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
+//
+// Vendored from MystenLabs/nautilus. Known upstream style issues:
+//   - `deploy_old_enclave_by_owner` actually destroys (deletes) the enclave
+//   - `verify_signature` uses explicit `return` instead of trailing expression
+// Left as-is to avoid diverging from the upstream source.
 
 // Permissionless registration of an enclave.
 

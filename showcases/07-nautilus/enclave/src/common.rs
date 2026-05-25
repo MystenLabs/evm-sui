@@ -1,26 +1,24 @@
 use crate::{AppState, EnclaveError};
 use axum::{extract::State, Json};
 use ed25519_dalek::Signer;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
 use tracing::info;
 
-/// Generic envelope: an `intent` byte + `timestamp_ms` + the typed `data`.
-/// BCS is positional — the Move-side struct must declare these three fields
-/// in the same order or signature verification will silently fail.
+/// Generic envelope: `intent` byte + `timestamp_ms` + typed `payload`.
+/// BCS is positional — the Move-side `IntentMessage<T>` in enclave.move
+/// declares these three fields in the same order.
 #[derive(Serialize, Deserialize, Clone)]
 pub struct IntentMessage<T: Serialize> {
     pub intent: u8,
     pub timestamp_ms: u64,
-    pub data: T,
+    pub payload: T,
 }
 
 impl<T: Serialize> IntentMessage<T> {
-    pub fn new(data: T, timestamp_ms: u64, intent: u8) -> Self {
-        Self { intent, timestamp_ms, data }
+    pub fn new(payload: T, timestamp_ms: u64, intent: u8) -> Self {
+        Self { intent, timestamp_ms, payload }
     }
 }
 
@@ -107,18 +105,13 @@ pub async fn health_check(
 ) -> Result<Json<HealthCheckResponse>, EnclaveError> {
     let pk_hex = hex::encode(state.signing_key.verifying_key().as_bytes());
 
-    let client = Client::builder()
-        .timeout(Duration::from_secs(5))
-        .build()
-        .map_err(|e| EnclaveError::GenericError(format!("client: {e}")))?;
-
     let mut status = HashMap::new();
     if let Ok(yaml) = std::fs::read_to_string("allowed_endpoints.yaml") {
         if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(&yaml) {
             if let Some(list) = value.get("endpoints").and_then(|e| e.as_sequence()) {
                 for ep in list.iter().filter_map(|v| v.as_str()) {
                     let url = format!("https://{ep}");
-                    let ok = client.get(&url).send().await.map(|r| r.status().is_success()).unwrap_or(false);
+                    let ok = state.http_client.get(&url).send().await.map(|r| r.status().is_success()).unwrap_or(false);
                     info!("endpoint {ep}: reachable = {ok}");
                     status.insert(ep.to_string(), ok);
                 }

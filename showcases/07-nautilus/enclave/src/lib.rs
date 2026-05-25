@@ -13,6 +13,7 @@ pub use apps::price_oracle as app;
 /// Process-wide state. Holds the enclave's ephemeral signing key for the lifetime of the server.
 pub struct AppState {
     pub signing_key: SigningKey,
+    pub http_client: reqwest::Client,
 }
 
 #[derive(Debug)]

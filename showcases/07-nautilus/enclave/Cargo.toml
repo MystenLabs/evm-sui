@@ -15,7 +15,7 @@ path = "src/lib.rs"
 
 [features]
 # Default = local-dev: deterministic signing key, no NSM driver, compiles on macOS.
-default = ["dev-key"]
+default = []
 # Replaces the random ephemeral key with a fixed 32-byte seed so the registered
 # enclave pubkey is stable across server restarts. NEVER ship to production.
 dev-key = []

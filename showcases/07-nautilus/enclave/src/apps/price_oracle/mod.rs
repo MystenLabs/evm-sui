@@ -31,12 +31,16 @@ pub async fn process_data(
     State(state): State<Arc<AppState>>,
     Json(req): Json<ProcessDataRequest<PriceRequest>>,
 ) -> Result<Json<ProcessedDataResponse<IntentMessage<PriceResponse>>>, EnclaveError> {
-    let url = format!(
-        "https://api.coingecko.com/api/v3/simple/price?ids={}&vs_currencies={}",
-        req.payload.coin_id, req.payload.vs
-    );
+    let url = reqwest::Url::parse_with_params(
+        "https://api.coingecko.com/api/v3/simple/price",
+        &[("ids", &req.payload.coin_id), ("vs_currencies", &req.payload.vs)],
+    )
+    .map_err(|e| EnclaveError::GenericError(format!("url: {e}")))?;
 
-    let body: serde_json::Value = reqwest::get(&url)
+    let body: serde_json::Value = state
+        .http_client
+        .get(url)
+        .send()
         .await
         .map_err(|e| EnclaveError::GenericError(format!("coingecko: {e}")))?
         .json()
@@ -55,7 +59,15 @@ pub async fn process_data(
     let payload = PriceResponse {
         coin_id: req.payload.coin_id,
         vs: req.payload.vs,
-        price_micro: (price * 1_000_000.0) as u64,
+        price_micro: {
+            let scaled = price * 1_000_000.0;
+            if !(scaled >= 0.0 && scaled < u64::MAX as f64) {
+                return Err(EnclaveError::GenericError(format!(
+                    "price out of representable range: {price}"
+                )));
+            }
+            scaled as u64
+        },
     };
 
     Ok(Json(to_signed_response(
