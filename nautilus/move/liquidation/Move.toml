@@ -1,0 +1,9 @@
+[package]
+name = "liquidation"
+edition = "2024"
+
+[dependencies]
+enclave = { local = "../enclave" }
+
+[addresses]
+liquidation = "0x0"

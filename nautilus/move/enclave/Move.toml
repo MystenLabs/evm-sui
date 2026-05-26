@@ -1,0 +1,8 @@
+[package]
+name = "enclave"
+edition = "2024"
+
+[dependencies]
+
+[addresses]
+enclave = "0x0"

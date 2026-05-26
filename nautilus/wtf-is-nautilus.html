@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WTF is Nautilus? — TEE Explainer for EVM Developers</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --fg: #1f1f1f;
+      --fg-muted: #6e6e6e;
+      --heading-fg: #1a1a1a;
+      --accent: #1976d2;
+      --border: #e0e0e0;
+      --code-bg: #f0f0f0;
+      --code-fg: #6e3700;
+      --pre-bg: #fafafa;
+      --aside-bg: #f5f5f5;
+      --success: #2e7d32;
+      --warning: #9a5b00;
+      --error: #d32f2f;
+
+      --diagram-node-bg: #e3f2fd;
+      --diagram-node-border: #90caf9;
+      --diagram-node-fg: #0d47a1;
+      --diagram-edge: #757575;
+      --diagram-enclave-bg: #fff3e0;
+      --diagram-enclave-border: #ffb74d;
+      --diagram-enclave-fg: #e65100;
+      --diagram-move-bg: #e8f5e9;
+      --diagram-move-border: #81c784;
+      --diagram-move-fg: #1b5e20;
+      --diagram-user-bg: #f3e5f5;
+      --diagram-user-border: #ce93d8;
+      --diagram-user-fg: #6a1b9a;
+      --diagram-real: #2e7d32;
+      --diagram-fake: #d32f2f;
+      --diagram-real-bg: #e8f5e9;
+      --diagram-fake-bg: #ffebee;
+
+      --layer-outer: #e8eaf6;
+      --layer-outer-border: #7986cb;
+      --layer-mid: #fff3e0;
+      --layer-mid-border: #ffb74d;
+      --layer-inner: #e3f2fd;
+      --layer-inner-border: #64b5f6;
+
+      --tbl-header-bg: #f5f5f5;
+      --tbl-row-alt: #fafafa;
+      --tbl-yes: #2e7d32;
+      --tbl-no: #d32f2f;
+      --tbl-partial: #9a5b00;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --fg: #cccccc;
+        --fg-muted: #9e9e9e;
+        --heading-fg: #e8e8e8;
+        --accent: #4dabf7;
+        --border: #2a2a2a;
+        --code-bg: #2a2a2a;
+        --code-fg: #f0e8d8;
+        --pre-bg: #161616;
+        --aside-bg: #242424;
+        --success: #66bb6a;
+        --warning: #f0c674;
+        --error: #ff7676;
+
+        --diagram-node-bg: #1a2a3a;
+        --diagram-node-border: #3a6a9a;
+        --diagram-node-fg: #90caf9;
+        --diagram-edge: #9e9e9e;
+        --diagram-enclave-bg: #2a1f0a;
+        --diagram-enclave-border: #a0743a;
+        --diagram-enclave-fg: #ffcc80;
+        --diagram-move-bg: #0a2a0a;
+        --diagram-move-border: #4a8a4a;
+        --diagram-move-fg: #81c784;
+        --diagram-user-bg: #2a1a3a;
+        --diagram-user-border: #8a4a9a;
+        --diagram-user-fg: #ce93d8;
+        --diagram-real: #66bb6a;
+        --diagram-fake: #ff7676;
+        --diagram-real-bg: #0a2a0a;
+        --diagram-fake-bg: #2a0a0a;
+
+        --layer-outer: #1a1a2e;
+        --layer-outer-border: #5c6bc0;
+        --layer-mid: #2a1f0a;
+        --layer-mid-border: #a0743a;
+        --layer-inner: #0a1a2a;
+        --layer-inner-border: #4a8ab0;
+
+        --tbl-header-bg: #242424;
+        --tbl-row-alt: #222222;
+        --tbl-yes: #66bb6a;
+        --tbl-no: #ff7676;
+        --tbl-partial: #f0c674;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.65;
+      padding: 2rem 1.5rem;
+    }
+    main { max-width: 960px; margin: 0 auto; }
+    h1, h2, h3, h4 { color: var(--heading-fg); }
+    h1 { font-size: 2rem; margin-bottom: 0.3rem; letter-spacing: -0.02em; }
+    h2 { font-size: 1.5rem; margin: 2.5rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+    h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+    p { margin: 0.6rem 0; }
+    a { color: var(--accent); }
+    code {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      padding: 0.15em 0.35em;
+      border-radius: 3px;
+      font-size: 0.92em;
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", Menlo, Consolas, monospace;
+    }
+    pre {
+      background: var(--pre-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 0.8rem 0;
+    }
+    pre code { background: none; padding: 0; }
+    small, figcaption { color: var(--fg-muted); }
+    aside {
+      background: var(--aside-bg);
+      border-left: 3px solid var(--accent);
+      padding: 0.7rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 4px 4px 0;
+    }
+    aside.warning { border-left-color: var(--warning); }
+    aside.success { border-left-color: var(--success); }
+    aside.error { border-left-color: var(--error); }
+
+    header { max-width: 960px; margin: 0 auto 1.5rem; }
+    header p { color: var(--fg-muted); font-size: 1.05rem; }
+
+    nav { max-width: 960px; margin: 0 auto 2rem; }
+    nav ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    nav a {
+      display: inline-block;
+      padding: 0.35rem 0.8rem;
+      background: var(--aside-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    nav a:hover { background: var(--code-bg); }
+
+    figure { margin: 1.5rem 0; }
+    figcaption { font-size: 0.88rem; margin-top: 0.5rem; text-align: center; }
+    figure svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+    thead th {
+      background: var(--tbl-header-bg);
+      text-align: left;
+      padding: 0.6rem 0.7rem;
+      border-bottom: 2px solid var(--border);
+      color: var(--fg-muted);
+      font-weight: 600;
+    }
+    tbody td {
+      padding: 0.55rem 0.7rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) { background: var(--tbl-row-alt); }
+    .yes { color: var(--tbl-yes); font-weight: 600; }
+    .no { color: var(--tbl-no); font-weight: 600; }
+    .partial { color: var(--tbl-partial); font-weight: 600; }
+
+    .one-liner {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--heading-fg);
+      padding: 1rem 1.2rem;
+      background: var(--aside-bg);
+      border-radius: 6px;
+      margin: 1.2rem 0;
+      line-height: 1.5;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .card {
+      background: var(--aside-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+    .card h4 { margin-bottom: 0.4rem; font-size: 1rem; }
+    .card ul { margin: 0.3rem 0 0 1.2rem; font-size: 0.92rem; }
+    .card li { margin: 0.2rem 0; }
+
+    details { margin: 0.8rem 0; }
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--accent);
+      padding: 0.3rem 0;
+    }
+    details[open] summary { margin-bottom: 0.5rem; }
+
+    footer {
+      max-width: 960px;
+      margin: 3rem auto 0;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      color: var(--fg-muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 1rem; }
+      h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.25rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      nav ul { flex-direction: column; }
+      table { font-size: 0.82rem; }
+      thead th, tbody td { padding: 0.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>WTF is Nautilus?</h1>
+  <p>A visual mental model for EVM developers &mdash; what it is, how it uses Sui, how it compares, and what "local mocking" actually means.</p>
+</header>
+
+<nav aria-label="Contents">
+  <ul>
+    <li><a href="#what">What It Is</a></li>
+    <li><a href="#how-sui">How It Uses Sui</a></li>
+    <li><a href="#layers">Nautilus vs Nitro vs Oyster</a></li>
+    <li><a href="#compare">EVM Comparison</a></li>
+    <li><a href="#mocking">Local Mocking</a></li>
+    <li><a href="#decide">Decision Flow</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="what">
+<h2>1. What Nautilus Actually Is</h2>
+
+<div class="one-liner">
+  Nautilus = a framework for running Rust code inside AWS Nitro Enclaves, where a Move contract on Sui cryptographically verifies every output the enclave produces.
+</div>
+
+<p>It is <strong>not</strong> a blockchain, not a rollup, not a sidechain. It's a pattern: <em>trusted hardware signs data, an on-chain contract checks the signature</em>. The novelty is how tight the coupling is between the enclave and the chain.</p>
+
+<figure>
+  <svg viewBox="0 0 820 300" width="820" height="300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nautilus architecture: three zones showing enclave, chain, and the bridge between them">
+    <defs>
+      <marker id="arr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--diagram-edge)"/>
+      </marker>
+    </defs>
+
+    <!-- Enclave zone -->
+    <rect x="10" y="20" width="280" height="260" rx="10" fill="var(--diagram-enclave-bg)" stroke="var(--diagram-enclave-border)" stroke-width="2"/>
+    <text x="150" y="50" text-anchor="middle" font-weight="700" font-size="14" fill="var(--diagram-enclave-fg)">AWS Nitro Enclave</text>
+    <text x="150" y="68" text-anchor="middle" font-size="11" fill="var(--fg-muted)">(isolated hardware &mdash; host OS cannot read memory)</text>
+
+    <rect x="30" y="85" width="240" height="40" rx="6" fill="var(--bg)" stroke="var(--diagram-enclave-border)" stroke-width="1.5"/>
+    <text x="150" y="110" text-anchor="middle" font-size="13" fill="currentColor">Your Rust Code</text>
+
+    <rect x="30" y="140" width="240" height="40" rx="6" fill="var(--bg)" stroke="var(--diagram-enclave-border)" stroke-width="1.5"/>
+    <text x="150" y="155" text-anchor="middle" font-size="11" fill="var(--fg-muted)">Ed25519 keypair (ephemeral)</text>
+    <text x="150" y="170" text-anchor="middle" font-size="11" font-weight="600" fill="var(--diagram-fake)">private key NEVER leaves</text>
+
+    <rect x="30" y="195" width="115" height="35" rx="6" fill="var(--bg)" stroke="var(--diagram-enclave-border)" stroke-width="1.5"/>
+    <text x="87" y="217" text-anchor="middle" font-size="11" fill="currentColor">API Secrets</text>
+
+    <rect x="155" y="195" width="115" height="35" rx="6" fill="var(--bg)" stroke="var(--diagram-enclave-border)" stroke-width="1.5"/>
+    <text x="212" y="217" text-anchor="middle" font-size="11" fill="currentColor">PCR Hashes</text>
+
+    <text x="150" y="255" text-anchor="middle" font-size="10" fill="var(--fg-muted)">PCR0 = OS | PCR1 = Code | PCR2 = Config</text>
+    <text x="150" y="270" text-anchor="middle" font-size="10" fill="var(--fg-muted)">Change 1 byte of code &rarr; PCR changes &rarr; chain rejects</text>
+
+    <!-- Arrow: enclave to user -->
+    <line x1="295" y1="105" x2="380" y2="105" stroke="var(--diagram-edge)" stroke-width="2" marker-end="url(#arr)"/>
+    <text x="337" y="98" text-anchor="middle" font-size="10" fill="var(--fg-muted)">signs</text>
+    <text x="337" y="118" text-anchor="middle" font-size="10" fill="var(--fg-muted)">{response, sig}</text>
+
+    <!-- User zone -->
+    <rect x="380" y="70" width="130" height="80" rx="8" fill="var(--diagram-user-bg)" stroke="var(--diagram-user-border)" stroke-width="2"/>
+    <text x="445" y="100" text-anchor="middle" font-size="13" font-weight="600" fill="var(--diagram-user-fg)">User / dApp</text>
+    <text x="445" y="118" text-anchor="middle" font-size="11" fill="var(--fg-muted)">submits to chain</text>
+    <text x="445" y="134" text-anchor="middle" font-size="11" fill="var(--fg-muted)">with BCS payload</text>
+
+    <!-- Arrow: user to chain -->
+    <line x1="515" y1="110" x2="540" y2="110" stroke="var(--diagram-edge)" stroke-width="2" marker-end="url(#arr)"/>
+
+    <!-- Chain zone -->
+    <rect x="545" y="20" width="265" height="260" rx="10" fill="var(--diagram-move-bg)" stroke="var(--diagram-move-border)" stroke-width="2"/>
+    <text x="677" y="50" text-anchor="middle" font-weight="700" font-size="14" fill="var(--diagram-move-fg)">Sui Blockchain</text>
+    <text x="677" y="68" text-anchor="middle" font-size="11" fill="var(--fg-muted)">(Move smart contracts)</text>
+
+    <rect x="565" y="85" width="225" height="42" rx="6" fill="var(--bg)" stroke="var(--diagram-move-border)" stroke-width="1.5"/>
+    <text x="677" y="103" text-anchor="middle" font-size="12" fill="currentColor">EnclaveConfig (shared object)</text>
+    <text x="677" y="118" text-anchor="middle" font-size="10" fill="var(--fg-muted)">stores PCR0, PCR1, PCR2 + version</text>
+
+    <rect x="565" y="140" width="225" height="42" rx="6" fill="var(--bg)" stroke="var(--diagram-move-border)" stroke-width="1.5"/>
+    <text x="677" y="158" text-anchor="middle" font-size="12" fill="currentColor">Enclave (shared object)</text>
+    <text x="677" y="173" text-anchor="middle" font-size="10" fill="var(--fg-muted)">stores ephemeral pubkey + metadata</text>
+
+    <rect x="565" y="195" width="225" height="42" rx="6" fill="var(--bg)" stroke="var(--diagram-move-border)" stroke-width="1.5"/>
+    <text x="677" y="210" text-anchor="middle" font-size="12" font-weight="600" fill="var(--diagram-move-fg)">verify_signature()</text>
+    <text x="677" y="228" text-anchor="middle" font-size="10" fill="var(--fg-muted)">checks sig against stored pubkey + PCRs</text>
+
+    <text x="677" y="260" text-anchor="middle" font-size="11" fill="var(--diagram-move-fg)">Valid &rarr; execute business logic</text>
+    <text x="677" y="275" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">Invalid &rarr; transaction aborts</text>
+  </svg>
+  <figcaption>The three zones: enclave (hardware-isolated), user (relay), and Sui chain (cryptographic verification).</figcaption>
+</figure>
+
+<aside>
+  <strong>EVM mental model:</strong> Think of it like Chainlink Functions, but instead of a committee of DON nodes voting on what's true, you have a single machine running inside tamper-proof hardware that <em>mathematically proves</em> which binary it's executing. The Move contract doesn't trust the machine &mdash; it trusts the math.
+</aside>
+
+<h3>The PCR System (Platform Configuration Registers)</h3>
+<p>PCRs are SHA-384 hashes baked into the enclave image. They are Nautilus's equivalent of a contract's bytecode hash on Ethereum &mdash; but they cover the entire runtime, not just the application code.</p>
+<div class="grid-2">
+  <div class="card">
+    <h4>PCR0 &mdash; OS &amp; Boot</h4>
+    <ul>
+      <li>Hash of the enclave's operating system image</li>
+      <li>Immutable for a given AWS AMI</li>
+      <li>Like the EVM version your contract runs on</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>PCR1 &mdash; Application Code</h4>
+    <ul>
+      <li>Hash of your compiled Rust binary (EIF image)</li>
+      <li>Change one byte of code &rarr; PCR1 changes</li>
+      <li>Like <code>keccak256(bytecode)</code> for your off-chain logic</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>PCR2 &mdash; Runtime Config</h4>
+    <ul>
+      <li>Hash of <code>run.sh</code>, traffic forwarding rules</li>
+      <li>Proves the enclave's network setup wasn't tampered with</li>
+      <li>No EVM equivalent &mdash; new concept</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>The Guarantee</h4>
+    <ul>
+      <li>Anyone can rebuild from source and compare PCRs</li>
+      <li>If PCRs match &rarr; binary matches published source</li>
+      <li>Move contract stores expected PCRs; rejects mismatches</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="how-sui">
+<h2>2. How It Uses Sui &mdash; The Two-Phase Pattern</h2>
+
+<p>The core insight: <strong>expensive verification happens once at registration; cheap signature checks happen on every call forever after.</strong></p>
+
+<figure>
+  <svg viewBox="0 0 820 520" width="820" height="520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two-phase flow: registration then runtime">
+    <defs>
+      <marker id="arr2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--diagram-edge)"/>
+      </marker>
+    </defs>
+
+    <!-- Phase 1 background -->
+    <rect x="10" y="10" width="800" height="230" rx="10" fill="var(--diagram-node-bg)" stroke="var(--diagram-node-border)" stroke-width="2" stroke-dasharray="6,3"/>
+    <text x="30" y="36" font-weight="700" font-size="15" fill="var(--diagram-node-fg)">PHASE 1 &mdash; Registration (one-time, expensive)</text>
+
+    <!-- Step 1 -->
+    <rect x="30" y="55" width="160" height="60" rx="6" fill="var(--bg)" stroke="var(--diagram-move-border)" stroke-width="1.5"/>
+    <text x="110" y="78" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Deploy Move</text>
+    <text x="110" y="94" text-anchor="middle" font-size="10" fill="var(--fg-muted)">enclave pkg + app pkg</text>
+    <text x="110" y="106" text-anchor="middle" font-size="10" fill="var(--fg-muted)">&rarr; EnclaveConfig + Cap</text>
+
+    <line x1="195" y1="85" x2="225" y2="85" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Step 2 -->
+    <rect x="230" y="55" width="160" height="60" rx="6" fill="var(--bg)" stroke="var(--diagram-enclave-border)" stroke-width="1.5"/>
+    <text x="310" y="78" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Build Enclave</text>
+    <text x="310" y="94" text-anchor="middle" font-size="10" fill="var(--fg-muted)">reproducible Nix build</text>
+    <text x="310" y="106" text-anchor="middle" font-size="10" fill="var(--fg-muted)">&rarr; PCR0, PCR1, PCR2</text>
+
+    <line x1="395" y1="85" x2="425" y2="85" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Step 3 -->
+    <rect x="430" y="55" width="160" height="60" rx="6" fill="var(--bg)" stroke="var(--diagram-move-border)" stroke-width="1.5"/>
+    <text x="510" y="78" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Register PCRs</text>
+    <text x="510" y="94" text-anchor="middle" font-size="10" fill="var(--fg-muted)">update_pcrs(Cap, pcrs)</text>
+    <text x="510" y="106" text-anchor="middle" font-size="10" fill="var(--fg-muted)">&rarr; chain knows the binary</text>
+
+    <line x1="595" y1="85" x2="625" y2="85" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Step 4 -->
+    <rect x="630" y="55" width="160" height="60" rx="6" fill="var(--bg)" stroke="var(--diagram-enclave-border)" stroke-width="1.5"/>
+    <text x="710" y="78" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Register Enclave</text>
+    <text x="710" y="94" text-anchor="middle" font-size="10" fill="var(--fg-muted)">verify AWS cert chain</text>
+    <text x="710" y="106" text-anchor="middle" font-size="10" fill="var(--fg-muted)">(P-384, expensive!)</text>
+
+    <!-- Result of Phase 1 -->
+    <line x1="710" y1="120" x2="710" y2="140" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+    <rect x="230" y="145" width="560" height="40" rx="6" fill="var(--diagram-move-bg)" stroke="var(--diagram-move-border)" stroke-width="2"/>
+    <text x="510" y="170" text-anchor="middle" font-size="13" font-weight="600" fill="var(--diagram-move-fg)">Result: Enclave object on Sui stores {pubkey, PCRs, metadata} &mdash; ready to verify</text>
+
+    <line x1="110" y1="120" x2="110" y2="200" stroke="var(--diagram-edge)" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="115" y="180" font-size="10" fill="var(--fg-muted)">done once</text>
+
+    <!-- Phase 2 background -->
+    <rect x="10" y="255" width="800" height="255" rx="10" fill="var(--diagram-enclave-bg)" stroke="var(--diagram-enclave-border)" stroke-width="2" stroke-dasharray="6,3"/>
+    <text x="30" y="282" font-weight="700" font-size="15" fill="var(--diagram-enclave-fg)">PHASE 2 &mdash; Runtime (every call, cheap)</text>
+
+    <!-- Runtime Step 1 -->
+    <rect x="30" y="300" width="150" height="55" rx="6" fill="var(--bg)" stroke="var(--diagram-user-border)" stroke-width="1.5"/>
+    <text x="105" y="323" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">User calls</text>
+    <text x="105" y="340" text-anchor="middle" font-size="10" fill="var(--fg-muted)">/process_data</text>
+
+    <line x1="185" y1="327" x2="215" y2="327" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Runtime Step 2 -->
+    <rect x="220" y="300" width="165" height="55" rx="6" fill="var(--bg)" stroke="var(--diagram-enclave-border)" stroke-width="1.5"/>
+    <text x="302" y="323" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Enclave executes</text>
+    <text x="302" y="340" text-anchor="middle" font-size="10" fill="var(--fg-muted)">fetches data, computes</text>
+
+    <line x1="390" y1="327" x2="415" y2="327" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Runtime Step 3 -->
+    <rect x="420" y="300" width="165" height="55" rx="6" fill="var(--bg)" stroke="var(--diagram-enclave-border)" stroke-width="1.5"/>
+    <text x="502" y="318" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Enclave signs</text>
+    <text x="502" y="334" text-anchor="middle" font-size="10" fill="var(--fg-muted)">intent || timestamp ||</text>
+    <text x="502" y="348" text-anchor="middle" font-size="10" fill="var(--fg-muted)">BCS(payload)</text>
+
+    <line x1="590" y1="327" x2="620" y2="327" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Runtime Step 4 -->
+    <rect x="625" y="300" width="165" height="55" rx="6" fill="var(--bg)" stroke="var(--diagram-user-border)" stroke-width="1.5"/>
+    <text x="707" y="323" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">User submits</text>
+    <text x="707" y="340" text-anchor="middle" font-size="10" fill="var(--fg-muted)">to Move contract</text>
+
+    <!-- Arrow down to verification -->
+    <line x1="707" y1="360" x2="707" y2="385" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Verification box -->
+    <rect x="220" y="390" width="570" height="55" rx="6" fill="var(--diagram-move-bg)" stroke="var(--diagram-move-border)" stroke-width="2"/>
+    <text x="505" y="412" text-anchor="middle" font-size="12" font-weight="700" fill="var(--diagram-move-fg)">verify_signature(enclave, intent_byte, timestamp, payload, sig)</text>
+    <text x="505" y="434" text-anchor="middle" font-size="11" fill="var(--fg-muted)">reconstructs bytes &rarr; checks sig against pubkey &rarr; checks PCRs &rarr; executes or aborts</text>
+
+    <!-- Outcome arrows -->
+    <line x1="400" y1="450" x2="350" y2="485" stroke="var(--diagram-real)" stroke-width="1.5" marker-end="url(#arr2)"/>
+    <text x="280" y="498" font-size="12" font-weight="600" fill="var(--diagram-real)">Valid &rarr; mint / update price / settle</text>
+
+    <line x1="600" y1="450" x2="650" y2="485" stroke="var(--diagram-fake)" stroke-width="1.5" marker-end="url(#arr2)"/>
+    <text x="700" y="498" font-size="12" font-weight="600" fill="var(--diagram-fake)">Invalid &rarr; abort</text>
+  </svg>
+  <figcaption>Phase 1 happens once per enclave deployment. Phase 2 happens on every user interaction &mdash; just a signature check.</figcaption>
+</figure>
+
+<aside>
+  <strong>Key insight for EVM devs:</strong> The BCS (Binary Canonical Serialization) encoding is critical. Rust struct field order <strong>must</strong> match Move struct field order exactly &mdash; BCS is positional, not name-keyed. Mismatch &rarr; signature verification silently fails. There's no ABI encoding/decoding hop like Solidity&harr;ethers.js &mdash; payloads are encoded the same way Sui encodes its own objects.
+</aside>
+
+<details>
+  <summary>How BCS coupling works (Rust vs Move)</summary>
+  <p>BCS serializes structs by field order. The Rust side and the Move side must declare fields in the <em>exact same order</em>:</p>
+  <pre><code>// Rust (enclave side)
+struct PriceResponse {
+    coin_id: String,      // field 0
+    vs: String,           // field 1
+    price_micro: u64,     // field 2
+}
+
+// Move (chain side) &mdash; MUST match field order
+struct PricePayload has copy, drop {
+    coin_id: vector&lt;u8&gt;,  // field 0
+    vs: vector&lt;u8&gt;,       // field 1
+    price_micro: u64,     // field 2
+}</code></pre>
+  <p>No field names in the wire format &mdash; just bytes in order. Swap <code>vs</code> and <code>price_micro</code> on either side and signature verification fails silently.</p>
+</details>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="layers">
+<h2>3. Nautilus vs Nitro vs Oyster &mdash; "Is It Still Nautilus?"</h2>
+
+<p>This is the part that confuses everyone. Three names, three different things, all involved in the same system.</p>
+
+<figure>
+  <svg viewBox="0 0 700 400" width="700" height="400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Concentric layers: Marlin Oyster wraps AWS Nitro wraps Nautilus framework">
+    <!-- Outer layer: Marlin Oyster -->
+    <rect x="20" y="20" width="660" height="360" rx="16" fill="var(--layer-outer)" stroke="var(--layer-outer-border)" stroke-width="2.5"/>
+    <text x="350" y="50" text-anchor="middle" font-weight="700" font-size="15" fill="var(--layer-outer-border)">Marlin Oyster (optional managed layer)</text>
+    <text x="350" y="70" text-anchor="middle" font-size="11" fill="var(--fg-muted)">Marketplace of operators who run Nitro enclaves for you. Pay in stablecoins.</text>
+    <text x="350" y="85" text-anchor="middle" font-size="11" fill="var(--fg-muted)">You skip all AWS ops. Same cryptographic guarantees underneath.</text>
+
+    <!-- Middle layer: AWS Nitro -->
+    <rect x="70" y="100" width="560" height="250" rx="12" fill="var(--layer-mid)" stroke="var(--layer-mid-border)" stroke-width="2.5"/>
+    <text x="350" y="128" text-anchor="middle" font-weight="700" font-size="14" fill="var(--layer-mid-border)">AWS Nitro Enclaves (the TEE hardware)</text>
+    <text x="350" y="148" text-anchor="middle" font-size="11" fill="var(--fg-muted)">Trust root = AWS root certificate. Isolated memory. NSM attestation driver.</text>
+    <text x="350" y="163" text-anchor="middle" font-size="11" fill="var(--fg-muted)">Reproducible EIF builds via Nix. ~$0.19/hr self-managed.</text>
+
+    <!-- Inner layer: Nautilus Framework -->
+    <rect x="130" y="178" width="440" height="145" rx="10" fill="var(--layer-inner)" stroke="var(--layer-inner-border)" stroke-width="2.5"/>
+    <text x="350" y="203" text-anchor="middle" font-weight="700" font-size="14" fill="var(--layer-inner-border)">Nautilus Framework (what Mysten built)</text>
+
+    <rect x="155" y="216" width="110" height="38" rx="5" fill="var(--bg)" stroke="var(--layer-inner-border)" stroke-width="1"/>
+    <text x="210" y="233" text-anchor="middle" font-size="11" fill="currentColor">Rust enclave</text>
+    <text x="210" y="247" text-anchor="middle" font-size="11" fill="currentColor">template</text>
+
+    <rect x="290" y="216" width="120" height="38" rx="5" fill="var(--bg)" stroke="var(--layer-inner-border)" stroke-width="1"/>
+    <text x="350" y="233" text-anchor="middle" font-size="11" fill="currentColor">Move verification</text>
+    <text x="350" y="247" text-anchor="middle" font-size="11" fill="currentColor">contracts</text>
+
+    <rect x="435" y="216" width="120" height="38" rx="5" fill="var(--bg)" stroke="var(--layer-inner-border)" stroke-width="1"/>
+    <text x="495" y="233" text-anchor="middle" font-size="11" fill="currentColor">Reproducible</text>
+    <text x="495" y="247" text-anchor="middle" font-size="11" fill="currentColor">build pipeline</text>
+
+    <text x="350" y="282" text-anchor="middle" font-size="12" font-weight="600" fill="var(--layer-inner-border)">BCS encoding + Ed25519 signing + PCR attestation</text>
+    <text x="350" y="300" text-anchor="middle" font-size="11" fill="var(--fg-muted)">This stays constant regardless of who manages the hardware.</text>
+  </svg>
+  <figcaption>Nautilus is the framework. Nitro is the hardware. Oyster is an optional managed wrapper. All three can coexist.</figcaption>
+</figure>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Running on Oyster = still Nautilus?</h4>
+    <ul>
+      <li><strong>Yes.</strong> Same Rust code, same PCR values, same Move verification contracts</li>
+      <li>Oyster operators handle AWS provisioning, networking, billing</li>
+      <li>Your Move contract can't tell the difference &mdash; it just checks pubkey + PCRs</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Could Nautilus run on non-Nitro TEEs?</h4>
+    <ul>
+      <li><strong>Not today.</strong> Attestation format is Nitro-specific (NSM driver, AWS cert chain)</li>
+      <li>Mysten: <em>"Support for additional TEE providers may be considered in the future."</em></li>
+      <li>Move verification contracts would need rewriting for SGX/TDX attestation formats</li>
+    </ul>
+  </div>
+</div>
+
+<aside class="warning">
+  <strong>The trust root question:</strong> Whether you self-manage AWS or use Oyster, the ultimate trust anchor is <em>AWS's Nitro root certificate</em>. If Nitro has a zero-day, both paths break. This is the single most important threat model assumption. If multi-cloud TEE diversity is mandatory, look at Phala (SGX/TDX/SEV/H100 roadmap).
+</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="compare">
+<h2>4. How It Differs from EVM TEE Solutions</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Solution</th>
+      <th>TEE Hardware?</th>
+      <th>Chain</th>
+      <th>Trust Model</th>
+      <th>Secret Safety</th>
+      <th>Dev Language</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Nautilus</strong></td>
+      <td class="yes">AWS Nitro</td>
+      <td>Sui (Move)</td>
+      <td>PCR attestation + sig verify</td>
+      <td class="yes">Hardware-isolated</td>
+      <td>Rust + Move</td>
+    </tr>
+    <tr>
+      <td><strong>Chainlink Functions</strong></td>
+      <td class="no">No TEE</td>
+      <td>EVM chains</td>
+      <td>DON quorum (16-of-31)</td>
+      <td class="partial">BETA &mdash; "may reveal"</td>
+      <td>JavaScript (Deno)</td>
+    </tr>
+    <tr>
+      <td><strong>Phala Network</strong></td>
+      <td class="yes">SGX/TDX/SEV</td>
+      <td>EVM + Substrate</td>
+      <td>Multi-TEE attestation</td>
+      <td class="yes">Hardware-isolated</td>
+      <td>JS/TS (Phala Cloud)</td>
+    </tr>
+    <tr>
+      <td><strong>Oasis Sapphire</strong></td>
+      <td class="yes">SGX (ParaTime)</td>
+      <td>Confidential EVM</td>
+      <td>Full-state encryption</td>
+      <td class="yes">All state encrypted</td>
+      <td>Solidity</td>
+    </tr>
+    <tr>
+      <td><strong>Marlin Oyster</strong></td>
+      <td class="yes">AWS Nitro</td>
+      <td>EVM + Sui</td>
+      <td>Same as Nautilus</td>
+      <td class="yes">Hardware-isolated</td>
+      <td>Rust / any</td>
+    </tr>
+    <tr>
+      <td><strong>Flashbots SUAVE</strong></td>
+      <td class="yes">SGX/TDX</td>
+      <td>Ethereum L1</td>
+      <td>TEE block builder</td>
+      <td class="yes">Builder-isolated</td>
+      <td>Solidity (MEVM)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Where Nautilus Wins</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Tightest TEE-to-Chain Coupling</h4>
+    <p>BCS encoding &mdash; same serialization Sui uses for its own objects. No JSON&rarr;ABI-encode&rarr;verify hops. Move verifier deserializes payloads directly.</p>
+  </div>
+  <div class="card">
+    <h4>Reproducible Builds by Default</h4>
+    <p>Nix-style template ships with the framework. PCRs are deterministic from source. Anyone can rebuild and verify.</p>
+  </div>
+  <div class="card">
+    <h4>Free Local Dev Mode</h4>
+    <p>Full Rust + Move dev loop with zero AWS spend. No Phala worker fees, no SGX cloud time. Pay only in production.</p>
+  </div>
+  <div class="card">
+    <h4>First-Party Maintenance</h4>
+    <p>Mysten Labs builds both the framework and the Sui runtime. Bug fixes and docs go through one team. No multi-vendor integration tax.</p>
+  </div>
+</div>
+
+<h3>Where Nautilus Loses</h3>
+<div class="grid-2">
+  <div class="card" style="border-color: var(--error);">
+    <h4>Must Leave EVM</h4>
+    <p>You need Move + Rust. If your users, liquidity, or partners are on Ethereum &mdash; Phala, Oyster-from-EVM, or Sapphire are better.</p>
+  </div>
+  <div class="card" style="border-color: var(--error);">
+    <h4>Selective, Not Full Confidentiality</h4>
+    <p>Move contract on Sui stays public. Only enclave contents are private. For "everything encrypted by default" &rarr; Oasis Sapphire wins.</p>
+  </div>
+  <div class="card" style="border-color: var(--error);">
+    <h4>AWS Nitro Lock-in</h4>
+    <p>Single TEE vendor today. Multi-cloud TEE diversity? Phala's SGX/TDX/SEV/H100 roadmap is broader.</p>
+  </div>
+  <div class="card" style="border-color: var(--error);">
+    <h4>~4-8 Week Ramp-Up</h4>
+    <p>Move's resource semantics + Rust for enclaves + AWS Nitro ops. Real cost for Solidity/TS teams.</p>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="mocking">
+<h2>5. What "Mocking" Nautilus Locally Actually Means</h2>
+
+<p>When you "mock" Nautilus locally, you're <strong>replacing the hardware trust guarantees with deterministic test values</strong> while keeping the entire signing-to-verification pipeline functional.</p>
+
+<figure>
+  <svg viewBox="0 0 820 420" width="820" height="420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Local mock mode: what's real vs what's faked">
+    <!-- Title -->
+    <text x="410" y="25" text-anchor="middle" font-weight="700" font-size="16" fill="currentColor">Local Dev Mode &mdash; What's Real vs What's Mocked</text>
+
+    <!-- Real column -->
+    <rect x="20" y="45" width="380" height="360" rx="10" fill="var(--diagram-real-bg)" stroke="var(--diagram-real)" stroke-width="2"/>
+    <text x="210" y="72" text-anchor="middle" font-weight="700" font-size="14" fill="var(--diagram-real)">REAL (works identically to production)</text>
+
+    <rect x="40" y="90" width="340" height="48" rx="6" fill="var(--bg)" stroke="var(--diagram-real)" stroke-width="1.5"/>
+    <text x="210" y="112" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Rust server runs locally</text>
+    <text x="210" y="128" text-anchor="middle" font-size="10" fill="var(--fg-muted)">cargo run &mdash; same code as production enclave</text>
+
+    <rect x="40" y="150" width="340" height="48" rx="6" fill="var(--bg)" stroke="var(--diagram-real)" stroke-width="1.5"/>
+    <text x="210" y="172" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Ed25519 signing</text>
+    <text x="210" y="188" text-anchor="middle" font-size="10" fill="var(--fg-muted)">same algorithm, same payload format (intent || ts || BCS)</text>
+
+    <rect x="40" y="210" width="340" height="48" rx="6" fill="var(--bg)" stroke="var(--diagram-real)" stroke-width="1.5"/>
+    <text x="210" y="232" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">BCS encoding</text>
+    <text x="210" y="248" text-anchor="middle" font-size="10" fill="var(--fg-muted)">Rust struct &harr; Move struct field-order compatibility tested</text>
+
+    <rect x="40" y="270" width="340" height="48" rx="6" fill="var(--bg)" stroke="var(--diagram-real)" stroke-width="1.5"/>
+    <text x="210" y="292" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Move contract on Sui testnet</text>
+    <text x="210" y="308" text-anchor="middle" font-size="10" fill="var(--fg-muted)">verify_signature() runs for real, free faucet SUI</text>
+
+    <rect x="40" y="330" width="340" height="48" rx="6" fill="var(--bg)" stroke="var(--diagram-real)" stroke-width="1.5"/>
+    <text x="210" y="352" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">External API calls</text>
+    <text x="210" y="368" text-anchor="middle" font-size="10" fill="var(--fg-muted)">CoinGecko, Weather API, Twitter/X &mdash; all work locally</text>
+
+    <!-- Mocked column -->
+    <rect x="420" y="45" width="380" height="360" rx="10" fill="var(--diagram-fake-bg)" stroke="var(--diagram-fake)" stroke-width="2"/>
+    <text x="610" y="72" text-anchor="middle" font-weight="700" font-size="14" fill="var(--diagram-fake)">MOCKED (replaced with test values)</text>
+
+    <rect x="440" y="90" width="340" height="58" rx="6" fill="var(--bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="610" y="112" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Signing key = deterministic seed</text>
+    <text x="610" y="128" text-anchor="middle" font-size="10" fill="var(--fg-muted)">let seed: [u8; 32] = [42u8; 32];</text>
+    <text x="610" y="143" text-anchor="middle" font-size="10" fill="var(--diagram-fake)">Same pubkey every restart (prod: random ephemeral)</text>
+
+    <rect x="440" y="160" width="340" height="58" rx="6" fill="var(--bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="610" y="182" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">PCRs = all zeros</text>
+    <text x="610" y="198" text-anchor="middle" font-size="10" fill="var(--fg-muted)">PCR0 = PCR1 = PCR2 = 0x000...000</text>
+    <text x="610" y="213" text-anchor="middle" font-size="10" fill="var(--diagram-fake)">Proves nothing about binary integrity</text>
+
+    <rect x="440" y="230" width="340" height="58" rx="6" fill="var(--bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="610" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">/get_attestation = unavailable</text>
+    <text x="610" y="268" text-anchor="middle" font-size="10" fill="var(--fg-muted)">Needs NSM driver (Nitro Secure Module)</text>
+    <text x="610" y="283" text-anchor="middle" font-size="10" fill="var(--diagram-fake)">Only works inside real AWS Nitro hardware</text>
+
+    <rect x="440" y="300" width="340" height="58" rx="6" fill="var(--bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="610" y="322" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Hardware isolation = none</text>
+    <text x="610" y="338" text-anchor="middle" font-size="10" fill="var(--fg-muted)">Process runs in your normal OS</text>
+    <text x="610" y="353" text-anchor="middle" font-size="10" fill="var(--diagram-fake)">Memory readable by host (no security guarantee)</text>
+  </svg>
+  <figcaption>Left: everything that works identically to production. Right: the three things that are test stubs.</figcaption>
+</figure>
+
+<h3>The Local Dev Loop</h3>
+<pre><code># 1. Run Rust server locally (no AWS needed)
+cargo run --features=price-oracle --bin nautilus-server
+
+# 2. Hit the process endpoint
+curl http://localhost:3000/process_data -d '{"coin_id":"sui"}'
+# &rarr; returns {response: ..., signature: ...}
+
+# 3. Submit signed payload to Move contract on Sui testnet
+sui client call --package 0x... --module price_oracle \
+  --function update_price --args ... $SIGNATURE
+
+# 4. Move contract runs verify_signature()
+#    Passes using all-zero PCRs + deterministic pubkey
+# Total AWS cost: $0</code></pre>
+
+<aside class="success">
+  <strong>What this validates:</strong> Your entire Rust&rarr;BCS&rarr;sign&rarr;Move verify pipeline works end-to-end. BCS field ordering bugs, payload format mismatches, signature encoding issues &mdash; all caught locally, for free. The only thing you can't test locally is the AWS attestation document.
+</aside>
+
+<aside class="warning">
+  <strong>When to graduate:</strong> Once the local loop works, deploy to real AWS Nitro (~$0.19/hr self-managed) or Marlin Oyster (pay-per-minute). Remove the deterministic seed, use real PCRs from your reproducible build, call <code>register_enclave.sh</code> with a real attestation document. The Move contract doesn't change &mdash; only the PCR values and pubkey do.
+</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="decide">
+<h2>6. Decision Flow &mdash; Should I Use Nautilus?</h2>
+
+<figure>
+  <svg viewBox="0 0 820 560" width="820" height="560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision flowchart for whether to use Nautilus">
+    <defs>
+      <marker id="arrR" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--diagram-fake)"/>
+      </marker>
+      <marker id="arrG" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--diagram-real)"/>
+      </marker>
+      <marker id="arrN" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--diagram-edge)"/>
+      </marker>
+    </defs>
+
+    <!-- Q1 -->
+    <rect x="250" y="10" width="320" height="50" rx="8" fill="var(--diagram-node-bg)" stroke="var(--diagram-node-border)" stroke-width="2"/>
+    <text x="410" y="32" text-anchor="middle" font-size="12" font-weight="600" fill="var(--diagram-node-fg)">Are you locked to EVM by</text>
+    <text x="410" y="48" text-anchor="middle" font-size="12" font-weight="600" fill="var(--diagram-node-fg)">users, liquidity, or partners?</text>
+
+    <line x1="573" y1="35" x2="648" y2="35" stroke="var(--diagram-fake)" stroke-width="2" marker-end="url(#arrR)"/>
+    <text x="610" y="28" font-size="11" font-weight="600" fill="var(--diagram-fake)">Yes</text>
+    <rect x="653" y="10" width="155" height="50" rx="6" fill="var(--diagram-fake-bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="730" y="32" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">Use Phala, Sapphire,</text>
+    <text x="730" y="48" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">Oyster-EVM, or CL Fns</text>
+
+    <line x1="410" y1="65" x2="410" y2="95" stroke="var(--diagram-real)" stroke-width="2" marker-end="url(#arrG)"/>
+    <text x="425" y="83" font-size="11" font-weight="600" fill="var(--diagram-real)">No</text>
+
+    <!-- Q2 -->
+    <rect x="230" y="100" width="360" height="50" rx="8" fill="var(--diagram-node-bg)" stroke="var(--diagram-node-border)" stroke-width="2"/>
+    <text x="410" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="var(--diagram-node-fg)">Is your core problem TEE-solvable?</text>
+    <text x="410" y="138" text-anchor="middle" font-size="10" fill="var(--fg-muted)">(secrets, private state, attested compute, app-specific oracle)</text>
+
+    <line x1="593" y1="125" x2="648" y2="125" stroke="var(--diagram-fake)" stroke-width="2" marker-end="url(#arrR)"/>
+    <text x="620" y="118" font-size="11" font-weight="600" fill="var(--diagram-fake)">No</text>
+    <rect x="653" y="100" width="155" height="50" rx="6" fill="var(--diagram-fake-bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="730" y="122" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">Nautilus doesn't</text>
+    <text x="730" y="138" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">help with this</text>
+
+    <line x1="410" y1="155" x2="410" y2="185" stroke="var(--diagram-real)" stroke-width="2" marker-end="url(#arrG)"/>
+    <text x="425" y="173" font-size="11" font-weight="600" fill="var(--diagram-real)">Yes</text>
+
+    <!-- Q3 -->
+    <rect x="210" y="190" width="400" height="50" rx="8" fill="var(--diagram-node-bg)" stroke="var(--diagram-node-border)" stroke-width="2"/>
+    <text x="410" y="212" text-anchor="middle" font-size="12" font-weight="600" fill="var(--diagram-node-fg)">Do you need fully confidential smart contracts?</text>
+    <text x="410" y="228" text-anchor="middle" font-size="10" fill="var(--fg-muted)">(calldata, state, and events ALL encrypted by default)</text>
+
+    <line x1="613" y1="215" x2="648" y2="215" stroke="var(--diagram-fake)" stroke-width="2" marker-end="url(#arrR)"/>
+    <text x="630" y="208" font-size="11" font-weight="600" fill="var(--diagram-fake)">Yes</text>
+    <rect x="653" y="190" width="155" height="50" rx="6" fill="var(--diagram-fake-bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="730" y="212" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">Use Oasis Sapphire</text>
+    <text x="730" y="228" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">or TEN Protocol</text>
+
+    <line x1="410" y1="245" x2="410" y2="275" stroke="var(--diagram-real)" stroke-width="2" marker-end="url(#arrG)"/>
+    <text x="460" y="263" font-size="11" font-weight="600" fill="var(--diagram-real)">Selective is fine</text>
+
+    <!-- Q4 -->
+    <rect x="230" y="280" width="360" height="50" rx="8" fill="var(--diagram-node-bg)" stroke="var(--diagram-node-border)" stroke-width="2"/>
+    <text x="410" y="302" text-anchor="middle" font-size="12" font-weight="600" fill="var(--diagram-node-fg)">Can your team absorb ~4-8 weeks of</text>
+    <text x="410" y="318" text-anchor="middle" font-size="12" font-weight="600" fill="var(--diagram-node-fg)">Move + Rust ramp-up?</text>
+
+    <line x1="593" y1="305" x2="648" y2="305" stroke="var(--diagram-fake)" stroke-width="2" marker-end="url(#arrR)"/>
+    <text x="620" y="298" font-size="11" font-weight="600" fill="var(--diagram-fake)">No</text>
+    <rect x="653" y="280" width="155" height="50" rx="6" fill="var(--diagram-fake-bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="730" y="302" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">Stay on EVM with</text>
+    <text x="730" y="318" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">Phala / Marlin / CL</text>
+
+    <line x1="410" y1="335" x2="410" y2="365" stroke="var(--diagram-real)" stroke-width="2" marker-end="url(#arrG)"/>
+    <text x="425" y="353" font-size="11" font-weight="600" fill="var(--diagram-real)">Yes</text>
+
+    <!-- Q5 -->
+    <rect x="195" y="370" width="430" height="50" rx="8" fill="var(--diagram-node-bg)" stroke="var(--diagram-node-border)" stroke-width="2"/>
+    <text x="410" y="392" text-anchor="middle" font-size="12" font-weight="600" fill="var(--diagram-node-fg)">Comfortable with AWS Nitro as your trust root?</text>
+    <text x="410" y="408" text-anchor="middle" font-size="10" fill="var(--fg-muted)">(optionally managed by Marlin Oyster)</text>
+
+    <line x1="628" y1="395" x2="648" y2="395" stroke="var(--diagram-fake)" stroke-width="2" marker-end="url(#arrR)"/>
+    <text x="638" y="388" font-size="11" font-weight="600" fill="var(--diagram-fake)">No</text>
+    <rect x="653" y="370" width="155" height="50" rx="6" fill="var(--diagram-fake-bg)" stroke="var(--diagram-fake)" stroke-width="1.5"/>
+    <text x="730" y="392" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">Phala has broader</text>
+    <text x="730" y="408" text-anchor="middle" font-size="11" fill="var(--diagram-fake)">multi-TEE roadmap</text>
+
+    <line x1="410" y1="425" x2="410" y2="455" stroke="var(--diagram-real)" stroke-width="2" marker-end="url(#arrG)"/>
+    <text x="425" y="443" font-size="11" font-weight="600" fill="var(--diagram-real)">Yes</text>
+
+    <!-- Result -->
+    <rect x="210" y="460" width="400" height="80" rx="10" fill="var(--diagram-real-bg)" stroke="var(--diagram-real)" stroke-width="2.5"/>
+    <text x="410" y="490" text-anchor="middle" font-size="16" font-weight="700" fill="var(--diagram-real)">Nautilus is a strong choice.</text>
+    <text x="410" y="512" text-anchor="middle" font-size="12" fill="currentColor">Start with local dev mode ($0).</text>
+    <text x="410" y="530" text-anchor="middle" font-size="12" fill="currentColor">Build a prototype before committing.</text>
+  </svg>
+  <figcaption>Five questions. Each "No" gives you the right alternative for your situation.</figcaption>
+</figure>
+</section>
+
+<!-- TL;DR -->
+<details>
+  <summary>TL;DR &mdash; The One-Paragraph Summary</summary>
+  <p>Nautilus is Mysten Labs' framework for running Rust code inside AWS Nitro Enclaves with cryptographic proof on Sui. The enclave generates a keypair (private key never leaves hardware), signs every output with BCS encoding, and a Move contract verifies the signature against a registered pubkey + PCR hashes that commit to the exact binary running inside the enclave. AWS Nitro is the hardware; Marlin Oyster is an optional managed marketplace for that hardware; running on either is "still Nautilus" because the framework (Rust template + Move contracts + reproducible build pipeline) stays the same. "Mocking locally" means replacing the ephemeral key with a deterministic seed and PCRs with all-zeros, which gives you a full signing-to-verification dev loop for $0 &mdash; you just don't get real attestation guarantees until you deploy to actual Nitro hardware. Compared to EVM solutions: Chainlink Functions has no TEE, Phala has broader TEE diversity but looser chain coupling, Oasis Sapphire is fully confidential EVM (Nautilus is selective), and Flashbots SUAVE is Ethereum-MEV-specific. Nautilus's edge is the tightest TEE-to-chain integration via BCS, reproducible builds by default, and first-party Mysten maintenance &mdash; but the cost is leaving EVM and learning Move + Rust.</p>
+</details>
+
+</main>
+
+<footer>
+  <p>Source: Sui Nautilus documentation (docs.sui.io/sui-stack/nautilus), MystenLabs/nautilus repo, evm-sui/nautilus research notes. May 2026.</p>
+</footer>
+
+</body>
+</html>

@@ -34,6 +34,9 @@
       <a href="04-dao-proposals.html">04 DAO</a>
       <a href="05-verifiable-manifest.html">05 Manifest</a>
       <a href="06-quilted-collection.html">06 Quilt</a>
+      <a href="nautilus-rfq.html">N1 RFQ</a>
+      <a href="nautilus-liquidation.html">N2 Liq</a>
+      <a href="nautilus-batch-swap.html">N3 Batch</a>
       <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
     </span>
   </div>
@@ -338,6 +341,149 @@
               <div class="box accent">store-quilt ×2</div>
               <div class="arrow">→</div>
               <div class="box">contract(QID_META)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ─── nautilus defi ─────────────────────────────────────────── -->
+<section>
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">nautilus defi</span>
+      <h2>Three DeFi examples with TEE-private matching.</h2>
+    </div>
+    <p class="section-sub" style="margin-bottom: 40px;">
+      A complementary pillar: Nautilus enclaves run DeFi matching logic inside AWS Nitro TEEs.
+      Sui verifies, Walrus stores the proof, Solidity stubs show EVM settlement.
+    </p>
+
+    <!-- N1 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">N1</span>
+        <h3><a href="nautilus-rfq.html">Sealed RFQ — private quote matching</a></h3>
+        <span class="tag">nautilus · rfq/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            A Nautilus enclave collects maker quotes over TLS, picks the <strong>lowest price</strong>
+            for the taker (argmin), signs the result with Ed25519, and posts proof to Sui. No one sees
+            the quotes before the match — no MEV, no front-running.
+          </p>
+          <div class="effort">
+            <span class="pill good">simplest</span>
+            <span class="pill">Rust · Move · Solidity</span>
+            <span class="pill accent">1 taker, N makers</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape</div>
+<pre class="code"><span class="c">// Rust — select best quote</span>
+<span class="k">fn</span> <span class="f">select_best_quote</span>(quotes, now_ms)
+    -&gt; <span class="t">Option</span>&lt;&amp;<span class="t">Quote</span>&gt; {
+    quotes.iter()
+        .filter(|q| q.expiry_ms &gt; now_ms)
+        .min_by_key(|q| q.price)
+}</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">makers TLS</div>
+              <div class="arrow">→</div>
+              <div class="box accent">enclave argmin</div>
+              <div class="arrow">→</div>
+              <div class="box">Sui verify</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- N2 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">N2</span>
+        <h3><a href="nautilus-liquidation.html">Sealed Liquidation — fair bid selection</a></h3>
+        <span class="tag">nautilus · liquidation/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            When a DeFi position goes under-collateralised, sealed bids compete on <strong>liquidation
+            bonus</strong> (argmax), not on gas speed. The enclave picks the bidder offering the highest
+            bonus to the protocol, signs the result, and posts proof to Sui.
+          </p>
+          <div class="effort">
+            <span class="pill good">medium</span>
+            <span class="pill">Rust · Move · Solidity</span>
+            <span class="pill accent">1 event, N bidders</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape</div>
+<pre class="code"><span class="c">// Rust — select best bid</span>
+<span class="k">fn</span> <span class="f">select_best_bid</span>(bids, now_ms)
+    -&gt; <span class="t">Option</span>&lt;&amp;<span class="t">Bid</span>&gt; {
+    bids.iter()
+        .filter(|b| b.expiry_ms &gt; now_ms)
+        .max_by_key(|b| b.liquidation_bonus_bps)
+}</pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">bidders TLS</div>
+              <div class="arrow">→</div>
+              <div class="box accent">enclave argmax</div>
+              <div class="arrow">→</div>
+              <div class="box">Sui verify</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- N3 -->
+    <article class="showcase">
+      <div class="showcase-head">
+        <span class="num">N3</span>
+        <h3><a href="nautilus-batch-swap.html">Sealed Batch Swap — crossing-order auction</a></h3>
+        <span class="tag">nautilus · batch-swap/</span>
+      </div>
+      <div class="showcase-body">
+        <div class="showcase-prose">
+          <h4>What it shows</h4>
+          <p class="fix">
+            A CoW-style batch auction inside a TEE. Buy and sell orders are collected during an auction
+            window, the enclave computes a <strong>uniform clearing price</strong> at the crossing point,
+            and all eligible orders fill at that price. No sandwich attacks possible.
+          </p>
+          <div class="effort">
+            <span class="pill good">most complex</span>
+            <span class="pill">Rust · Move · Solidity</span>
+            <span class="pill accent">N buyers + M sellers</span>
+          </div>
+        </div>
+        <div class="showcase-code">
+          <div class="caption">Shape</div>
+<pre class="code"><span class="c">// Rust — crossing-order match</span>
+<span class="c">// buys desc, sells asc → midpoint</span>
+<span class="k">let</span> clearing_price =
+    (buys[<span class="n">0</span>].limit_price
+   + sells[<span class="n">0</span>].limit_price) / <span class="n">2</span>;
+<span class="c">// fill buys >= clearing, sells <= clearing</span></pre>
+          <div class="flow">
+            <div class="flow-row">
+              <div class="box">orders TLS</div>
+              <div class="arrow">→</div>
+              <div class="box accent">enclave cross</div>
+              <div class="arrow">→</div>
+              <div class="box">Sui verify</div>
             </div>
           </div>
         </div>

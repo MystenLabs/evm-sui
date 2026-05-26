@@ -16,5 +16,16 @@ manifest.json
 .remember/
 .claude-pr-review/
 
+# Rust build artifacts
+nautilus/enclave-server/target/
+
+# Foundry artifacts (nautilus contracts)
+nautilus/contracts/out/
+nautilus/contracts/cache/
+nautilus/contracts/lib/
+
+# Move build artifacts
+nautilus/move/*/build/
+
 # macOS / editor noise
 .DS_Store
