@@ -201,7 +201,7 @@ That's the well-known Anvil dev-0 private key. Safe for local dev, never for a r
 ```solidity
 function mint(string memory tokenURI_) external returns (uint256 tokenId);
 function mintTo(address to, string memory tokenURI_) external returns (uint256 tokenId);
-event Minted(uint256 indexed tokenId, address indexed minter, string tokenURI_);
+event Minted(uint256 indexed tokenId, address indexed to, string tokenURI_);
 ```
 
 `mint` is public — anyone can self-mint. `mintTo` is the gift-mint variant. `Ownable` is still inherited but no longer gates minting (reserved for future admin needs).

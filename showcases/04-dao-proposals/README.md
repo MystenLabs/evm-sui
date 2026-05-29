@@ -57,20 +57,27 @@ The proposer pays WAL via the public publisher; the DAO contract never holds WAL
 | Snapshot adapter is an integration the DAO can't audit cheaply | Three contract methods (`propose` / `vote` / `tally`) and one publisher PUT — auditable in one sitting |
 | Pinning lifetime depends on a vendor contract | `epochs` is a value the proposer chose; renewal is a Sui tx anyone can pay |
 
-## ⚠️ Showcase-only voting surface
+## Voting surface
 
-`Governance.vote()` reads `voteToken.balanceOf(msg.sender)` at the instant
-of the call. **Against any ERC-20 with a flash-mint or flash-borrow
-integration, this is exploitable.** An attacker can borrow tokens, vote,
-and repay in a single transaction.
+`Governance.vote()` weights each vote by snapshotted voting power:
+`IVotes(voteToken).getPastVotes(msg.sender, startBlock)`, where `startBlock`
+is the block recorded when the proposal was created. Because the snapshot is
+fixed in the past, tokens that are flash-borrowed, flash-minted, or moved to a
+fresh wallet *after* the proposal was created carry **zero** weight — the
+flash-loan and vote-recycling attacks against a live `balanceOf` read are
+closed.
 
-This contract is a demonstration of the **Walrus integration shape** —
+Two requirements follow from using OpenZeppelin's `Votes`:
+
+- `voteToken` must implement `IVotes` (an `ERC20Votes` token, for example).
+- Holders must **delegate** (self-delegation is fine) before the snapshot
+  block, or their balance counts for nothing.
+
+This contract is still a demonstration of the **Walrus integration shape** —
 proposer-pays publisher PUT, on-chain pointer, deterministic aggregator
-resolution. The voting math is deliberately minimal.
-
-For production: pair with an OpenZeppelin `ERC20Votes` token and switch
-`vote()` to `IVotes(voteToken).getPastVotes(msg.sender, proposalStartBlock)`.
-See the NatSpec at the top of [`Governance.sol`](../contracts/src/Governance.sol).
+resolution. The voting envelope is deliberately minimal (no quorum, no
+on-chain execution). See the NatSpec at the top of
+[`Governance.sol`](../contracts/src/Governance.sol).
 
 ## CLI flow
 
@@ -133,9 +140,11 @@ The contract stores it as `uint64`.
 ## What this showcase is NOT
 
 - **Not a Snapshot replacement.** No off-chain signature aggregation, no
-  EIP-712 envelope, no delegate weight, no quorum logic. The contract is
+  EIP-712 envelope, no quorum logic, no on-chain execution. The contract is
   a demonstration of *where the body lives*, not the full vote envelope.
-- **Not a production governance contract.** See the flash-loan warning above.
+- **Not a full governance framework.** Voting power is snapshotted via
+  `IVotes.getPastVotes` (see "Voting surface" above), but there is no quorum,
+  proposal threshold, timelock, or execution path — add those for production.
 - **Not a Walrus pricing oracle.** `epochs` is a number the proposer
   picks. WAL cost is paid by the proposer's wallet to the publisher
   upfront — neither the DAO contract nor the voters touch WAL.
