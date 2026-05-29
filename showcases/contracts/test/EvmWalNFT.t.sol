@@ -11,7 +11,7 @@ contract EvmWalNFTTest is Test {
     address internal bob   = address(0xCAFE);
     address internal carol = address(0xD00D);
 
-    event Minted(uint256 indexed tokenId, address indexed minter, string tokenURI_);
+    event Minted(uint256 indexed tokenId, address indexed to, string tokenURI_);
 
     function setUp() public {
         nft = new EvmWalNFT(owner);
