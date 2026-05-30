@@ -1,5 +1,0 @@
-# Loaded by /health_check at runtime. Duplicated here so `cargo run` from
-# this directory finds it; the canonical per-app copy lives at
-# src/apps/price_oracle/allowed_endpoints.yaml.
-endpoints:
-  - api.coingecko.com
