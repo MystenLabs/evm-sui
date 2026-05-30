@@ -8,7 +8,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract EvmWalNFT is ERC721, ERC721URIStorage, Ownable {
     uint256 private _nextTokenId = 1;
 
-    event Minted(uint256 indexed tokenId, address indexed minter, string tokenURI_);
+    /// @dev `to` is the token recipient/owner — the address the NFT is minted
+    /// to, not necessarily the caller. In the `mintTo` gift path the caller and
+    /// recipient differ, so indexing `to` keeps off-chain attribution aligned
+    /// with the ERC-721 `Transfer` event.
+    event Minted(uint256 indexed tokenId, address indexed to, string tokenURI_);
 
     constructor(address initialOwner)
         ERC721("EvmWal NFT", "WALNFT")
@@ -29,7 +33,7 @@ contract EvmWalNFT is ERC721, ERC721URIStorage, Ownable {
         tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, tokenURI_);
-        emit Minted(tokenId, msg.sender, tokenURI_);
+        emit Minted(tokenId, to, tokenURI_);
     }
 
     function totalSupply() external view returns (uint256) {

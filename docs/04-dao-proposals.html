@@ -3,14 +3,530 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Showcase 04 — DAO governance proposals · Walrus - EVM Integrations</title>
+<title>Showcase 04 — DAO governance proposals · EVM × Sui</title>
 <meta name="description" content="The Snapshot pattern, off IPFS: proposer pays WAL via the public publisher, the contract holds only the 32-byte blobId + deadline + tallies, and tooling is two TS CLIs (propose + tally)." />
 <meta property="og:title" content="Showcase 04 — DAO governance proposals on Walrus" />
 <meta property="og:description" content="Proposer-pays Walrus storage; blobId stored on-chain; vote and tally with one EVM call each." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://mystenlabs.github.io/evm-wal/04-dao-proposals.html" />
-<link rel="canonical" href="https://mystenlabs.github.io/evm-wal/04-dao-proposals.html" />
-<link rel="stylesheet" href="style.css" />
+<meta property="og:url" content="https://mystenlabs.github.io/evm-sui/04-dao-proposals.html" />
+<link rel="canonical" href="https://mystenlabs.github.io/evm-sui/04-dao-proposals.html" />
+<style>
+/* ─── design tokens ────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light dark;
+  /* light (default) */
+  --bg: #ffffff;
+  --bg-soft: #f6f8fa;
+  --bg-card: #ffffff;
+  --bg-elev: #f0f2f5;
+  --line: #d1d9e0;
+  --line-soft: #e8ecf0;
+  --text: #1f2328;
+  --text-soft: #656d76;
+  --text-dim: #8b949e;
+  --accent: #0969da;
+  --accent-soft: rgba(9, 105, 218, 0.08);
+  --accent-line: rgba(9, 105, 218, 0.25);
+  --warn: #9a6700;
+  --warn-soft: rgba(154, 103, 0, 0.08);
+  --good: #1a7f37;
+  --good-soft: rgba(26, 127, 55, 0.08);
+  --bad: #cf222e;
+  --bad-soft: rgba(207, 34, 46, 0.08);
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --maxw: 1120px;
+  /* syntax highlighting */
+  --syn-kw: #a626a4;
+  --syn-str: #50a14f;
+  --syn-num: #4078f2;
+  --syn-fn: #c18401;
+  --syn-type: #0184bc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #07080b;
+    --bg-soft: #0d1015;
+    --bg-card: #11151b;
+    --bg-elev: #161b22;
+    --line: #1f2630;
+    --line-soft: #161c25;
+    --text: #e6edf3;
+    --text-soft: #9aa6b2;
+    --text-dim: #5e6a78;
+    --accent: #4da2ff;
+    --accent-soft: rgba(77, 162, 255, 0.12);
+    --accent-line: rgba(77, 162, 255, 0.35);
+    --warn: #f0b429;
+    --warn-soft: rgba(240, 180, 41, 0.1);
+    --good: #4ade80;
+    --good-soft: rgba(74, 222, 128, 0.1);
+    --bad: #f87171;
+    --bad-soft: rgba(248, 113, 113, 0.1);
+    --syn-kw: #c792ea;
+    --syn-str: #c3e88d;
+    --syn-num: #82aaff;
+    --syn-fn: #ffcb6b;
+    --syn-type: #89ddff;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 120ms ease; }
+a:hover { border-bottom-color: var(--accent); }
+
+::selection { background: var(--accent-soft); color: var(--text); }
+
+/* ─── shell ────────────────────────────────────────────────────────────── */
+.shell { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+/* ─── top rail ─────────────────────────────────────────────────────────── */
+.rail {
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  position: sticky; top: 0; z-index: 10;
+  backdrop-filter: blur(8px);
+}
+.rail-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0;
+  font-size: 13px;
+  color: var(--text-soft);
+  letter-spacing: 0.02em;
+}
+.rail .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; }
+.rail .brand a { color: inherit; border: 0; }
+.rail .brand svg { display: block; }
+.rail .nav { display: flex; align-items: center; gap: 20px; font-family: var(--mono); font-size: 12px; }
+.rail .nav a { color: var(--text-soft); }
+.rail .nav a:hover { color: var(--text); }
+.rail .crumbs { font-family: var(--mono); font-size: 12px; }
+.rail .crumbs span { color: var(--text-dim); }
+.rail .crumbs em { color: var(--text-soft); font-style: normal; }
+.rail .crumbs strong { color: var(--text); font-weight: 500; }
+
+/* ─── hero ─────────────────────────────────────────────────────────────── */
+.hero { padding: 80px 0 56px; border-bottom: 1px solid var(--line); position: relative; overflow: hidden; }
+.hero::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(1100px 400px at 20% -10%, rgba(77, 162, 255, 0.10), transparent 60%),
+              radial-gradient(800px 280px at 90% 30%, rgba(77, 162, 255, 0.06), transparent 60%);
+  pointer-events: none;
+}
+.hero-inner { position: relative; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); padding: 6px 12px; border: 1px solid var(--accent-line); border-radius: 999px;
+  background: var(--accent-soft);
+}
+h1 {
+  font-size: clamp(36px, 5.4vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  margin: 24px 0 18px;
+  max-width: 22ch;
+}
+h1 em { font-style: normal; color: var(--accent); }
+.lede {
+  font-size: 19px; line-height: 1.55; color: var(--text-soft); max-width: 68ch; margin: 0 0 28px;
+}
+.meta {
+  display: flex; flex-wrap: wrap; gap: 24px;
+  font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.meta strong { color: var(--text-soft); font-weight: 500; }
+
+/* ─── sections ─────────────────────────────────────────────────────────── */
+section { padding: 72px 0; border-bottom: 1px solid var(--line); }
+section.tight { padding: 56px 0; }
+.section-head {
+  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+.section-num {
+  font-family: var(--mono); font-size: 12px; color: var(--accent);
+  letter-spacing: 0.16em; text-transform: uppercase;
+}
+h2 {
+  font-size: clamp(26px, 3vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+  margin: 0;
+  max-width: 24ch;
+}
+h3 { font-size: 20px; font-weight: 600; margin: 0 0 10px; letter-spacing: -0.01em; }
+h4 { font-size: 14px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
+.section-sub {
+  color: var(--text-soft);
+  max-width: 64ch;
+  font-size: 17px;
+  margin: 14px 0 0;
+}
+p { color: var(--text-soft); font-size: 16px; line-height: 1.65; }
+p strong { color: var(--text); font-weight: 600; }
+ul, ol { color: var(--text-soft); padding-left: 22px; line-height: 1.7; }
+li { margin-bottom: 6px; }
+li strong { color: var(--text); }
+code {
+  font-family: var(--mono);
+  color: var(--text);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+/* ─── pain anchor strip ────────────────────────────────────────────────── */
+.pain-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+}
+@media (max-width: 880px) { .pain-grid { grid-template-columns: 1fr; } }
+.pain-card {
+  border: 1px solid var(--line);
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 22px 22px 20px;
+  position: relative;
+}
+.pain-card .stat {
+  font-family: var(--mono);
+  font-size: 11px; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.pain-card blockquote {
+  margin: 0 0 14px; padding: 0;
+  font-size: 16px; line-height: 1.5; color: var(--text);
+  font-weight: 500;
+}
+.pain-card cite {
+  font-style: normal; font-size: 12px; color: var(--text-soft); font-family: var(--mono);
+}
+.pain-card .corner {
+  position: absolute; top: 0; right: 0; padding: 6px 10px;
+  border-left: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  border-radius: 0 10px 0 10px;
+  font-family: var(--mono); font-size: 11px; color: var(--bad);
+  background: var(--bad-soft);
+}
+
+/* ─── thesis grid (two-column) ─────────────────────────────────────────── */
+.thesis-grid {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: start;
+}
+@media (max-width: 880px) { .thesis-grid { grid-template-columns: 1fr; gap: 28px; } }
+.thesis-grid p { color: var(--text-soft); font-size: 17px; line-height: 1.65; margin: 0 0 18px; }
+.thesis-grid p strong { color: var(--text); font-weight: 600; }
+.thesis-grid .callout {
+  border-left: 2px solid var(--accent);
+  padding: 4px 0 4px 20px;
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.thesis-grid .callout em { color: var(--accent); font-style: normal; }
+
+.pillars { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.pillar {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 16px 18px;
+  background: var(--bg-soft);
+  display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: start;
+}
+.pillar svg { margin-top: 2px; }
+.pillar h4 { margin: 0 0 4px; font-size: 14px; color: var(--text); font-weight: 600; }
+.pillar p { margin: 0; font-size: 14px; color: var(--text-soft); line-height: 1.55; }
+
+/* ─── template recap (two-column) ──────────────────────────────────────── */
+.template {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: stretch;
+}
+@media (max-width: 880px) { .template { grid-template-columns: 1fr; } }
+.template > div { display: flex; flex-direction: column; }
+.template h3 { margin: 0 0 10px; font-size: 18px; font-weight: 600; }
+.template p { color: var(--text-soft); margin: 0 0 16px; }
+
+/* ─── code blocks ──────────────────────────────────────────────────────── */
+pre, code { font-family: var(--mono); }
+pre.code {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 0;
+}
+pre.code code { background: transparent; border: 0; padding: 0; }
+pre.code .k { color: var(--syn-kw); }
+pre.code .s { color: var(--syn-str); }
+pre.code .n { color: var(--syn-num); }
+pre.code .c { color: var(--text-dim); font-style: italic; }
+pre.code .f { color: var(--syn-fn); }
+pre.code .t { color: var(--syn-type); }
+
+/* ─── showcase cards (used on landing) ─────────────────────────────────── */
+.showcase {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-soft) 100%);
+  overflow: hidden;
+  margin: 0 0 28px;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+.showcase:hover { border-color: var(--accent-line); }
+.showcase-head {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-elev);
+}
+.showcase-head .num {
+  font-family: var(--mono); font-size: 13px; color: var(--accent);
+  letter-spacing: 0.16em;
+}
+.showcase-head h3 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.showcase-head h3 a { color: inherit; border-bottom: 0; }
+.showcase-head h3 a:hover { color: var(--accent); }
+.showcase-head .tag {
+  font-family: var(--mono); font-size: 11px; color: var(--text-soft);
+  border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+.showcase-body {
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: 0;
+}
+@media (max-width: 980px) { .showcase-body { grid-template-columns: 1fr; } }
+.showcase-prose, .showcase-code {
+  padding: 24px 28px;
+}
+.showcase-prose { border-right: 1px solid var(--line); }
+@media (max-width: 980px) { .showcase-prose { border-right: none; border-bottom: 1px solid var(--line); } }
+
+.showcase-prose h4 {
+  margin: 0 0 8px; font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.16em; text-transform: uppercase; font-family: var(--mono);
+  font-weight: 500;
+}
+.showcase-prose .pain-quote {
+  border-left: 2px solid var(--bad);
+  padding: 2px 0 2px 14px;
+  margin: 0 0 18px;
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.showcase-prose .pain-quote em { color: var(--text-soft); font-style: normal; font-size: 12px; display: block; margin-top: 6px; }
+.showcase-prose .fix {
+  color: var(--text-soft); font-size: 15px; line-height: 1.65; margin: 0 0 18px;
+}
+.showcase-prose .fix strong { color: var(--text); font-weight: 600; }
+.showcase-prose .effort {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px;
+}
+.pill {
+  font-family: var(--mono); font-size: 11px;
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--text-soft); background: var(--bg-soft);
+  letter-spacing: 0.04em;
+}
+.pill.good { color: var(--good); border-color: rgba(74, 222, 128, 0.3); background: var(--good-soft); }
+.pill.accent { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.pill.warn { color: var(--warn); border-color: rgba(240, 180, 41, 0.3); background: var(--warn-soft); }
+.pill.bad { color: var(--bad); border-color: rgba(248, 113, 113, 0.3); background: var(--bad-soft); }
+
+.showcase-code .caption {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+/* ─── flow diagrams ───────────────────────────────────────────────────── */
+.flow {
+  margin: 16px 0 0;
+  border-top: 1px dashed var(--line);
+  padding-top: 16px;
+}
+.flow-row {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; align-items: center;
+  font-family: var(--mono); font-size: 11px;
+}
+.flow-row .box {
+  padding: 8px 6px; border: 1px solid var(--line); border-radius: 6px;
+  text-align: center; background: var(--bg-elev); color: var(--text-soft);
+  line-height: 1.3;
+}
+.flow-row .box.accent { border-color: var(--accent-line); color: var(--accent); background: var(--accent-soft); }
+.flow-row .arrow { text-align: center; color: var(--text-dim); }
+
+/* ─── comparison matrix ────────────────────────────────────────────────── */
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table.matrix {
+  width: 100%; border-collapse: collapse; font-size: 13.5px;
+  min-width: 760px;
+}
+table.matrix th, table.matrix td {
+  text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top;
+}
+table.matrix thead th {
+  background: var(--bg-elev); color: var(--text); font-weight: 600;
+  font-size: 13px; letter-spacing: 0.02em; position: sticky; top: 0;
+}
+table.matrix tbody td:first-child { color: var(--text); font-weight: 500; width: 28%; }
+table.matrix tbody td { color: var(--text-soft); }
+table.matrix tbody tr:last-child td { border-bottom: none; }
+table.matrix td.pain { color: var(--bad); }
+table.matrix td.fix { color: var(--good); }
+table.matrix td code { font-size: 0.85em; }
+
+/* ─── sequencing ladder ───────────────────────────────────────────────── */
+.ladder { display: grid; grid-template-columns: 1fr; gap: 12px; counter-reset: rung; }
+.rung {
+  display: grid; grid-template-columns: 56px 1fr auto; gap: 16px; align-items: center;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bg-card);
+  padding: 16px 20px;
+}
+.rung::before {
+  counter-increment: rung; content: counter(rung, decimal-leading-zero);
+  font-family: var(--mono); font-size: 18px; color: var(--accent);
+  letter-spacing: 0.04em;
+}
+.rung h4 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.rung p { margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.5; }
+.rung .estimate { font-family: var(--mono); font-size: 12px; color: var(--text-soft); white-space: nowrap; }
+@media (max-width: 720px) {
+  .rung { grid-template-columns: 40px 1fr; }
+  .rung .estimate { grid-column: 1 / -1; text-align: left; padding-left: 56px; }
+}
+
+/* ─── walkthrough steps (showcase pages) ──────────────────────────────── */
+.step {
+  display: grid; grid-template-columns: 56px 1fr; gap: 22px;
+  padding: 22px 0; border-top: 1px solid var(--line);
+}
+.step:first-child { border-top: 0; padding-top: 0; }
+.step .num {
+  font-family: var(--mono); font-size: 20px; color: var(--accent);
+  letter-spacing: 0.04em; line-height: 1; padding-top: 2px;
+}
+.step h3 { margin: 0 0 8px; }
+.step p { margin: 0 0 12px; }
+.step p:last-child { margin-bottom: 0; }
+.step pre.code { margin: 12px 0 0; }
+.step .pill { margin-right: 6px; }
+@media (max-width: 720px) {
+  .step { grid-template-columns: 1fr; gap: 8px; }
+}
+
+/* ─── env table (showcase walkthroughs) ────────────────────────────────── */
+table.env {
+  width: 100%; border-collapse: collapse; font-size: 13.5px;
+  border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  margin: 12px 0 0;
+}
+table.env th, table.env td {
+  text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top;
+}
+table.env thead th {
+  background: var(--bg-elev); color: var(--text); font-weight: 600; font-size: 12px;
+  letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--mono);
+}
+table.env tbody td:first-child { font-family: var(--mono); color: var(--accent); white-space: nowrap; }
+table.env tbody td { color: var(--text-soft); }
+table.env tbody tr:last-child td { border-bottom: none; }
+
+/* ─── notice (warnings) ───────────────────────────────────────────────── */
+.notice {
+  border: 1px solid rgba(240, 180, 41, 0.3);
+  background: var(--warn-soft);
+  border-left: 3px solid var(--warn);
+  padding: 16px 20px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.notice strong { color: var(--warn); }
+.notice.bad { border-color: rgba(248, 113, 113, 0.3); background: var(--bad-soft); border-left-color: var(--bad); }
+.notice.bad strong { color: var(--bad); }
+
+/* ─── sibling nav (prev/next on showcase pages) ───────────────────────── */
+.siblings {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) { .siblings { grid-template-columns: 1fr; } }
+.sibling {
+  display: block;
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px 20px;
+  background: var(--bg-card);
+  color: var(--text);
+  transition: border-color 200ms ease;
+}
+.sibling:hover { border-color: var(--accent-line); border-bottom-color: var(--accent-line); }
+.sibling .label {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  margin: 0 0 6px;
+}
+.sibling .title { font-size: 16px; color: var(--text); font-weight: 600; line-height: 1.3; }
+.sibling.next { text-align: right; }
+.sibling.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ─── source-file list ────────────────────────────────────────────────── */
+.sources { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.sources a {
+  display: block;
+  font-family: var(--mono); font-size: 13px;
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 14px;
+  background: var(--bg-soft);
+  color: var(--text-soft);
+}
+.sources a:hover { color: var(--text); border-color: var(--accent-line); }
+.sources a strong { color: var(--accent); margin-right: 8px; }
+
+/* ─── caveats list (what this is NOT) ─────────────────────────────────── */
+.caveats { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.caveats li {
+  list-style: none; padding: 14px 18px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg-soft);
+}
+.caveats ul { padding-left: 0; margin: 0; }
+
+/* ─── footer ──────────────────────────────────────────────────────────── */
+footer { padding: 56px 0 80px; color: var(--text-soft); font-size: 14px; }
+footer .foot-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 48px; }
+@media (max-width: 720px) { footer .foot-grid { grid-template-columns: 1fr; gap: 24px; } }
+footer h5 { margin: 0 0 10px; color: var(--text); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--mono); }
+footer ul { margin: 0; padding: 0; list-style: none; }
+footer li { padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+footer li:last-child { border-bottom: none; }
+footer code { font-size: 12px; color: var(--text-dim); background: transparent; border: 0; padding: 0; }
+
+</style>
 </head>
 <body>
 
@@ -18,13 +534,14 @@
   <div class="shell rail-inner">
     <span class="brand">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
-        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+        <circle cx="12" cy="12" r="9.5" stroke="var(--accent)" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="var(--accent)" fill-opacity="0.85" />
       </svg>
-      <a href="./">Walrus - EVM Integrations</a>
+      <a href="./">EVM × Sui</a>
     </span>
-    <span class="crumbs">
-      <span>showcase</span> <em>/</em> <strong>04 · DAO proposals</strong>
+    <span class="nav">
+      <a href="walrus.html" style="color: var(--text);">Walrus</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
 </div>
@@ -39,8 +556,8 @@
       the DAO contract never holds WAL. Anyone reads the proposal anonymously through any Walrus aggregator.
     </p>
     <div class="meta">
-      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
-      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/showcases/04-dao-proposals">04-dao-proposals/</a></span>
+      <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
+      <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/04-dao-proposals">04-dao-proposals/</a></span>
       <span><strong>Stack:</strong> Solidity · viem · Walrus publisher API</span>
     </div>
   </div>
@@ -262,12 +779,12 @@
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
-      <a href="https://github.com/MystenLabs/evm-wal/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
     </div>
   </div>
 </section>
@@ -289,7 +806,7 @@
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;">Part of the <a href="./">Walrus - EVM Integrations</a> showcase set. <a href="https://github.com/MystenLabs/evm-wal">Repo on GitHub</a>.</p>
+    <p style="margin: 0;">Part of the <a href="./">EVM × Sui</a> examples. <a href="walrus.html">Walrus hub</a> · <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>.</p>
   </div>
 </footer>
 

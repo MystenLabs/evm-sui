@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 
 /// DAO governance with proposal bodies on Walrus.
 ///
@@ -11,22 +11,19 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// 32-byte Walrus blob id is stored on-chain alongside the deadline and the
 /// vote tallies.
 ///
-/// WARNING — NOT PRODUCTION-SAFE AS WRITTEN.
-/// Voting weight is read as the live `voteToken.balanceOf(msg.sender)` at the
-/// instant of the `vote()` call. If `voteToken` supports flash loans or
-/// flash mints (true of most modern ERC-20s integrated with Aave, Solidly
-/// forks, or any DEX with a `flash` hook), an attacker can borrow tokens,
-/// vote, and repay in a single transaction — overriding any honest tally.
-/// This contract is a showcase of the *Walrus integration shape* (proposer-
-/// pays blob storage, on-chain pointer, deterministic resolution) and
-/// deliberately keeps the voting surface minimal.
+/// Voting weight is *snapshotted*. Each proposal records the block in which it
+/// was created (`startBlock`), and `vote()` reads the caller's past voting
+/// power as of that block via `IVotes.getPastVotes`. Because the snapshot
+/// block is fixed at proposal-creation time and always lies strictly in the
+/// past by the time a vote is cast, tokens that are flash-borrowed,
+/// flash-minted, or transferred to a fresh wallet *after* the proposal was
+/// created carry zero weight. This closes the flash-loan and vote-recycling
+/// attacks that a live `balanceOf` read would otherwise expose.
 ///
-/// For production, replace the live `balanceOf` read with a past-balance
-/// snapshot: pair this contract with an OpenZeppelin `ERC20Votes` token,
-/// store the proposal's start block in `Proposal`, and read voting weight
-/// via `IVotes(voteToken).getPastVotes(msg.sender, proposalStartBlock)`.
-/// That is the only correct way to use this pattern against an asset that
-/// can be borrowed or rapidly transferred.
+/// `voteToken` MUST implement `IVotes` (e.g. an OpenZeppelin `ERC20Votes`
+/// token), and holders MUST delegate — self-delegation is fine — for their
+/// balance to count toward voting power. This is the standard OpenZeppelin
+/// Votes requirement, not specific to this contract.
 contract Governance {
     struct Proposal {
         address proposer;
@@ -34,9 +31,10 @@ contract Governance {
         uint64 deadline;    // unix seconds; voting closes when block.timestamp >= deadline
         uint128 yes;        // sum of voter weights for YES
         uint128 no;         // sum of voter weights for NO
+        uint48 startBlock;  // snapshot block for voting-weight lookups (getPastVotes)
     }
 
-    IERC20 public immutable voteToken;
+    IVotes public immutable voteToken;
     uint256 public lastProposalId;
 
     mapping(uint256 id => Proposal) public proposals;
@@ -45,12 +43,14 @@ contract Governance {
     event Proposed(uint256 indexed id, address indexed proposer, bytes32 blobId, uint64 deadline);
     event Voted(uint256 indexed id, address indexed voter, bool support, uint256 weight);
 
-    constructor(IERC20 voteToken_) {
+    constructor(IVotes voteToken_) {
         voteToken = voteToken_;
     }
 
     /// @notice Submit a new proposal. The blob must already be uploaded to
-    /// Walrus — this contract only stores the pointer.
+    /// Walrus — this contract only stores the pointer. The voting-weight
+    /// snapshot is taken at `block.number - 1` so it is already final and
+    /// queryable via `getPastVotes` for votes cast in this block or later.
     function propose(bytes32 blobId, uint64 deadline) external returns (uint256 id) {
         require(deadline > block.timestamp, "Governance: deadline in past");
         require(blobId != bytes32(0), "Governance: zero blobId");
@@ -61,20 +61,21 @@ contract Governance {
             blobId: blobId,
             deadline: deadline,
             yes: 0,
-            no: 0
+            no: 0,
+            startBlock: uint48(block.number - 1)
         });
         emit Proposed(id, msg.sender, blobId, deadline);
     }
 
-    /// @notice Cast a yes/no vote weighted by the caller's vote-token balance
-    /// at the time of voting.
+    /// @notice Cast a yes/no vote weighted by the caller's vote-token voting
+    /// power at the proposal's snapshot block.
     function vote(uint256 id, bool support) external {
         Proposal storage p = proposals[id];
         require(p.deadline != 0, "Governance: unknown proposal");
         require(block.timestamp < p.deadline, "Governance: voting closed");
         require(!hasVoted[id][msg.sender], "Governance: already voted");
 
-        uint256 weight = voteToken.balanceOf(msg.sender);
+        uint256 weight = voteToken.getPastVotes(msg.sender, p.startBlock);
         require(weight > 0, "Governance: zero weight");
         require(weight <= type(uint128).max, "Governance: weight overflow");
 

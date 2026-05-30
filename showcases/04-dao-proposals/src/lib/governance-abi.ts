@@ -33,6 +33,7 @@ export const GOVERNANCE_ABI = [
       { name: "deadline", type: "uint64" },
       { name: "yes", type: "uint128" },
       { name: "no", type: "uint128" },
+      { name: "startBlock", type: "uint48" },
     ],
   },
   {

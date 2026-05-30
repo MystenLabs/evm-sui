@@ -30,8 +30,8 @@ async function main() {
 
   const client = createPublicClient({ chain, transport: http(rpcUrl) });
 
-  // `proposals()` returns (proposer, blobId, deadline, yes, no) — the
-  // canonical yes/no come from `tally()` below, so we skip them here.
+  // `proposals()` returns (proposer, blobId, deadline, yes, no, startBlock) —
+  // the canonical yes/no come from `tally()` below, so we skip them here.
   const [proposer, blobIdHex, deadline] = await client.readContract({
     address: governance,
     abi: GOVERNANCE_ABI,

@@ -16,7 +16,7 @@ few hundred lines of TypeScript.
 | 05 | Verifiable token list / dApp manifest | [`05-verifiable-manifest/`](./05-verifiable-manifest/) + [`contracts/src/WalrusResolver.sol`](./contracts/src/WalrusResolver.sol) | implemented |
 | 06 | Quilted ERC-721 collection drop | [`06-quilted-collection/`](./06-quilted-collection/) + [`contracts/src/QuiltedCollection.sol`](./contracts/src/QuiltedCollection.sol) | implemented |
 
-The landing site at <https://mystenlabs.github.io/evm-wal/> indexes the
+The landing site at <https://mystenlabs.github.io/evm-sui/> indexes the
 six examples, with a per-showcase walkthrough linked from each card.
 The site's source is under [`../docs/`](../docs/).
 
@@ -130,12 +130,13 @@ See `publish.sh` for the SuiNS link + optional ENS bridge follow-up steps.
   pays the WAL storage cost via the public publisher; only the 32-byte
   blobId, deadline, and tallies live on-chain.
 
-  > **Warning — showcase-only voting surface.** `Governance.vote` weights by
-  > live `voteToken.balanceOf(msg.sender)`, which is **flash-loan-attackable**
-  > against any ERC-20 with a flash-mint or flash-borrow integration. For
-  > production, pair with an OpenZeppelin `ERC20Votes` token and switch
-  > `vote()` to read `IVotes(voteToken).getPastVotes(msg.sender, proposalStartBlock)`.
-  > See the NatSpec at the top of `contracts/src/Governance.sol`.
+  > **Note — snapshotted voting power.** `Governance.vote` weights by
+  > `IVotes(voteToken).getPastVotes(msg.sender, startBlock)`, where `startBlock`
+  > is recorded at proposal-creation time — so flash-borrowed or
+  > post-snapshot-transferred tokens carry zero weight. The `voteToken` must
+  > implement `IVotes` (e.g. an OpenZeppelin `ERC20Votes` token) and holders
+  > must delegate for their balance to count. See the NatSpec at the top of
+  > `contracts/src/Governance.sol`.
 - **QuiltedCollection** answers "OpenSea improved metadata reliability 99.2%
   when they switched to Pinata" (§8). One Walrus Quilt holds every token's
   metadata; `tokenURI(id)` deterministically returns the aggregator URL — no

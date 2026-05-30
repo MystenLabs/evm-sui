@@ -1,15 +1,15 @@
 <p align="center">
-  <strong>Walrus - EVM Integrations</strong> · six small dApps showing how to put a<br>
-  <a href="https://docs.wal.app/">Walrus</a> blob behind an EVM smart contract.
+  <strong>EVM × Sui</strong> · code examples showing EVM dApps what they gain<br>
+  from <a href="https://docs.wal.app/">Walrus</a> decentralized storage on <a href="https://sui.io/">Sui</a>.
 </p>
 
 ---
 
-Each example is a tiny Solidity contract plus a few hundred lines of TypeScript. Showcase 01 (the **EvmWal NFT** dApp) is the canonical template — every other one is a variation on the same shape: an EVM contract that stores a Walrus URL or blob id, and the browser / CLI code that puts the bytes there.
+Walrus showcases (01–06) each pair a Solidity contract with a few hundred lines of TypeScript — same EVM surface, storage swapped to Walrus.
 
-The landing site at <https://mystenlabs.github.io/evm-wal/> shows the six examples and links each one to its per-showcase walkthrough page. The source lives under [`docs/`](./docs/).
+The landing site at <https://mystenlabs.github.io/evm-sui/> links to the [Walrus hub](https://mystenlabs.github.io/evm-sui/walrus.html), with per-showcase walkthrough pages. Source lives under [`docs/`](./docs/).
 
-## The six examples
+## Walrus showcases — decentralized storage for EVM
 
 | # | Showcase | Layout | Status |
 |---|---|---|---|
@@ -24,7 +24,7 @@ Pick a showcase under [`showcases/<n>-*`](./showcases/) and read its README — 
 
 ## Repo conventions
 
-- **Solidity** for every showcase lives in a single shared Foundry package at [`showcases/contracts/`](./showcases/contracts/). Build + test with `cd showcases/contracts && forge build && forge test -vv`.
+- **Solidity** for every EVM showcase lives in a single shared Foundry package at [`showcases/contracts/`](./showcases/contracts/). Build + test with `cd showcases/contracts && forge build && forge test -vv`.
 - **TypeScript / Next.js packages** sit one per showcase under `showcases/<n>-*`. Showcase 01 is a `pnpm` workspace (`01-evmwal-nft` + `01-evmwal-nft/web`); 03 and 05 expect `pnpm install` to be run in their own directories.
 - **Repo-wide** tooling at root: `dev:chain` (anvil), `format` (Prettier + `prettier-plugin-solidity`), `dev:nft` shortcut into showcase 01's frontend.
 - **Node 22**, **pnpm 10**, **Foundry**. `.nvmrc` pins Node.

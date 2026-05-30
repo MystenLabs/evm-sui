@@ -451,7 +451,7 @@ export const CONTRACT_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "minter",
+        "name": "to",
         "type": "address",
         "indexed": true,
         "internalType": "address"
