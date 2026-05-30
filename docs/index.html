@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>EVM × Sui — Integrate the Sui stack with EVM dApps</title>
-<meta name="description" content="Practical showcases for integrating Walrus storage and Nautilus verifiable compute into EVM-based applications. Code examples you can run locally." />
+<meta name="description" content="Practical showcases for integrating Walrus decentralized storage into EVM-based applications. Code examples you can run locally." />
 <meta property="og:title" content="EVM × Sui" />
-<meta property="og:description" content="Integrate the Sui stack with EVM dApps — Walrus storage and Nautilus verifiable compute." />
+<meta property="og:description" content="Integrate the Sui stack with EVM dApps — Walrus decentralized storage." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://mystenlabs.github.io/evm-sui/" />
 <meta name="twitter:card" content="summary" />
@@ -570,7 +570,6 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </span>
     <span class="nav">
       <a href="walrus.html">Walrus</a>
-      <a href="nautilus.html">Nautilus</a>
       <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
@@ -578,13 +577,12 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 
 <header class="hero">
   <div class="shell hero-inner">
-    <span class="eyebrow">Walrus · Nautilus · code you can run</span>
+    <span class="eyebrow">Walrus · code you can run</span>
     <h1>Integrate the <em>Sui stack</em> with EVM dApps.</h1>
     <p class="lede">
-      Two integration surfaces, one repo. <strong>Walrus</strong> gives your EVM contracts decentralized storage
-      for blobs, metadata, and frontend hosting. <strong>Nautilus</strong> gives them verifiable off-chain compute
-      when the EVM itself hits its trust limit. Each showcase is a small, runnable example with a step-by-step
-      walkthrough.
+      <strong>Walrus</strong> gives your EVM contracts decentralized storage for blobs, metadata, and
+      frontend hosting — swap IPFS/Arweave for Walrus with minimal contract changes. Each showcase is a
+      small, runnable example with a step-by-step walkthrough.
     </p>
     <div class="meta">
       <span><strong>Repo:</strong> <a href="https://github.com/MystenLabs/evm-sui">MystenLabs/evm-sui</a></span>
@@ -595,8 +593,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <section>
   <div class="shell">
     <div class="section-head">
-      <span class="section-num">two pillars</span>
-      <h2>Pick the integration that fits your problem.</h2>
+      <span class="section-num">the showcases</span>
+      <h2>Decentralized storage for your EVM dApp.</h2>
     </div>
 
     <div class="hub-grid">
@@ -614,28 +612,13 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
           <span class="pill accent">storage</span>
         </div>
       </a>
-
-      <a class="hub-card" href="nautilus.html">
-        <span class="hub-eyebrow">compute layer</span>
-        <h3><span>Nautilus on EVM</span></h3>
-        <p>
-          When an EVM contract can't verify the off-chain part — oracle data, secret management,
-          sealed auctions, AI agents — a Rust enclave signs and a Sui Move package verifies.
-          TEE-attested compute for the twelve trust-failure categories where EVM hits its wall.
-        </p>
-        <div class="hub-meta">
-          <span class="pill good">1 showcase</span>
-          <span class="pill">Rust · Sui Move</span>
-          <span class="pill accent">compute</span>
-        </div>
-      </a>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="shell">
-    <p style="margin: 0;"><a href="https://github.com/MystenLabs/evm-sui">Repo on GitHub</a> · <a href="https://docs.wal.app/">Walrus docs</a> · <a href="https://docs.sui.io/sui-stack/nautilus">Nautilus docs</a></p>
+    <p style="margin: 0;"><a href="https://github.com/MystenLabs/evm-sui">Repo on GitHub</a> · <a href="https://docs.wal.app/">Walrus docs</a></p>
   </div>
 </footer>
 

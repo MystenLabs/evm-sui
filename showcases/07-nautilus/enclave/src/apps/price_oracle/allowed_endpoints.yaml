@@ -1,4 +1,0 @@
-# External endpoints the enclave is allowed to access at runtime.
-# Used by /health_check (and, in production, by network egress filtering).
-endpoints:
-  - api.coingecko.com
