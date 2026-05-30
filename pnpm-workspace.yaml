@@ -3,3 +3,6 @@ packages:
   - showcases/01-evmwal-nft/web
   - showcases/04-dao-proposals
   - showcases/06-quilted-collection
+  - nautilus/rfq
+  - nautilus/liquidation
+  - nautilus/batch-swap
