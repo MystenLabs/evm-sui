@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Showcase 04 — DAO governance proposals · EVM × Sui</title>
-<meta name="description" content="The Snapshot pattern, off IPFS: proposer pays WAL via the public publisher, the contract holds only the 32-byte blobId + deadline + tallies, and tooling is two TS CLIs (propose + tally)." />
+<meta name="description" content="The Snapshot pattern, off IPFS: proposer pays WAL via the public publisher, an OpenZeppelin Governor stores only the 32-byte blobId pointer and inherits snapshot voting + quorum, and tooling is three TS CLIs (propose + vote + tally)." />
 <meta property="og:title" content="Showcase 04 — DAO governance proposals on Walrus" />
 <meta property="og:description" content="Proposer-pays Walrus storage; blobId stored on-chain; vote and tally with one EVM call each." />
 <meta property="og:type" content="article" />
@@ -551,14 +551,15 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     <span class="eyebrow">Showcase 04 · implemented</span>
     <h1>Snapshot's pattern, the <em>proposer pays WAL</em>, the contract holds 32 bytes.</h1>
     <p class="lede">
-      A 100-line Solidity contract holds the on-chain skeleton of a vote — proposer, deadline, yes/no tallies —
-      while the human-readable proposal body lives on Walrus. The proposer pays WAL once via the public publisher;
-      the DAO contract never holds WAL. Anyone reads the proposal anonymously through any Walrus aggregator.
+      An OpenZeppelin <code>Governor</code> contract whose only Walrus-specific storage is an on-chain pointer —
+      <code>proposalBlob[id] → blobId</code> — while the human-readable proposal body lives on Walrus. Snapshot
+      voting, quorum, and state come from OZ; the proposer pays WAL once via the public publisher and the DAO
+      contract never holds WAL. Anyone reads the proposal anonymously through any Walrus aggregator.
     </p>
     <div class="meta">
       <span><strong>Contract:</strong> <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol">Governance.sol</a></span>
       <span><strong>CLIs:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/04-dao-proposals">04-dao-proposals/</a></span>
-      <span><strong>Stack:</strong> Solidity · viem · Walrus publisher API</span>
+      <span><strong>Stack:</strong> Solidity · OpenZeppelin Governor · viem · Walrus publisher API</span>
     </div>
   </div>
 </header>
@@ -588,54 +589,53 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>The DAO never touches WAL. Voters never touch IPFS.</h2>
     </div>
 
-    <div class="notice bad">
-      <strong>Showcase-only voting surface.</strong> <code>Governance.vote()</code> reads
-      <code>voteToken.balanceOf(msg.sender)</code> at the instant of the call. Against any ERC-20 with a flash-mint
-      or flash-borrow integration, this is exploitable: an attacker can borrow tokens, vote, and repay in a single
-      transaction. For production, pair with an OpenZeppelin <code>ERC20Votes</code> token and switch
-      <code>vote()</code> to <code>IVotes(voteToken).getPastVotes(msg.sender, proposalStartBlock)</code>.
+    <div class="notice">
+      <strong>Real Governor rails.</strong> The contract inherits OpenZeppelin <code>Governor</code> +
+      <code>GovernorSettings</code> + <code>GovernorCountingSimple</code> + <code>GovernorVotes</code> +
+      <code>GovernorVotesQuorumFraction</code>. Snapshot voting, quorum (4% of past supply), and state machine are
+      all inherited — the only Walrus-specific code is the <code>proposalBlob</code> mapping and the
+      <code>proposeWithBlob</code> wrapper.
     </div>
 
     <div class="thesis-grid">
       <div>
         <p>
-          <code>propose(blobId, deadline)</code> takes a 32-byte Walrus blob id and a unix-seconds deadline. The
-          contract reverts on past deadlines and zero blob ids, then stores the
-          <code>Proposal(proposer, blobId, deadline, yes, no)</code> struct and emits <code>Proposed</code>.
+          <code>proposeWithBlob(blobId)</code> takes a 32-byte Walrus blob id, reverts on zero, opens a signaling
+          proposal (one no-op action), records <code>proposalBlob[id] = blobId</code>, and emits
+          <code>ProposalBlob</code>. The blob id is encoded into the proposal description, so the OZ
+          <code>proposalId</code> is derived from the body — identical bodies dedupe.
         </p>
         <p>
-          <code>vote(id, support)</code> reads the caller's voteToken balance, gates on
-          <code>!hasVoted &amp;&amp; block.timestamp &lt; deadline</code>, and accumulates the weight on <code>yes</code> or
-          <code>no</code>.
+          <code>castVote(id, support)</code> is stock <code>Governor</code> (0 Against · 1 For · 2 Abstain). Weight
+          is the caller's <code>getPastVotes</code> at the proposal snapshot, so balances acquired after the
+          snapshot count for zero — flash-loan and recycling attacks are closed by the inherited mechanism.
         </p>
         <p>
-          <code>tally(id)</code> is the canonical read for <code>(yes, no, passed, closed)</code>. The proposal
-          body is fetched from <code>&lt;aggregator&gt;/v1/blobs/&lt;blobIdBase64Url&gt;</code> — no Snapshot adapter,
-          no pinning vendor.
+          <code>state(id)</code> and <code>proposalVotes(id)</code> are the canonical reads for outcome and the
+          (against, for, abstain) tuple. The proposal body is fetched from
+          <code>&lt;aggregator&gt;/v1/blobs/&lt;blobIdBase64Url&gt;</code> — no Snapshot adapter, no pinning vendor.
         </p>
       </div>
       <div>
-<pre class="code"><span class="c">// Governance.sol</span>
-<span class="k">struct</span> Proposal {
-  <span class="t">address</span> proposer;
-  <span class="t">bytes32</span> blobId;
-  <span class="t">uint64</span>  deadline;
-  <span class="t">uint128</span> yes;
-  <span class="t">uint128</span> no;
-}
+<pre class="code"><span class="c">// Governance.sol — OZ Governor + a Walrus pointer</span>
+<span class="k">contract</span> Governance <span class="k">is</span>
+  Governor, GovernorSettings, GovernorCountingSimple,
+  GovernorVotes, GovernorVotesQuorumFraction {
 
-<span class="k">function</span> <span class="f">propose</span>(<span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline)
-  <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> id);
-<span class="k">function</span> <span class="f">vote</span>(<span class="t">uint256</span> id, <span class="t">bool</span> support) <span class="k">external</span>;
-<span class="k">function</span> <span class="f">tally</span>(<span class="t">uint256</span> id) <span class="k">external view</span>
-  <span class="k">returns</span> (<span class="t">uint128</span>, <span class="t">uint128</span>, <span class="t">bool</span> passed, <span class="t">bool</span> closed);</pre>
+  <span class="k">mapping</span>(<span class="t">uint256</span> proposalId =&gt; <span class="t">bytes32</span> blobId)
+    <span class="k">public</span> proposalBlob;
+
+  <span class="k">function</span> <span class="f">proposeWithBlob</span>(<span class="t">bytes32</span> blobId)
+    <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> proposalId);
+}
+<span class="c">// castVote / proposalVotes / state are inherited from Governor</span></pre>
         <div class="flow" style="margin-top: 18px;">
           <div class="flow-row">
             <div class="box">proposer</div>
             <div class="arrow">→</div>
             <div class="box accent">walrus PUT</div>
             <div class="arrow">→</div>
-            <div class="box">propose(blobId)</div>
+            <div class="box">proposeWithBlob</div>
           </div>
         </div>
       </div>
@@ -647,7 +647,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   <div class="shell">
     <div class="section-head">
       <span class="section-num">03 · try it locally</span>
-      <h2>Two CLIs, four env vars per CLI, end-to-end in five minutes.</h2>
+      <h2>Three CLIs, a few env vars each, end-to-end in five minutes.</h2>
     </div>
 
     <div class="step">
@@ -660,7 +660,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   --private-key <span class="n">$DEPLOYER_PRIVATE_KEY</span> \
   --constructor-args <span class="n">$VOTE_TOKEN_ADDRESS</span>
 
-<span class="c"># local: anvil + a dummy ERC-20 you already control work fine.</span></pre>
+<span class="c"># $VOTE_TOKEN_ADDRESS must be an IVotes / ERC20Votes token whose
+# holders have delegated. local: anvil + a dummy ERC20Votes works fine.</span></pre>
       </div>
     </div>
 
@@ -676,7 +677,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
             <tr><td>EVM_RPC_URL</td><td>yes</td><td>JSON-RPC for the chain holding Governance.</td></tr>
             <tr><td>EVM_CHAIN_ID</td><td>default 31337</td><td>Anvil; mainnet=1, sepolia=11155111.</td></tr>
             <tr><td>GOVERNANCE_ADDRESS</td><td>yes</td><td>Deployed Governance address.</td></tr>
-            <tr><td>PROPOSER_PRIVATE_KEY</td><td>propose only</td><td>Signer for the propose() tx.</td></tr>
+            <tr><td>PROPOSER_PRIVATE_KEY</td><td>propose only</td><td>Signer for the proposeWithBlob() tx.</td></tr>
+            <tr><td>VOTER_PRIVATE_KEY</td><td>vote only</td><td>Signer for castVote() (falls back to PROPOSER_PRIVATE_KEY).</td></tr>
             <tr><td>WALRUS_PUBLISHER</td><td>default testnet</td><td>Public Walrus publisher URL.</td></tr>
             <tr><td>WALRUS_AGGREGATOR</td><td>default testnet</td><td>Walrus aggregator URL.</td></tr>
             <tr><td>WALRUS_EPOCHS</td><td>default <code>5</code></td><td>Blob retention window (≈14 days at 5 epochs).</td></tr>
@@ -690,51 +692,58 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <div>
         <h3>Submit a proposal — dry run first</h3>
 <pre class="code"><span class="c"># dry-run prints the calldata but skips the EVM tx (the Walrus upload still happens)</span>
-<span class="f">pnpm</span> propose --dry-run ./fixtures/sample-proposal.md 2027-01-15T00:00:00Z
+<span class="f">pnpm</span> propose --dry-run ./fixtures/sample-proposal.md
 
 <span class="c"># real run</span>
-<span class="f">pnpm</span> propose ./fixtures/sample-proposal.md 2027-01-15T00:00:00Z
+<span class="f">pnpm</span> propose ./fixtures/sample-proposal.md
 <span class="c"># → [walrus] PUT publisher/v1/blobs?epochs=5  (1234 bytes)
 # → [walrus] blobId (base64url): xT4f...
 # → [walrus] blobId (bytes32):  0x...
 # → [evm] tx submitted: 0xabc...
 # → [evm] tx mined in block 1234 (status=success)
-# → [evm] lastProposalId: 1
-# → [ok] proposal stored — re-fetch the body with:
-#        pnpm tally 1</span></pre>
-        <p>The deadline accepts either a unix-seconds integer or an ISO-8601 string. The contract stores it as <code>uint64</code>.</p>
+# → [evm] proposalId: 20847741295406530737537864472470944467905460224349669446845357318197959586005
+# → [evm] voting window: blocks 1235 → 51635 (votes open once block > 1235)
+# → [ok] proposal stored — cast a vote (1=For, 0=Against, 2=Abstain):
+#        pnpm vote &lt;proposalId&gt; 1
+#        pnpm tally &lt;proposalId&gt;</span></pre>
+        <p>There is no caller-supplied deadline: the voting window is fixed by the contract's
+        <code>votingDelay</code> / <code>votingPeriod</code> (in blocks) and reported back after the proposal is mined.
+        The <code>proposalId</code> is an OZ hash, not a sequential counter.</p>
       </div>
     </div>
 
     <div class="step">
       <span class="num">04</span>
       <div>
-        <h3>Read the tally (and the body)</h3>
-<pre class="code"><span class="f">pnpm</span> tally 1
-<span class="c"># → proposal #1
-#     proposer:  0x...
-#     deadline:  1768435200  (2027-01-15T00:00:00.000Z)
-#     blobId:    0x...
-#     aggregator: https://aggregator.walrus-testnet.walrus.space/v1/blobs/xT4f...
-#     yes: 0
-#     no:  0
-#     closed: false
-#     passed: false
-#     ---- body (1234 bytes) ----
-#     # [Proposal] ...</span></pre>
-        <p>No signer is required for the read — anyone can verify the body matches the on-chain pointer.</p>
+        <h3>Cast a vote</h3>
+<pre class="code"><span class="c"># support: for | against | abstain (or 1 | 0 | 2)</span>
+<span class="f">pnpm</span> vote <span class="n">$PROPOSAL_ID</span> for
+<span class="c"># → [evm] tx mined in block 1300 (status=success)
+# → [ok] voted For on proposal ...
+#        tally → for: 100000000000000000000  against: 0  abstain: 0</span></pre>
+        <p>Weight is the voter's <code>getPastVotes</code> at the proposal snapshot, so the voter must have held
+        and delegated the vote token before the proposal was created. Voting only succeeds while the proposal is
+        <code>Active</code> (after <code>votingDelay</code>, before the deadline).</p>
       </div>
     </div>
 
     <div class="step">
       <span class="num">05</span>
       <div>
-        <h3>(Optional) cast a vote</h3>
-<pre class="code"><span class="f">cast</span> send <span class="n">$GOVERNANCE_ADDRESS</span> <span class="s">"vote(uint256,bool)"</span> 1 true \
-  --rpc-url <span class="n">$EVM_RPC_URL</span> \
-  --private-key <span class="n">$VOTER_PRIVATE_KEY</span>
-
-<span class="c"># then re-run `pnpm tally 1` and the yes count reflects voteToken.balanceOf(voter).</span></pre>
+        <h3>Read the state + tally (and the body)</h3>
+<pre class="code"><span class="f">pnpm</span> tally <span class="n">$PROPOSAL_ID</span>
+<span class="c"># → proposal #...
+#     proposer:   0x...
+#     state:      Active        (or Succeeded / Defeated / Pending …)
+#     voting:     blocks 1235 → 51635
+#     blobId:     0x...
+#     aggregator: https://aggregator.walrus-testnet.walrus.space/v1/blobs/xT4f...
+#     for:        100000000000000000000
+#     against:    0
+#     abstain:    0
+#     ---- body (1234 bytes) ----
+#     # [Proposal] ...</span></pre>
+        <p>No signer is required for the read — anyone can verify the body matches the on-chain pointer.</p>
       </div>
     </div>
   </div>
@@ -747,10 +756,10 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>What "good" looks like.</h2>
     </div>
     <ul>
-      <li><code>cast call $GOVERNANCE_ADDRESS "lastProposalId()(uint256)"</code> matches the id <code>propose</code> printed.</li>
+      <li><code>cast call $GOVERNANCE_ADDRESS "proposalBlob(uint256)(bytes32)" $PROPOSAL_ID</code> returns the same blobId the CLI printed.</li>
       <li>Fetching the aggregator URL the CLI prints returns the markdown body byte-for-byte.</li>
-      <li><code>pnpm tally 1</code> shows the tally; <code>passed</code> stays false until <code>block.timestamp &gt;= deadline</code>.</li>
-      <li>Any duplicate <code>vote()</code> from the same address reverts with <code>Governance: already voted</code>.</li>
+      <li><code>pnpm tally $PROPOSAL_ID</code> shows <code>state</code> moving Pending → Active → Succeeded/Defeated as blocks advance past the snapshot and deadline.</li>
+      <li>Proposing the <em>same</em> blob twice reverts (the OZ <code>proposalId</code> is derived from the body), and a second <code>castVote</code> from one address reverts with <code>GovernorAlreadyCastVote</code>.</li>
     </ul>
   </div>
 </section>
@@ -763,8 +772,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </div>
     <div class="caveats">
       <ul>
-        <li><strong>Not production governance.</strong> The flash-loan attack vector on live <code>balanceOf</code> reads is real. Use <code>ERC20Votes</code> + <code>getPastVotes</code> in any real DAO.</li>
-        <li><strong>Not a Snapshot replacement.</strong> No off-chain signature aggregation, no EIP-712 envelope, no delegate weight, no quorum logic. The contract is a demonstration of <em>where the body lives</em>, not a full vote envelope.</li>
+        <li><strong>Signaling only — not an executing DAO.</strong> Proposals carry a single no-op action and are never queued/executed; the outcome is the vote result. Add <code>GovernorTimelockControl</code> + real <code>targets/calldatas</code> for on-chain execution.</li>
+        <li><strong>Not a Snapshot replacement.</strong> No off-chain signature aggregation and no EIP-712 envelope — voting is fully on-chain via <code>castVote</code>. Snapshot voting and quorum <em>are</em> present (inherited from <code>Governor</code>); the showcase's point is <em>where the body lives</em>.</li>
         <li><strong>Not a Walrus pricing oracle.</strong> <code>epochs</code> is a number the proposer picks. WAL cost is paid by the proposer's wallet to the publisher upfront — neither the DAO contract nor the voters touch WAL.</li>
         <li><strong><code>--dry-run</code> still spends WAL.</strong> The Walrus upload runs <em>before</em> the dry-run gate so the CLI can preview the real <code>blobId</code>; only the EVM tx is skipped. Rename to <code>--no-broadcast</code> in your fork if the literal "dry-run = no side effects" reading matters.</li>
       </ul>
@@ -779,12 +788,13 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>OpenZeppelin <code>Governor</code> + <code>proposeWithBlob</code> / <code>proposalBlob</code> Walrus layer.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>13 Foundry tests: proposeWithBlob + dedupe, vote weight + reverts, snapshot recycling resistance, quorum + state transitions.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>proposeWithBlob(blobId)</code> via viem; recovers the proposalId from the event; <code>--dry-run</code> support.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/vote.ts"><strong>04-dao-proposals/src/vote.ts</strong><code>castVote(id, support)</code> with for/against/abstain parsing.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only state + vote tally + body fetch.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough of the Governor + Walrus integration.</a>
     </div>
   </div>
 </section>

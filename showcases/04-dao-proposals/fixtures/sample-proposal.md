@@ -18,11 +18,12 @@ single point of failure the DAO is trying to avoid.
 
 - Proposers PUT the proposal body to the public Walrus publisher with
   `epochs=5` (≈ 14 days) at minimum.
-- Proposers call `Governance.propose(blobId, deadline)` with the 32-byte
+- Proposers call `Governance.proposeWithBlob(blobId)` with the 32-byte
   blobId returned by the publisher.
 - Voters read the body via any Walrus aggregator (`GET /v1/blobs/<blobId>`)
-  and vote on-chain via `Governance.vote(id, support)`.
-- Tallies are settled by `Governance.tally(id)` after `block.timestamp >= deadline`.
+  and vote on-chain via `Governance.castVote(id, support)`.
+- Outcome is read from `Governance.state(id)` / `proposalVotes(id)` once the
+  voting period closes.
 
 ## Cost
 

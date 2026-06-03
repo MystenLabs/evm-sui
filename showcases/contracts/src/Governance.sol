@@ -1,102 +1,115 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
+import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
+import {GovernorCountingSimple} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import {GovernorVotesQuorumFraction} from "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-/// DAO governance with proposal bodies on Walrus.
+/// DAO governance with proposal bodies on Walrus, built on OpenZeppelin `Governor`.
 ///
 /// The proposal body (markdown / JSON / whatever the DAO renders) lives on
-/// Walrus as a single blob. The proposer pays the WAL storage cost via the
-/// public Walrus publisher — the DAO contract is not on the WAL hook. The
-/// 32-byte Walrus blob id is stored on-chain alongside the deadline and the
-/// vote tallies.
+/// Walrus as a single blob; the proposer pays the WAL storage cost out of band.
+/// This contract only stores the 32-byte Walrus blob id as an on-chain pointer
+/// and lets OpenZeppelin's `Governor` stack handle everything else — proposal
+/// lifecycle, snapshot voting, quorum, and state transitions.
 ///
-/// Voting weight is *snapshotted*. Each proposal records the block in which it
-/// was created (`startBlock`), and `vote()` reads the caller's past voting
-/// power as of that block via `IVotes.getPastVotes`. Because the snapshot
-/// block is fixed at proposal-creation time and always lies strictly in the
-/// past by the time a vote is cast, tokens that are flash-borrowed,
-/// flash-minted, or transferred to a fresh wallet *after* the proposal was
-/// created carry zero weight. This closes the flash-loan and vote-recycling
-/// attacks that a live `balanceOf` read would otherwise expose.
+/// Composed modules:
+///   - `GovernorSettings`            — voting delay / period / proposal threshold
+///   - `GovernorCountingSimple`      — Against / For / Abstain tallying
+///   - `GovernorVotes`               — voting weight from an `IVotes` token
+///   - `GovernorVotesQuorumFraction` — quorum as a % of past total supply
 ///
-/// `voteToken` MUST implement `IVotes` (e.g. an OpenZeppelin `ERC20Votes`
-/// token), and holders MUST delegate — self-delegation is fine — for their
-/// balance to count toward voting power. This is the standard OpenZeppelin
-/// Votes requirement, not specific to this contract.
-contract Governance {
-    struct Proposal {
-        address proposer;
-        bytes32 blobId;     // Walrus blob holding the proposal body
-        uint64 deadline;    // unix seconds; voting closes when block.timestamp >= deadline
-        uint128 yes;        // sum of voter weights for YES
-        uint128 no;         // sum of voter weights for NO
-        uint48 startBlock;  // snapshot block for voting-weight lookups (getPastVotes)
+/// Snapshot voting comes for free: `Governor` records each proposal's vote
+/// snapshot (`proposalSnapshot`) and reads weight via `IVotes.getPastVotes`, so
+/// tokens flash-borrowed or transferred to a fresh wallet *after* the snapshot
+/// carry zero weight — the flash-loan and vote-recycling attacks are closed by
+/// the same mechanism `Governor` uses everywhere. `token` MUST implement
+/// `IVotes` (e.g. an OpenZeppelin `ERC20Votes` token) and holders MUST delegate
+/// (self-delegation is fine) for their balance to count.
+///
+/// Proposals here are *signaling only*: they carry no on-chain actions, so
+/// there is nothing to `queue`/`execute` — the outcome is the vote result over
+/// a Walrus-hosted body. Wiring real actions (and a `TimelockController`) is a
+/// standard `Governor` extension and orthogonal to the Walrus integration this
+/// showcase demonstrates.
+contract Governance is
+    Governor,
+    GovernorSettings,
+    GovernorCountingSimple,
+    GovernorVotes,
+    GovernorVotesQuorumFraction
+{
+    /// @notice Walrus blob id holding each proposal's body, keyed by the OZ proposal id.
+    /// Readable in one `eth_call` — no event-log scraping needed.
+    mapping(uint256 proposalId => bytes32 blobId) public proposalBlob;
+
+    /// @notice Emitted alongside `Governor`'s `ProposalCreated` with the Walrus pointer.
+    event ProposalBlob(uint256 indexed proposalId, bytes32 blobId);
+
+    error ZeroBlobId();
+
+    constructor(
+        IVotes token_
+    )
+        Governor("WalrusDAO")
+        GovernorSettings(1 /* votingDelay: 1 block */, 50_400 /* votingPeriod: ~1 week @ 12s blocks */, 0 /* proposalThreshold */)
+        GovernorVotes(token_)
+        GovernorVotesQuorumFraction(4 /* quorum: 4% of past total supply */)
+    {}
+
+    /// @notice Open a signaling proposal whose body lives on Walrus.
+    /// @dev The blob must already be uploaded to Walrus — this stores only the
+    /// pointer. The blob id is encoded into the proposal description, so the OZ
+    /// `proposalId` is derived from the body (identical bodies dedupe: a second
+    /// proposal for the same blob reverts via `Governor`'s duplicate guard), and
+    /// is also mirrored into `proposalBlob` for direct on-chain lookup.
+    /// @param blobId 32-byte Walrus blob id of the proposal body.
+    /// @return proposalId The OZ proposal id (hash of the empty action set + description).
+    function proposeWithBlob(bytes32 blobId) external returns (uint256 proposalId) {
+        if (blobId == bytes32(0)) revert ZeroBlobId();
+
+        // Signaling vote: `Governor` rejects a zero-action proposal, so we carry
+        // a single no-op action (a 0-value, empty-calldata self-call). Nothing
+        // is ever executed — the proposal exists only to be voted on — so the
+        // action's contents are immaterial.
+        address[] memory targets = new address[](1);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory calldatas = new bytes[](1);
+        targets[0] = address(this);
+
+        proposalId = propose(targets, values, calldatas, _blobDescription(blobId));
+        proposalBlob[proposalId] = blobId;
+        emit ProposalBlob(proposalId, blobId);
     }
 
-    IVotes public immutable voteToken;
-    uint256 public lastProposalId;
-
-    mapping(uint256 id => Proposal) public proposals;
-    mapping(uint256 id => mapping(address voter => bool)) public hasVoted;
-
-    event Proposed(uint256 indexed id, address indexed proposer, bytes32 blobId, uint64 deadline);
-    event Voted(uint256 indexed id, address indexed voter, bool support, uint256 weight);
-
-    constructor(IVotes voteToken_) {
-        voteToken = voteToken_;
+    /// @dev Canonical description for a Walrus-bodied proposal: `walrus:0x<64 hex>`.
+    /// Encoding the blob id here is what makes the `proposalId` a function of the
+    /// body and lets identical bodies collide instead of creating duplicates.
+    function _blobDescription(bytes32 blobId) internal pure returns (string memory) {
+        return string.concat("walrus:", Strings.toHexString(uint256(blobId), 32));
     }
 
-    /// @notice Submit a new proposal. The blob must already be uploaded to
-    /// Walrus — this contract only stores the pointer. The voting-weight
-    /// snapshot is taken at `block.number - 1` so it is already final and
-    /// queryable via `getPastVotes` for votes cast in this block or later.
-    function propose(bytes32 blobId, uint64 deadline) external returns (uint256 id) {
-        require(deadline > block.timestamp, "Governance: deadline in past");
-        require(blobId != bytes32(0), "Governance: zero blobId");
+    // ── Required overrides for the composed Governor modules ────────────────
 
-        id = ++lastProposalId;
-        proposals[id] = Proposal({
-            proposer: msg.sender,
-            blobId: blobId,
-            deadline: deadline,
-            yes: 0,
-            no: 0,
-            startBlock: uint48(block.number - 1)
-        });
-        emit Proposed(id, msg.sender, blobId, deadline);
+    function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
+        return super.votingDelay();
     }
 
-    /// @notice Cast a yes/no vote weighted by the caller's vote-token voting
-    /// power at the proposal's snapshot block.
-    function vote(uint256 id, bool support) external {
-        Proposal storage p = proposals[id];
-        require(p.deadline != 0, "Governance: unknown proposal");
-        require(block.timestamp < p.deadline, "Governance: voting closed");
-        require(!hasVoted[id][msg.sender], "Governance: already voted");
-
-        uint256 weight = voteToken.getPastVotes(msg.sender, p.startBlock);
-        require(weight > 0, "Governance: zero weight");
-        require(weight <= type(uint128).max, "Governance: weight overflow");
-
-        hasVoted[id][msg.sender] = true;
-        if (support) {
-            p.yes += uint128(weight);
-        } else {
-            p.no += uint128(weight);
-        }
-        emit Voted(id, msg.sender, support, weight);
+    function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
+        return super.votingPeriod();
     }
 
-    /// @notice Convenience view: returns (yes, no, passed, closed).
-    /// Reverts for unknown proposal ids — callers that need to probe for
-    /// existence should compare `id <= lastProposalId` first.
-    function tally(uint256 id) external view returns (uint128 yes, uint128 no, bool passed, bool closed) {
-        Proposal storage p = proposals[id];
-        require(p.deadline != 0, "Governance: unknown proposal");
-        yes = p.yes;
-        no = p.no;
-        closed = block.timestamp >= p.deadline;
-        passed = closed && yes > no;
+    function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
+        return super.proposalThreshold();
+    }
+
+    function quorum(
+        uint256 timepoint
+    ) public view override(Governor, GovernorVotesQuorumFraction) returns (uint256) {
+        return super.quorum(timepoint);
     }
 }

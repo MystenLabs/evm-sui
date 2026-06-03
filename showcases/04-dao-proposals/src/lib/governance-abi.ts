@@ -1,68 +1,87 @@
 // Hand-picked subset of the Governance.sol ABI — only the surface these
-// CLIs touch. Keep in sync with showcases/contracts/src/Governance.sol.
+// CLIs touch. Governance.sol inherits OpenZeppelin `Governor`, so most of this
+// (castVote, state, proposalVotes, proposal*) is the stock Governor interface;
+// `proposeWithBlob` / `proposalBlob` / `ProposalBlob` are the Walrus add-ons.
+// Keep in sync with showcases/contracts/src/Governance.sol.
 
 export const GOVERNANCE_ABI = [
   {
     type: "function",
-    name: "propose",
+    name: "proposeWithBlob",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "blobId", type: "bytes32" }],
+    outputs: [{ name: "proposalId", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "castVote",
     stateMutability: "nonpayable",
     inputs: [
-      { name: "blobId", type: "bytes32" },
-      { name: "deadline", type: "uint64" },
+      { name: "proposalId", type: "uint256" },
+      { name: "support", type: "uint8" }, // 0 = Against, 1 = For, 2 = Abstain
     ],
-    outputs: [{ name: "id", type: "uint256" }],
+    outputs: [{ name: "weight", type: "uint256" }],
   },
   {
     type: "function",
-    name: "vote",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "id", type: "uint256" },
-      { name: "support", type: "bool" },
-    ],
-    outputs: [],
-  },
-  {
-    type: "function",
-    name: "proposals",
+    name: "state",
     stateMutability: "view",
-    inputs: [{ name: "id", type: "uint256" }],
+    inputs: [{ name: "proposalId", type: "uint256" }],
+    // 0 Pending · 1 Active · 2 Canceled · 3 Defeated · 4 Succeeded · 5 Queued · 6 Expired · 7 Executed
+    outputs: [{ name: "", type: "uint8" }],
+  },
+  {
+    type: "function",
+    name: "proposalVotes",
+    stateMutability: "view",
+    inputs: [{ name: "proposalId", type: "uint256" }],
     outputs: [
-      { name: "proposer", type: "address" },
-      { name: "blobId", type: "bytes32" },
-      { name: "deadline", type: "uint64" },
-      { name: "yes", type: "uint128" },
-      { name: "no", type: "uint128" },
-      { name: "startBlock", type: "uint48" },
+      { name: "againstVotes", type: "uint256" },
+      { name: "forVotes", type: "uint256" },
+      { name: "abstainVotes", type: "uint256" },
     ],
   },
   {
     type: "function",
-    name: "tally",
+    name: "proposalBlob",
     stateMutability: "view",
-    inputs: [{ name: "id", type: "uint256" }],
-    outputs: [
-      { name: "yes", type: "uint128" },
-      { name: "no", type: "uint128" },
-      { name: "passed", type: "bool" },
-      { name: "closed", type: "bool" },
-    ],
+    inputs: [{ name: "proposalId", type: "uint256" }],
+    outputs: [{ name: "blobId", type: "bytes32" }],
   },
   {
     type: "function",
-    name: "lastProposalId",
+    name: "proposalProposer",
     stateMutability: "view",
-    inputs: [],
-    outputs: [{ type: "uint256" }],
+    inputs: [{ name: "proposalId", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "function",
+    name: "proposalSnapshot",
+    stateMutability: "view",
+    inputs: [{ name: "proposalId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "proposalDeadline",
+    stateMutability: "view",
+    inputs: [{ name: "proposalId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quorum",
+    stateMutability: "view",
+    inputs: [{ name: "timepoint", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
   {
     type: "event",
-    name: "Proposed",
+    name: "ProposalBlob",
     inputs: [
-      { name: "id", type: "uint256", indexed: true },
-      { name: "proposer", type: "address", indexed: true },
+      { name: "proposalId", type: "uint256", indexed: true },
       { name: "blobId", type: "bytes32", indexed: false },
-      { name: "deadline", type: "uint64", indexed: false },
     ],
   },
 ] as const;

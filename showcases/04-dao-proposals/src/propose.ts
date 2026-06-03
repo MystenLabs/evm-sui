@@ -1,10 +1,16 @@
 /**
- * `propose` — upload a proposal body to Walrus, then call Governance.propose.
+ * `propose` — upload a proposal body to Walrus, then open a Governor proposal
+ * pointing at it via Governance.proposeWithBlob.
  *
  * Pattern: the proposer pays the WAL cost directly to the public publisher,
  * so the DAO contract is never on the WAL hook. The 32-byte blobId is what
- * the contract stores. Anyone reading the proposal does an anonymous
- * aggregator GET — no rate-limited gateway, no IPNS, no pinning vendor.
+ * the contract stores (mirrored into `proposalBlob` for one-call lookup).
+ * Anyone reading the proposal does an anonymous aggregator GET — no
+ * rate-limited gateway, no IPNS, no pinning vendor.
+ *
+ * Timing is governed by the contract's OpenZeppelin `Governor` settings
+ * (votingDelay / votingPeriod, in blocks), not a caller-supplied deadline:
+ * the proposal's voting window is reported back after it's mined.
  *
  * Required env:
  *   - EVM_RPC_URL         JSON-RPC for the chain holding Governance
@@ -15,11 +21,11 @@
  *   - WALRUS_EPOCHS       default: 5
  *
  * Usage:
- *   tsx src/propose.ts <markdown-file> <deadline-iso-or-unix>
+ *   tsx src/propose.ts [--dry-run] <markdown-file>
  *
  * Example:
- *   tsx src/propose.ts ./fixtures/sample-proposal.md 2026-06-01T00:00:00Z
- *   tsx src/propose.ts --dry-run ./fixtures/sample-proposal.md 1748736000
+ *   tsx src/propose.ts ./fixtures/sample-proposal.md
+ *   tsx src/propose.ts --dry-run ./fixtures/sample-proposal.md
  */
 
 import { readFileSync } from "node:fs";
@@ -27,6 +33,7 @@ import {
   createPublicClient,
   createWalletClient,
   http,
+  parseEventLogs,
   type Address,
   type Hex,
 } from "viem";
@@ -36,29 +43,19 @@ import { env, resolveChain } from "./lib/evm.js";
 import { GOVERNANCE_ABI } from "./lib/governance-abi.js";
 import { uploadToPublisher } from "./lib/walrus.js";
 
-function parseDeadline(input: string): bigint {
-  if (/^\d+$/.test(input)) return BigInt(input);
-  const ms = Date.parse(input);
-  if (Number.isNaN(ms)) {
-    throw new Error(`deadline must be a unix-seconds integer or ISO-8601 string, got: ${input}`);
-  }
-  return BigInt(Math.floor(ms / 1000));
-}
-
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args[0] === "--dry-run";
   const positional = dryRun ? args.slice(1) : args;
-  const [mdPath, deadlineRaw] = positional;
-  if (!mdPath || !deadlineRaw) {
-    throw new Error("usage: tsx src/propose.ts [--dry-run] <markdown-file> <deadline-iso-or-unix>");
+  const [mdPath] = positional;
+  if (!mdPath) {
+    throw new Error("usage: tsx src/propose.ts [--dry-run] <markdown-file>");
   }
 
   const body = readFileSync(mdPath);
   if (body.length === 0) {
     throw new Error(`proposal body is empty: ${mdPath}`);
   }
-  const deadline = parseDeadline(deadlineRaw);
 
   const publisher = env("WALRUS_PUBLISHER", "https://publisher.walrus-testnet.walrus.space");
   const epochs = Number(env("WALRUS_EPOCHS", "5"));
@@ -74,10 +71,9 @@ async function main() {
   const chain = resolveChain(Number(env("EVM_CHAIN_ID", "31337")), rpcUrl);
 
   if (dryRun) {
-    console.log("[dry-run] would call Governance.propose with:");
+    console.log("[dry-run] would call Governance.proposeWithBlob with:");
     console.log(`  contract: ${governance}`);
     console.log(`  blobId:   ${blobIdHex}`);
-    console.log(`  deadline: ${deadline} (${new Date(Number(deadline) * 1000).toISOString()})`);
     return;
   }
 
@@ -88,21 +84,35 @@ async function main() {
   const hash = await wallet.writeContract({
     address: governance,
     abi: GOVERNANCE_ABI,
-    functionName: "propose",
-    args: [blobIdHex, deadline],
+    functionName: "proposeWithBlob",
+    args: [blobIdHex],
   });
   console.log(`[evm] tx submitted: ${hash}`);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   console.log(`[evm] tx mined in block ${receipt.blockNumber} (status=${receipt.status})`);
 
-  const lastId = await publicClient.readContract({
-    address: governance,
+  // The OZ proposalId is a hash, not a sequential counter — recover it from the
+  // ProposalBlob event this contract emits alongside Governor's ProposalCreated.
+  const [event] = parseEventLogs({
     abi: GOVERNANCE_ABI,
-    functionName: "lastProposalId",
+    eventName: "ProposalBlob",
+    logs: receipt.logs,
   });
-  console.log(`[evm] lastProposalId: ${lastId}`);
-  console.log(`[ok] proposal stored — re-fetch the body with:`);
-  console.log(`     pnpm tally ${lastId}`);
+  if (!event) {
+    throw new Error("ProposalBlob event not found in receipt — did the proposal revert?");
+  }
+  const proposalId = event.args.proposalId;
+
+  const [snapshot, deadline] = await Promise.all([
+    publicClient.readContract({ address: governance, abi: GOVERNANCE_ABI, functionName: "proposalSnapshot", args: [proposalId] }),
+    publicClient.readContract({ address: governance, abi: GOVERNANCE_ABI, functionName: "proposalDeadline", args: [proposalId] }),
+  ]);
+
+  console.log(`[evm] proposalId: ${proposalId}`);
+  console.log(`[evm] voting window: blocks ${snapshot} → ${deadline} (votes open once block > ${snapshot})`);
+  console.log(`[ok] proposal stored — cast a vote (1=For, 0=Against, 2=Abstain):`);
+  console.log(`     pnpm vote ${proposalId} 1`);
+  console.log(`     pnpm tally ${proposalId}`);
 }
 
 main().catch((err) => {

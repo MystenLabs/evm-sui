@@ -42,7 +42,7 @@ showcases/
 ├── 02-walrus-sites/        publish.sh + example-site/ + walkthrough README
 ├── 03-walrus-resolver/
 │   └── keeper/             TS keeper that extends Sui Blob objects
-├── 04-dao-proposals/       TS propose + tally CLIs (publisher PUT + viem)
+├── 04-dao-proposals/       TS propose + vote + tally CLIs (publisher PUT + viem)
 ├── 05-verifiable-manifest/ TS client; resolves token lists through WalrusResolver
 ├── 06-quilted-collection/  TS pack + deploy + url helpers (walrus store-quilt)
 └── README.md               this file
@@ -127,13 +127,16 @@ See `publish.sh` for the SuiNS link + optional ENS bridge follow-up steps.
   (ipfs-pain.md §6). 35 lines, ENS-gated, struct pointer carrying the on-Sui
   Blob object id so a permissionless keeper can keep blobs alive forever.
 - **Governance** answers "Snapshot uses 4Everland-pinned IPFS" (§9). Proposer
-  pays the WAL storage cost via the public publisher; only the 32-byte
-  blobId, deadline, and tallies live on-chain.
+  pays the WAL storage cost via the public publisher; the contract is an
+  OpenZeppelin `Governor` whose only Walrus-specific state is the on-chain
+  `proposalBlob[id] → blobId` pointer.
 
-  > **Note — snapshotted voting power.** `Governance.vote` weights by
-  > `IVotes(voteToken).getPastVotes(msg.sender, startBlock)`, where `startBlock`
-  > is recorded at proposal-creation time — so flash-borrowed or
-  > post-snapshot-transferred tokens carry zero weight. The `voteToken` must
+  > **Note — built on OpenZeppelin `Governor`.** `Governance` composes
+  > `GovernorSettings` + `GovernorCountingSimple` + `GovernorVotes` +
+  > `GovernorVotesQuorumFraction`, so snapshot voting (`getPastVotes`), quorum
+  > (4% of past supply), and the proposal state machine are inherited, not
+  > hand-rolled. `proposeWithBlob(blobId)` opens a signaling proposal (no
+  > on-chain execution) and records the Walrus pointer. The `voteToken` must
   > implement `IVotes` (e.g. an OpenZeppelin `ERC20Votes` token) and holders
   > must delegate for their balance to count. See the NatSpec at the top of
   > `contracts/src/Governance.sol`.

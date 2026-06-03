@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "propose": "tsx src/propose.ts",
+    "vote": "tsx src/vote.ts",
     "tally": "tsx src/tally.ts"
   },
   "dependencies": {
