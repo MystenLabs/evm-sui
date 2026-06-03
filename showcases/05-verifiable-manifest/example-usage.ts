@@ -8,7 +8,9 @@
  *   EVM_RPC_URL          mainnet RPC (Infura, Alchemy, Llama, ...)
  *   RESOLVER_ADDRESS     deployed WalrusResolver address
  *   ENS_NAME             e.g. tokens.uniswap.eth
- *   AGGREGATOR           e.g. https://aggregator.walrus-testnet.walrus.space
+ *   WALRUS_NETWORK       'testnet' | 'mainnet' (default: 'testnet')
+ *   SUI_RPC_URL          Sui fullnode the Walrus SDK reads through
+ *                        (default: the public node for WALRUS_NETWORK)
  */
 import { resolveTokenList } from "./manifest.ts";
 
@@ -19,11 +21,13 @@ function requireEnv(key: string): string {
 }
 
 const ensName = process.env.ENS_NAME ?? "tokens.uniswap.eth";
+const network = (process.env.WALRUS_NETWORK as "testnet" | "mainnet") ?? "testnet";
 
 const { manifest, blobId, contentType } = await resolveTokenList(ensName, {
   rpcUrl: requireEnv("EVM_RPC_URL"),
   resolverAddress: requireEnv("RESOLVER_ADDRESS") as `0x${string}`,
-  aggregator: process.env.AGGREGATOR ?? "https://aggregator.walrus-testnet.walrus.space",
+  network,
+  suiRpcUrl: process.env.SUI_RPC_URL,
 });
 
 console.log(`Resolved ${ensName} → blobId=${blobId} (${contentType})`);

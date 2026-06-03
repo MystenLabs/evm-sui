@@ -7,6 +7,8 @@
     ".": "./manifest.ts"
   },
   "dependencies": {
+    "@mysten/sui": "2.16.2",
+    "@mysten/walrus": "1.1.7",
     "viem": "^2.21.0"
   },
   "devDependencies": {

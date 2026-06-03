@@ -2,22 +2,35 @@
  * Token-list / dApp manifest client.
  *
  * Resolves an ENS name (e.g. `tokens.uniswap.eth`) to a Walrus blob via the
- * WalrusResolver contract from showcase 03, then fetches the manifest body
- * from a Walrus aggregator by its content-addressed blob id.
+ * WalrusResolver contract from showcase 03, then reads the manifest body
+ * directly from the Walrus storage network with the `@mysten/walrus` SDK.
  *
- * Trust model: this client trusts the aggregator to serve the bytes that
- * correspond to the requested blob id; it does NOT re-encode the bytes with
- * Walrus's Reed-Solomon scheme to recompute the blob id client-side. Doing
- * so requires the `@mysten/walrus` encoder and is left to the caller. For
- * showcase purposes, the leverage over IPFS comes from the *pointer*: one
- * `eth_call` to the resolver beats IPNS, regardless of aggregator trust.
+ * Trust model: retrieval does NOT route through a single aggregator. The SDK
+ * pulls the blob's slivers from the Walrus storage nodes and reconstructs the
+ * bytes, checking them against the on-chain blob id — which is itself a
+ * content commitment over the encoded data. So both halves are trust-minimised:
+ * the *pointer* is one deterministic `eth_call` (no IPNS lottery), and the
+ * *bytes* are content-addressed and verified on read (no gateway to trust).
  *
- * If you need true trustless retrieval, post-process `manifest` and `blobId`
- * with a Walrus-SDK-backed verifier before relying on the contents.
+ * The trade-off versus a plain aggregator GET: an SDK read fans out to the
+ * storage nodes (~hundreds of requests) and needs a Sui fullnode, so it is
+ * heavier than one HTTP call. For a token list / manifest — small, high-value,
+ * read-rarely — paying that cost to remove the gateway from the trust path is
+ * the whole point of a "verifiable" manifest.
  */
 
 import { createPublicClient, hexToBytes, http, namehash, type Address } from "viem";
 import { mainnet } from "viem/chains";
+import { SuiGrpcClient } from "@mysten/sui/grpc";
+import { walrus } from "@mysten/walrus";
+
+type WalrusNetwork = "testnet" | "mainnet";
+
+/** Public Sui gRPC fullnodes the Walrus SDK reads through, keyed by network. */
+const DEFAULT_SUI_RPC: Record<WalrusNetwork, string> = {
+  testnet: "https://fullnode.testnet.sui.io:443",
+  mainnet: "https://fullnode.mainnet.sui.io:443",
+};
 
 const WALRUS_RESOLVER_ABI = [
   {
@@ -43,16 +56,21 @@ export interface ResolvedManifest<T> {
 }
 
 export interface ResolveOpts {
+  /** EVM JSON-RPC, used for the resolver `eth_call` (ENS + WalrusResolver live here). */
   rpcUrl: string;
+  /** Deployed WalrusResolver address. */
   resolverAddress: Address;
-  aggregator: string; // e.g. https://aggregator.walrus-testnet.walrus.space
+  /** Walrus network the pointer's blob lives on. Default: `"testnet"`. */
+  network?: WalrusNetwork;
+  /** Sui gRPC fullnode the Walrus SDK reads through. Default: the public node for `network`. */
+  suiRpcUrl?: string;
 }
 
 /**
  * Resolve `ensName` to its parsed manifest body.
  *
- * Throws if the pointer is unset, the aggregator returns a non-2xx status,
- * the on-chain contentType is not JSON, or the JSON fails to parse.
+ * Throws if the pointer is unset, the on-chain contentType is not JSON, the
+ * blob cannot be read from Walrus, or the JSON fails to parse.
  */
 export async function resolveManifest<T = unknown>(
   ensName: string,
@@ -82,13 +100,18 @@ export async function resolveManifest<T = unknown>(
     throw new Error(`manifest: unexpected contentType "${contentType}" for ${ensName}`);
   }
 
-  const url = `${opts.aggregator}/v1/blobs/${bytes32ToBase64Url(blobId)}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`manifest: aggregator HTTP ${res.status} for ${url}`);
-  }
+  const network = opts.network ?? "testnet";
+  const sui = new SuiGrpcClient({
+    network,
+    baseUrl: opts.suiRpcUrl ?? DEFAULT_SUI_RPC[network],
+  }).$extend(walrus());
 
-  const text = await res.text();
+  // Read the blob straight from the Walrus storage nodes. The SDK reconstructs
+  // the bytes from the slivers and checks them against the blobId (a content
+  // commitment), so the result is verified — not taken on faith from a gateway.
+  const bytes = await sui.walrus.readBlob({ blobId: bytes32ToBase64Url(blobId) });
+  const text = new TextDecoder().decode(bytes);
+
   return {
     manifest: JSON.parse(text) as T,
     blobId,
