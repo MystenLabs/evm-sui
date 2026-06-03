@@ -24,7 +24,7 @@ import { mainnet } from "viem/chains";
 import { SuiGrpcClient } from "@mysten/sui/grpc";
 import { walrus } from "@mysten/walrus";
 
-type WalrusNetwork = "testnet" | "mainnet";
+export type WalrusNetwork = "testnet" | "mainnet";
 
 /** Public Sui gRPC fullnodes the Walrus SDK reads through, keyed by network. */
 const DEFAULT_SUI_RPC: Record<WalrusNetwork, string> = {

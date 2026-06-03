@@ -12,7 +12,7 @@
  *   SUI_RPC_URL          Sui fullnode the Walrus SDK reads through
  *                        (default: the public node for WALRUS_NETWORK)
  */
-import { resolveTokenList } from "./manifest.ts";
+import { resolveTokenList, type WalrusNetwork } from "./manifest.ts";
 
 function requireEnv(key: string): string {
   const v = process.env[key];
@@ -21,7 +21,7 @@ function requireEnv(key: string): string {
 }
 
 const ensName = process.env.ENS_NAME ?? "tokens.uniswap.eth";
-const network = (process.env.WALRUS_NETWORK as "testnet" | "mainnet") ?? "testnet";
+const network = (process.env.WALRUS_NETWORK as WalrusNetwork) ?? "testnet";
 
 const { manifest, blobId, contentType } = await resolveTokenList(ensName, {
   rpcUrl: requireEnv("EVM_RPC_URL"),
