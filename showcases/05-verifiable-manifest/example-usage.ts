@@ -21,7 +21,10 @@ function requireEnv(key: string): string {
 }
 
 const ensName = process.env.ENS_NAME ?? "tokens.uniswap.eth";
-const network = (process.env.WALRUS_NETWORK as WalrusNetwork) ?? "testnet";
+const network = (process.env.WALRUS_NETWORK ?? "testnet") as WalrusNetwork;
+if (network !== "testnet" && network !== "mainnet") {
+  throw new Error(`WALRUS_NETWORK must be 'testnet' or 'mainnet' (got '${network}')`);
+}
 
 const { manifest, blobId, contentType } = await resolveTokenList(ensName, {
   rpcUrl: requireEnv("EVM_RPC_URL"),
