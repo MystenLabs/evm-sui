@@ -67,8 +67,12 @@ contract Governance is
     /// `proposalId` is derived from the body (identical bodies dedupe: a second
     /// proposal for the same blob reverts via `Governor`'s duplicate guard), and
     /// is also mirrored into `proposalBlob` for direct on-chain lookup.
+    ///
+    /// This is the only entry point that records a Walrus pointer. The inherited
+    /// 4-arg `Governor.propose` stays callable but leaves `proposalBlob` unset,
+    /// so this showcase's tooling always proposes through `proposeWithBlob`.
     /// @param blobId 32-byte Walrus blob id of the proposal body.
-    /// @return proposalId The OZ proposal id (hash of the empty action set + description).
+    /// @return proposalId The OZ proposal id (hash of the no-op action set + description).
     function proposeWithBlob(bytes32 blobId) external returns (uint256 proposalId) {
         if (blobId == bytes32(0)) revert ZeroBlobId();
 
