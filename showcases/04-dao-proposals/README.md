@@ -79,10 +79,14 @@ Two requirements follow from using OpenZeppelin's `Votes`:
 - Holders must **delegate** (self-delegation is fine) before the snapshot
   block, or their balance counts for nothing.
 
-Proposals here are **signaling only** — they carry a single no-op action and are
-never queued/executed; the outcome is the vote result over a Walrus-hosted body.
-Wiring real on-chain actions (and a `TimelockController`) is a standard `Governor`
-extension, orthogonal to the Walrus integration this showcase demonstrates.
+`proposeWithBlob` opens **signaling** proposals — each carries a single no-op
+action, so the intended outcome is just the vote result over a Walrus-hosted body.
+This is how the showcase *uses* the contract, not an enforced invariant: it is a
+stock `Governor` with no timelock and `proposalThreshold` 0, so the inherited 4-arg
+`propose` accepts real actions from anyone and a passed proposal can be executed (a
+signaling proposal's no-op self-call executes harmlessly). For production, add a
+`TimelockController`, a non-zero proposal threshold, and restrict the open `propose`
+path — all orthogonal to the Walrus integration this showcase demonstrates.
 
 ## CLI flow
 
@@ -147,8 +151,11 @@ pnpm tally <proposalId>
 - **Not a Snapshot replacement.** No off-chain signature aggregation and no
   EIP-712 envelope — voting is fully on-chain via `castVote`. The point is *where
   the body lives*, demonstrated on real `Governor` rails.
-- **Not an executing DAO.** Proposals are signaling only (a single no-op action,
-  never queued/executed). Add `GovernorTimelockControl` + real actions for production.
+- **Signaling by convention, not enforcement.** `proposeWithBlob` carries a single
+  no-op action, but this is a stock `Governor` (no timelock, `proposalThreshold` 0):
+  the inherited `propose` accepts real actions from anyone and a passed proposal can
+  be executed. Add `GovernorTimelockControl`, a non-zero threshold, and restrict the
+  open `propose` for production.
 - **Not a Walrus pricing oracle.** `epochs` is a number the proposer
   picks. WAL cost is paid by the proposer's wallet to the publisher
   upfront — neither the DAO contract nor the voters touch WAL.

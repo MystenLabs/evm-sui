@@ -135,8 +135,8 @@ See `publish.sh` for the SuiNS link + optional ENS bridge follow-up steps.
   > `GovernorSettings` + `GovernorCountingSimple` + `GovernorVotes` +
   > `GovernorVotesQuorumFraction`, so snapshot voting (`getPastVotes`), quorum
   > (4% of past supply), and the proposal state machine are inherited, not
-  > hand-rolled. `proposeWithBlob(blobId)` opens a signaling proposal (no
-  > on-chain execution) and records the Walrus pointer. The `voteToken` must
+  > hand-rolled. `proposeWithBlob(blobId)` opens a signaling proposal (carrying
+  > only a no-op action) and records the Walrus pointer. The `token` must
   > implement `IVotes` (e.g. an OpenZeppelin `ERC20Votes` token) and holders
   > must delegate for their balance to count. See the NatSpec at the top of
   > `contracts/src/Governance.sol`.

@@ -65,6 +65,11 @@ async function main() {
   console.log(`[evm] tx submitted: ${hash}`);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   console.log(`[evm] tx mined in block ${receipt.blockNumber} (status=${receipt.status})`);
+  if (receipt.status === "reverted") {
+    throw new Error(
+      "vote tx reverted — check the proposal is Active and you held delegated voting weight at its snapshot block",
+    );
+  }
 
   const [against, forVotes, abstain] = await publicClient.readContract({
     address: governance,

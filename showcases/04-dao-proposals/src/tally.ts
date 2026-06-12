@@ -63,6 +63,11 @@ async function main() {
   ]);
 
   const [against, forVotes, abstain] = votes;
+  if (blobIdHex === `0x${"00".repeat(32)}`) {
+    throw new Error(
+      `proposal ${id} has no Walrus pointer (proposalBlob is unset) — it was not created via proposeWithBlob`,
+    );
+  }
   const blobIdB64Url = hexToBase64Url(blobIdHex);
   const body = await fetchBlob(aggregator, blobIdB64Url);
 

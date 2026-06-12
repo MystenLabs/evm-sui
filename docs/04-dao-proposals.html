@@ -677,7 +677,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
             <tr><td>EVM_RPC_URL</td><td>yes</td><td>JSON-RPC for the chain holding Governance.</td></tr>
             <tr><td>EVM_CHAIN_ID</td><td>default 31337</td><td>Anvil; mainnet=1, sepolia=11155111.</td></tr>
             <tr><td>GOVERNANCE_ADDRESS</td><td>yes</td><td>Deployed Governance address.</td></tr>
-            <tr><td>PROPOSER_PRIVATE_KEY</td><td>propose only</td><td>Signer for the proposeWithBlob() tx.</td></tr>
+            <tr><td>PROPOSER_PRIVATE_KEY</td><td>propose (+ vote fallback)</td><td>Signer for the proposeWithBlob() tx; also used by vote if VOTER_PRIVATE_KEY is unset.</td></tr>
             <tr><td>VOTER_PRIVATE_KEY</td><td>vote only</td><td>Signer for castVote() (falls back to PROPOSER_PRIVATE_KEY).</td></tr>
             <tr><td>WALRUS_PUBLISHER</td><td>default testnet</td><td>Public Walrus publisher URL.</td></tr>
             <tr><td>WALRUS_AGGREGATOR</td><td>default testnet</td><td>Walrus aggregator URL.</td></tr>
@@ -772,7 +772,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </div>
     <div class="caveats">
       <ul>
-        <li><strong>Signaling only — not an executing DAO.</strong> Proposals carry a single no-op action and are never queued/executed; the outcome is the vote result. Add <code>GovernorTimelockControl</code> + real <code>targets/calldatas</code> for on-chain execution.</li>
+        <li><strong>Signaling by convention, not enforcement.</strong> <code>proposeWithBlob</code> carries a single no-op action, but this is a stock <code>Governor</code> (no timelock, <code>proposalThreshold</code> 0) — the inherited 4-arg <code>propose</code> accepts real actions from anyone and a passed proposal can be executed (a signaling proposal's no-op runs harmlessly). Add <code>GovernorTimelockControl</code>, a non-zero threshold, and restrict the open <code>propose</code> for production.</li>
         <li><strong>Not a Snapshot replacement.</strong> No off-chain signature aggregation and no EIP-712 envelope — voting is fully on-chain via <code>castVote</code>. Snapshot voting and quorum <em>are</em> present (inherited from <code>Governor</code>); the showcase's point is <em>where the body lives</em>.</li>
         <li><strong>Not a Walrus pricing oracle.</strong> <code>epochs</code> is a number the proposer picks. WAL cost is paid by the proposer's wallet to the publisher upfront — neither the DAO contract nor the voters touch WAL.</li>
         <li><strong><code>--dry-run</code> still spends WAL.</strong> The Walrus upload runs <em>before</em> the dry-run gate so the CLI can preview the real <code>blobId</code>; only the EVM tx is skipped. Rename to <code>--no-broadcast</code> in your fork if the literal "dry-run = no side effects" reading matters.</li>

@@ -31,10 +31,15 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 /// `IVotes` (e.g. an OpenZeppelin `ERC20Votes` token) and holders MUST delegate
 /// (self-delegation is fine) for their balance to count.
 ///
-/// Proposals here are *signaling only*: they carry no on-chain actions, so
-/// there is nothing to `queue`/`execute` — the outcome is the vote result over
-/// a Walrus-hosted body. Wiring real actions (and a `TimelockController`) is a
-/// standard `Governor` extension and orthogonal to the Walrus integration this
+/// `proposeWithBlob` opens *signaling* proposals: each carries a single no-op
+/// action, so the intended outcome is just the vote result over a Walrus-hosted
+/// body. This is a property of how the showcase *uses* the contract, not an
+/// enforced invariant — it is a stock `Governor` with no timelock and
+/// `proposalThreshold` 0, so the inherited 4-arg `propose` will accept real
+/// actions from anyone, and a passed proposal can be `execute`d (a signaling
+/// proposal's no-op self-call executes harmlessly). For production, add a
+/// `TimelockController`, a non-zero proposal threshold, and restrict the open
+/// `propose` path. All of that is orthogonal to the Walrus integration this
 /// showcase demonstrates.
 contract Governance is
     Governor,
@@ -77,9 +82,10 @@ contract Governance is
         if (blobId == bytes32(0)) revert ZeroBlobId();
 
         // Signaling vote: `Governor` rejects a zero-action proposal, so we carry
-        // a single no-op action (a 0-value, empty-calldata self-call). Nothing
-        // is ever executed — the proposal exists only to be voted on — so the
-        // action's contents are immaterial.
+        // a single no-op action (a 0-value, empty-calldata self-call). The
+        // showcase never queues/executes — the proposal exists to be voted on —
+        // and if a passed proposal were executed anyway, the self-call is a
+        // harmless no-op, so the action's contents are immaterial.
         address[] memory targets = new address[](1);
         uint256[] memory values = new uint256[](1);
         bytes[] memory calldatas = new bytes[](1);

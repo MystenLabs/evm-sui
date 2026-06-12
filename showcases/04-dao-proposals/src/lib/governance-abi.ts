@@ -70,13 +70,6 @@ export const GOVERNANCE_ABI = [
     outputs: [{ name: "", type: "uint256" }],
   },
   {
-    type: "function",
-    name: "quorum",
-    stateMutability: "view",
-    inputs: [{ name: "timepoint", type: "uint256" }],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-  {
     type: "event",
     name: "ProposalBlob",
     inputs: [
