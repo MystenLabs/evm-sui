@@ -602,8 +602,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
         <p>
           <code>propose(blobId, deadline)</code> takes a 32-byte Walrus blob id and a unix-seconds deadline. The
           contract reverts on past deadlines and zero blob ids, then stores the
-          <code>Proposal(proposer, blobId, deadline, yes, no, startBlock)</code> struct — snapshotting
-          <code>block.number - 1</code> — and emits <code>Proposed</code>.
+          <code>Proposal(proposer, blobId, deadline, yes, no, startBlock)</code> struct — with
+          <code>startBlock</code> snapshotted at <code>block.number - 1</code> — and emits <code>Proposed</code>.
         </p>
         <p>
           <code>vote(id, support)</code> reads the caller's voting power at the proposal's snapshot block via

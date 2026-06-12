@@ -720,7 +720,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
         <div class="showcase-prose">
           <h4>What it shows</h4>
           <p class="fix">
-            One contract storing <strong>proposalId → (proposer, blobId, deadline, yes, no)</strong>. Proposal body
+            One contract storing <strong>proposalId → (proposer, blobId, deadline, yes, no, startBlock)</strong>. Proposal body
             uploaded to Walrus via the public publisher (so the proposer pays, not the DAO operator); contract
             stores the 32-byte blobId. Two CLIs (<code>propose</code> + <code>tally</code>) drive the end-to-end
             flow.
@@ -833,8 +833,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <span class="f">pnpm</span> pack:quilt ./meta      <span class="c"># → QID_METADATA</span>
 
 <span class="c">// QuiltedCollection.tokenURI</span>
-<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> id) <span class="k">public</span> <span class="k">view</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
-    <span class="k">return</span> <span class="f">string.concat</span>(aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, id.<span class="f">toString</span>(), <span class="s">".json"</span>);
+<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> tokenId) <span class="k">public</span> <span class="k">view</span> <span class="k">override</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
+    <span class="k">return</span> <span class="f">string.concat</span>(aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, tokenId.<span class="f">toString</span>(), <span class="s">".json"</span>);
 }</pre>
           <div class="flow">
             <div class="flow-row">
