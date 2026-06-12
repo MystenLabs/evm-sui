@@ -613,10 +613,10 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <span class="t">uint256</span> <span class="k">public</span> <span class="k">immutable</span> maxSupply;
 
 <span class="k">function</span> <span class="f">mint</span>() <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> tokenId);
-<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> id) <span class="k">public</span> <span class="k">view</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
-    <span class="f">_requireOwned</span>(id);
+<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> tokenId) <span class="k">public</span> <span class="k">view</span> <span class="k">override</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
+    <span class="f">_requireOwned</span>(tokenId);
     <span class="k">return</span> <span class="f">string.concat</span>(
-      aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, id.<span class="f">toString</span>(), <span class="s">".json"</span>
+      aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, tokenId.<span class="f">toString</span>(), <span class="s">".json"</span>
     );
 }</pre>
         <div class="flow" style="margin-top: 18px;">
@@ -783,8 +783,8 @@ meta/
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/QuiltedCollection.sol"><strong>contracts/src/QuiltedCollection.sol</strong>~120 lines: ERC-721 + Ownable + immutable <code>maxSupply</code> + mutable <code>aggregator</code>.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/QuiltedCollection.t.sol"><strong>contracts/test/QuiltedCollection.t.sol</strong>10 Foundry tests covering constructor validation, sold-out cap, tokenURI shape, setAggregator authorization.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/QuiltedCollection.sol"><strong>contracts/src/QuiltedCollection.sol</strong>~100 lines: ERC-721 + Ownable + immutable <code>maxSupply</code> + mutable <code>aggregator</code>.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/QuiltedCollection.t.sol"><strong>contracts/test/QuiltedCollection.t.sol</strong>Foundry tests covering constructor validation, sold-out cap, tokenURI shape, setAggregator authorization.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/script/DeployQuiltedCollection.s.sol"><strong>contracts/script/DeployQuiltedCollection.s.sol</strong>Env-driven forge script — <code>QC_*</code> vars become constructor args.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/src/pack.ts"><strong>06-quilted-collection/src/pack.ts</strong>Wraps <code>walrus store-quilt --paths &lt;dir&gt;</code>; tolerant stdout parser for the quiltId.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/06-quilted-collection/src/deploy.ts"><strong>06-quilted-collection/src/deploy.ts</strong>Forge-script wrapper that forwards <code>QC_*</code> env vars; redacts the private key in <code>--dry-run</code> output.</a>

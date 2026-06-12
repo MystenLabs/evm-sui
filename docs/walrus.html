@@ -599,7 +599,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <pre class="code"><span class="c">// the entire EVM-side contract surface</span>
 <span class="k">function</span> <span class="f">mint</span>(<span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
 <span class="k">function</span> <span class="f">mintTo</span>(<span class="t">address</span> to, <span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
-<span class="k">event</span> <span class="f">Minted</span>(<span class="t">uint256</span> <span class="k">indexed</span> tokenId, <span class="t">address</span> <span class="k">indexed</span> minter, <span class="t">string</span> tokenURI_);</pre>
+<span class="k">event</span> <span class="f">Minted</span>(<span class="t">uint256</span> <span class="k">indexed</span> tokenId, <span class="t">address</span> <span class="k">indexed</span> to, <span class="t">string</span> tokenURI_);</pre>
           <div class="flow">
             <div class="flow-row">
               <div class="box">picker</div>
@@ -720,7 +720,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
         <div class="showcase-prose">
           <h4>What it shows</h4>
           <p class="fix">
-            One contract storing <strong>proposalId → (proposer, blobId, deadline, yes, no)</strong>. Proposal body
+            One contract storing <strong>proposalId → (proposer, blobId, deadline, yes, no, startBlock)</strong>. Proposal body
             uploaded to Walrus via the public publisher (so the proposer pays, not the DAO operator); contract
             stores the 32-byte blobId. Two CLIs (<code>propose</code> + <code>tally</code>) drive the end-to-end
             flow.
@@ -728,7 +728,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
           <div class="effort">
             <span class="pill good">straightforward</span>
             <span class="pill">~100 LOC</span>
-            <span class="pill warn">showcase-only voting surface</span>
+            <span class="pill warn">no quorum / timelock</span>
             <span class="pill accent">store blobId, not CID</span>
           </div>
         </div>
@@ -820,7 +820,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
           </p>
           <div class="effort">
             <span class="pill good">solid</span>
-            <span class="pill">~120 LOC</span>
+            <span class="pill">~100 LOC</span>
             <span class="pill warn">requires walrus CLI</span>
             <span class="pill accent">two-quilt packer + 1-line tokenURI</span>
           </div>
@@ -833,8 +833,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <span class="f">pnpm</span> pack:quilt ./meta      <span class="c"># → QID_METADATA</span>
 
 <span class="c">// QuiltedCollection.tokenURI</span>
-<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> id) <span class="k">public</span> <span class="k">view</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
-    <span class="k">return</span> <span class="f">string.concat</span>(aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, id.<span class="f">toString</span>(), <span class="s">".json"</span>);
+<span class="k">function</span> <span class="f">tokenURI</span>(<span class="t">uint256</span> tokenId) <span class="k">public</span> <span class="k">view</span> <span class="k">override</span> <span class="k">returns</span> (<span class="t">string</span> <span class="k">memory</span>) {
+    <span class="k">return</span> <span class="f">string.concat</span>(aggregator, <span class="s">"/v1/blobs/by-quilt-id/"</span>, quiltId, <span class="s">"/"</span>, tokenId.<span class="f">toString</span>(), <span class="s">".json"</span>);
 }</pre>
           <div class="flow">
             <div class="flow-row">
@@ -862,7 +862,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
           env tables, and a verify checklist. The shared Foundry package at
           <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/contracts"><code>showcases/contracts</code></a>
           builds and tests all four contracts together: <code>forge build &amp;&amp; forge test -vv</code> from that
-          directory runs 37 tests across <code>EvmWalNFT</code>, <code>Governance</code>,
+          directory runs the full Foundry suite across <code>EvmWalNFT</code>, <code>Governance</code>,
           <code>QuiltedCollection</code>, and <code>WalrusResolver</code>.
         </p>
       </div>
