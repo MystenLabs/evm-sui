@@ -594,7 +594,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       before the proposal was created. Because the snapshot is fixed in the past, flash-minted or flash-borrowed
       tokens carry zero weight, and shuffling tokens between wallets after the snapshot can't recycle votes.
       The one OpenZeppelin <code>ERC20Votes</code> caveat: holders must <em>delegate</em> (self-delegation
-      counts) before the snapshot block for their balance to count.
+      works) before the snapshot block for their balance to count.
     </div>
 
     <div class="thesis-grid">
@@ -738,8 +738,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   --rpc-url <span class="n">$EVM_RPC_URL</span> \
   --private-key <span class="n">$VOTER_PRIVATE_KEY</span>
 
-<span class="c"># then re-run `pnpm tally 1` and the yes count reflects the voter's snapshotted
-# voting power (the voter must have delegated before the proposal was created).</span></pre>
+<span class="c"># then re-run `pnpm tally 1` and the yes count reflects the voter's snapshotted voting power.</span></pre>
       </div>
     </div>
   </div>
@@ -768,8 +767,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </div>
     <div class="caveats">
       <ul>
-        <li><strong>Not a full governance framework.</strong> Voting power is snapshotted via <code>ERC20Votes</code> + <code>getPastVotes</code>, but there is no quorum, no timelock, and no on-chain execution — <code>tally</code> is informational.</li>
-        <li><strong>Not a Snapshot replacement.</strong> No off-chain signature aggregation, no EIP-712 envelope, no delegate weight, no quorum logic. The contract is a demonstration of <em>where the body lives</em>, not a full vote envelope.</li>
+        <li><strong>Not a full governance framework.</strong> No timelock and no on-chain execution — <code>tally</code> is informational.</li>
+        <li><strong>Not a Snapshot replacement.</strong> No off-chain signature aggregation, no EIP-712 envelope, no quorum logic. The contract is a demonstration of <em>where the body lives</em>, not a full vote envelope.</li>
         <li><strong>Not a Walrus pricing oracle.</strong> <code>epochs</code> is a number the proposer picks. WAL cost is paid by the proposer's wallet to the publisher upfront — neither the DAO contract nor the voters touch WAL.</li>
         <li><strong><code>--dry-run</code> still spends WAL.</strong> The Walrus upload runs <em>before</em> the dry-run gate so the CLI can preview the real <code>blobId</code>; only the EVM tx is skipped. Rename to <code>--no-broadcast</code> in your fork if the literal "dry-run = no side effects" reading matters.</li>
       </ul>
@@ -785,11 +784,11 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </div>
     <div class="sources">
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>~100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + snapshot-voting rationale in NatSpec.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>13 Foundry tests covering propose validation, snapshot vote weight + double-vote rejection, transfer-recycling resistance, tally state transitions.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>Foundry tests covering propose validation, snapshot vote weight + double-vote rejection, transfer-recycling resistance, tally state transitions.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the voting-surface notes verbatim.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + voting-surface notes.</a>
     </div>
   </div>
 </section>
