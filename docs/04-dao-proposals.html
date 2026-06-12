@@ -588,12 +588,13 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>The DAO never touches WAL. Voters never touch IPFS.</h2>
     </div>
 
-    <div class="notice bad">
-      <strong>Showcase-only voting surface.</strong> <code>Governance.vote()</code> reads
-      <code>voteToken.balanceOf(msg.sender)</code> at the instant of the call. Against any ERC-20 with a flash-mint
-      or flash-borrow integration, this is exploitable: an attacker can borrow tokens, vote, and repay in a single
-      transaction. For production, pair with an OpenZeppelin <code>ERC20Votes</code> token and switch
-      <code>vote()</code> to <code>IVotes(voteToken).getPastVotes(msg.sender, proposalStartBlock)</code>.
+    <div class="notice">
+      <strong>Snapshot-weighted voting.</strong> <code>Governance.vote()</code> weights each vote by
+      <code>IVotes(voteToken).getPastVotes(msg.sender, p.startBlock)</code> — the voter's power at the block
+      before the proposal was created. Because the snapshot is fixed in the past, flash-minted or flash-borrowed
+      tokens carry zero weight, and shuffling tokens between wallets after the snapshot can't recycle votes.
+      The one OpenZeppelin <code>ERC20Votes</code> caveat: holders must <em>delegate</em> (self-delegation
+      counts) before the snapshot block for their balance to count.
     </div>
 
     <div class="thesis-grid">
@@ -601,10 +602,12 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
         <p>
           <code>propose(blobId, deadline)</code> takes a 32-byte Walrus blob id and a unix-seconds deadline. The
           contract reverts on past deadlines and zero blob ids, then stores the
-          <code>Proposal(proposer, blobId, deadline, yes, no)</code> struct and emits <code>Proposed</code>.
+          <code>Proposal(proposer, blobId, deadline, yes, no, startBlock)</code> struct — snapshotting
+          <code>block.number - 1</code> — and emits <code>Proposed</code>.
         </p>
         <p>
-          <code>vote(id, support)</code> reads the caller's voteToken balance, gates on
+          <code>vote(id, support)</code> reads the caller's voting power at the proposal's snapshot block via
+          <code>getPastVotes</code>, gates on
           <code>!hasVoted &amp;&amp; block.timestamp &lt; deadline</code>, and accumulates the weight on <code>yes</code> or
           <code>no</code>.
         </p>
@@ -622,6 +625,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   <span class="t">uint64</span>  deadline;
   <span class="t">uint128</span> yes;
   <span class="t">uint128</span> no;
+  <span class="t">uint48</span>  startBlock;  <span class="c">// getPastVotes snapshot</span>
 }
 
 <span class="k">function</span> <span class="f">propose</span>(<span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline)
@@ -734,7 +738,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   --rpc-url <span class="n">$EVM_RPC_URL</span> \
   --private-key <span class="n">$VOTER_PRIVATE_KEY</span>
 
-<span class="c"># then re-run `pnpm tally 1` and the yes count reflects voteToken.balanceOf(voter).</span></pre>
+<span class="c"># then re-run `pnpm tally 1` and the yes count reflects the voter's snapshotted
+# voting power (the voter must have delegated before the proposal was created).</span></pre>
       </div>
     </div>
   </div>
@@ -763,7 +768,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </div>
     <div class="caveats">
       <ul>
-        <li><strong>Not production governance.</strong> The flash-loan attack vector on live <code>balanceOf</code> reads is real. Use <code>ERC20Votes</code> + <code>getPastVotes</code> in any real DAO.</li>
+        <li><strong>Not a full governance framework.</strong> Voting power is snapshotted via <code>ERC20Votes</code> + <code>getPastVotes</code>, but there is no quorum, no timelock, and no on-chain execution — <code>tally</code> is informational.</li>
         <li><strong>Not a Snapshot replacement.</strong> No off-chain signature aggregation, no EIP-712 envelope, no delegate weight, no quorum logic. The contract is a demonstration of <em>where the body lives</em>, not a full vote envelope.</li>
         <li><strong>Not a Walrus pricing oracle.</strong> <code>epochs</code> is a number the proposer picks. WAL cost is paid by the proposer's wallet to the publisher upfront — neither the DAO contract nor the voters touch WAL.</li>
         <li><strong><code>--dry-run</code> still spends WAL.</strong> The Walrus upload runs <em>before</em> the dry-run gate so the CLI can preview the real <code>blobId</code>; only the EVM tx is skipped. Rename to <code>--no-broadcast</code> in your fork if the literal "dry-run = no side effects" reading matters.</li>
@@ -779,12 +784,12 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + flash-loan warning in NatSpec.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>12 Foundry tests covering propose validation, vote weight + double-vote rejection, tally state transitions.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/Governance.sol"><strong>contracts/src/Governance.sol</strong>~100 lines: <code>propose</code> / <code>vote</code> / <code>tally</code> + snapshot-voting rationale in NatSpec.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/test/Governance.t.sol"><strong>contracts/test/Governance.t.sol</strong>13 Foundry tests covering propose validation, snapshot vote weight + double-vote rejection, transfer-recycling resistance, tally state transitions.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/propose.ts"><strong>04-dao-proposals/src/propose.ts</strong>Markdown → publisher PUT → <code>propose(blobId, deadline)</code> via viem; <code>--dry-run</code> support.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/tally.ts"><strong>04-dao-proposals/src/tally.ts</strong>Read-only tally + body fetch.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/src/lib/walrus.ts"><strong>04-dao-proposals/src/lib/walrus.ts</strong>Publisher PUT + aggregator GET + hex↔base64url conversion.</a>
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the flash-loan warning verbatim.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/04-dao-proposals/README.md"><strong>showcases/04-dao-proposals/README.md</strong>Full walkthrough + the voting-surface notes verbatim.</a>
     </div>
   </div>
 </section>

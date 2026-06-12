@@ -599,7 +599,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <pre class="code"><span class="c">// the entire EVM-side contract surface</span>
 <span class="k">function</span> <span class="f">mint</span>(<span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
 <span class="k">function</span> <span class="f">mintTo</span>(<span class="t">address</span> to, <span class="t">string</span> tokenURI_) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span>);
-<span class="k">event</span> <span class="f">Minted</span>(<span class="t">uint256</span> <span class="k">indexed</span> tokenId, <span class="t">address</span> <span class="k">indexed</span> minter, <span class="t">string</span> tokenURI_);</pre>
+<span class="k">event</span> <span class="f">Minted</span>(<span class="t">uint256</span> <span class="k">indexed</span> tokenId, <span class="t">address</span> <span class="k">indexed</span> to, <span class="t">string</span> tokenURI_);</pre>
           <div class="flow">
             <div class="flow-row">
               <div class="box">picker</div>
@@ -728,7 +728,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
           <div class="effort">
             <span class="pill good">straightforward</span>
             <span class="pill">~100 LOC</span>
-            <span class="pill warn">showcase-only voting surface</span>
+            <span class="pill warn">no quorum / timelock</span>
             <span class="pill accent">store blobId, not CID</span>
           </div>
         </div>
@@ -820,7 +820,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
           </p>
           <div class="effort">
             <span class="pill good">solid</span>
-            <span class="pill">~120 LOC</span>
+            <span class="pill">~100 LOC</span>
             <span class="pill warn">requires walrus CLI</span>
             <span class="pill accent">two-quilt packer + 1-line tokenURI</span>
           </div>
@@ -862,7 +862,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
           env tables, and a verify checklist. The shared Foundry package at
           <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/contracts"><code>showcases/contracts</code></a>
           builds and tests all four contracts together: <code>forge build &amp;&amp; forge test -vv</code> from that
-          directory runs 37 tests across <code>EvmWalNFT</code>, <code>Governance</code>,
+          directory runs 38 tests across <code>EvmWalNFT</code>, <code>Governance</code>,
           <code>QuiltedCollection</code>, and <code>WalrusResolver</code>.
         </p>
       </div>
