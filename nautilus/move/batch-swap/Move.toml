@@ -1,0 +1,9 @@
+[package]
+name = "batch_swap"
+edition = "2024"
+
+[dependencies]
+enclave = { local = "../enclave" }
+
+[addresses]
+batch_swap = "0x0"

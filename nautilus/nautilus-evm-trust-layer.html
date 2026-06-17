@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nautilus + EVM: Complementary Trust Layer, Not Replacement</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --fg: #1f1f1f;
+      --fg-muted: #6e6e6e;
+      --heading-fg: #1a1a1a;
+      --accent: #1976d2;
+      --border: #e0e0e0;
+      --code-bg: #f0f0f0;
+      --code-fg: #6e3700;
+      --pre-bg: #fafafa;
+      --aside-bg: #f5f5f5;
+      --success: #2e7d32;
+      --warning: #9a5b00;
+      --error: #d32f2f;
+
+      --sui-bg: #e8f5e9;
+      --sui-border: #81c784;
+      --sui-fg: #1b5e20;
+      --evm-bg: #e3f2fd;
+      --evm-border: #64b5f6;
+      --evm-fg: #0d47a1;
+      --enclave-bg: #fff3e0;
+      --enclave-border: #ffb74d;
+      --enclave-fg: #e65100;
+      --seal-bg: #f3e5f5;
+      --seal-border: #ce93d8;
+      --seal-fg: #6a1b9a;
+      --bridge-bg: #fff8e1;
+      --bridge-border: #ffd54f;
+      --bridge-fg: #f57f17;
+      --user-bg: #fafafa;
+      --user-border: #bdbdbd;
+
+      --diagram-edge: #757575;
+      --real: #2e7d32;
+      --real-bg: #e8f5e9;
+      --fake: #d32f2f;
+      --fake-bg: #ffebee;
+
+      --step-num-bg: #e3f2fd;
+      --step-num-fg: #0d47a1;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --fg: #cccccc;
+        --fg-muted: #9e9e9e;
+        --heading-fg: #e8e8e8;
+        --accent: #4dabf7;
+        --border: #2a2a2a;
+        --code-bg: #2a2a2a;
+        --code-fg: #f0e8d8;
+        --pre-bg: #161616;
+        --aside-bg: #242424;
+        --success: #66bb6a;
+        --warning: #f0c674;
+        --error: #ff7676;
+
+        --sui-bg: #0a2a0a;
+        --sui-border: #4a8a4a;
+        --sui-fg: #81c784;
+        --evm-bg: #0a1a2e;
+        --evm-border: #3a6a9a;
+        --evm-fg: #90caf9;
+        --enclave-bg: #2a1f0a;
+        --enclave-border: #a0743a;
+        --enclave-fg: #ffcc80;
+        --seal-bg: #2a1a3a;
+        --seal-border: #8a4a9a;
+        --seal-fg: #ce93d8;
+        --bridge-bg: #2a2510;
+        --bridge-border: #a09030;
+        --bridge-fg: #ffd54f;
+        --user-bg: #242424;
+        --user-border: #555555;
+
+        --diagram-edge: #9e9e9e;
+        --real: #66bb6a;
+        --real-bg: #0a2a0a;
+        --fake: #ff7676;
+        --fake-bg: #2a0a0a;
+
+        --step-num-bg: #0a1a2e;
+        --step-num-fg: #90caf9;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.65;
+      padding: 2rem 1.5rem;
+    }
+    main { max-width: 960px; margin: 0 auto; }
+    h1, h2, h3, h4 { color: var(--heading-fg); }
+    h1 { font-size: 1.9rem; margin-bottom: 0.3rem; letter-spacing: -0.02em; }
+    h2 { font-size: 1.45rem; margin: 2.5rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+    h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+    p { margin: 0.6rem 0; }
+    a { color: var(--accent); }
+    code {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      padding: 0.15em 0.35em;
+      border-radius: 3px;
+      font-size: 0.92em;
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", Menlo, Consolas, monospace;
+    }
+    small, figcaption { color: var(--fg-muted); }
+    aside {
+      background: var(--aside-bg);
+      border-left: 3px solid var(--accent);
+      padding: 0.7rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 4px 4px 0;
+    }
+    aside.warning { border-left-color: var(--warning); }
+    aside.success { border-left-color: var(--success); }
+    aside.error { border-left-color: var(--error); }
+
+    header { max-width: 960px; margin: 0 auto 1.5rem; }
+    header p { color: var(--fg-muted); font-size: 1.05rem; }
+
+    nav { max-width: 960px; margin: 0 auto 2rem; }
+    nav ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    nav a {
+      display: inline-block;
+      padding: 0.35rem 0.8rem;
+      background: var(--aside-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    nav a:hover { background: var(--code-bg); }
+
+    figure { margin: 1.5rem 0; }
+    figcaption { font-size: 0.88rem; margin-top: 0.5rem; text-align: center; }
+    figure svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+    .one-liner {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--heading-fg);
+      padding: 1rem 1.2rem;
+      background: var(--aside-bg);
+      border-radius: 6px;
+      margin: 1.2rem 0;
+      line-height: 1.5;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .card {
+      background: var(--aside-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+    .card h4 { margin-bottom: 0.4rem; font-size: 1rem; }
+    .card p, .card ul { font-size: 0.92rem; }
+    .card ul { margin: 0.3rem 0 0 1.2rem; }
+    .card li { margin: 0.2rem 0; }
+
+    .step-list { list-style: none; counter-reset: step; margin: 1rem 0; }
+    .step-list li {
+      counter-increment: step;
+      position: relative;
+      padding: 0.8rem 1rem 0.8rem 3.2rem;
+      background: var(--aside-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 0.6rem;
+    }
+    .step-list li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0.8rem;
+      top: 0.75rem;
+      width: 1.8rem;
+      height: 1.8rem;
+      background: var(--step-num-bg);
+      color: var(--step-num-fg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    footer {
+      max-width: 960px;
+      margin: 3rem auto 0;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      color: var(--fg-muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 1rem; }
+      h1 { font-size: 1.4rem; }
+      h2 { font-size: 1.2rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      nav ul { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Nautilus + EVM: Complementary Trust Layer, Not Replacement</h1>
+  <p>An honest architectural analysis &mdash; when combining Nautilus with EVM dapps makes sense, and when it doesn't.</p>
+</header>
+
+<nav aria-label="Contents">
+  <ul>
+    <li><a href="#thesis">Core Thesis</a></li>
+    <li><a href="#dual-chain">Dual-Chain Architecture</a></li>
+    <li><a href="#stack">The Full Stack</a></li>
+    <li><a href="#pattern">Cross-Chain Pattern</a></li>
+    <li><a href="#weaknesses">Honest Weaknesses</a></li>
+    <li><a href="#when">When It Makes Sense</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="thesis">
+<h2>The Reframe</h2>
+
+<div class="one-liner">
+  The "must leave EVM" claim is true if Nautilus is a <em>replacement</em>. It's not true if Nautilus is a <strong>complementary verification layer</strong> that EVM dapps consume.
+</div>
+
+<p>The expensive part of Nautilus &mdash; verifying the AWS certificate chain and PCR attestation &mdash; costs <strong>~70M gas on Solidity</strong> (Marlin had to optimize like hell to get it that low). On Sui/Move, it's cheap enough to do at registration. So the architecture becomes:</p>
+
+<ul>
+  <li><strong>Sui</strong> handles attestation verification (the hard crypto) + PCR governance (key rotation as Move transactions)</li>
+  <li><strong>The enclave</strong> signs results that both chains can consume &mdash; Ed25519 for Sui, secp256k1 for EVM</li>
+  <li><strong>Solidity</strong> trusts the enclave's pubkey because it's anchored on Sui with verified PCRs</li>
+</ul>
+
+<p>That's genuinely something you can't get from Marlin-on-EVM-alone or Phala-alone &mdash; the Sui side acts as a lightweight, cheap, first-party verification root that the EVM side doesn't have to replicate.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="dual-chain">
+<h2>1. The Dual-Chain Architecture</h2>
+
+<figure>
+  <svg viewBox="0 0 860 440" width="860" height="440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dual-chain architecture: Sui as verification root, enclave in the middle, EVM as settlement layer">
+    <defs>
+      <marker id="arr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--diagram-edge)"/>
+      </marker>
+      <marker id="arrSui" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--sui-border)"/>
+      </marker>
+      <marker id="arrEvm" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--evm-border)"/>
+      </marker>
+      <marker id="arrEnc" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--enclave-border)"/>
+      </marker>
+    </defs>
+
+    <!-- Sui zone -->
+    <rect x="15" y="15" width="270" height="410" rx="12" fill="var(--sui-bg)" stroke="var(--sui-border)" stroke-width="2"/>
+    <text x="150" y="42" text-anchor="middle" font-weight="700" font-size="15" fill="var(--sui-fg)">Sui (Verification Root)</text>
+
+    <rect x="35" y="60" width="230" height="48" rx="6" fill="var(--bg)" stroke="var(--sui-border)" stroke-width="1.5"/>
+    <text x="150" y="80" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Attestation Verification</text>
+    <text x="150" y="98" text-anchor="middle" font-size="10" fill="var(--fg-muted)">P-384 cert chain &mdash; cheap on Move</text>
+
+    <rect x="35" y="120" width="230" height="48" rx="6" fill="var(--bg)" stroke="var(--sui-border)" stroke-width="1.5"/>
+    <text x="150" y="140" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">PCR Governance</text>
+    <text x="150" y="158" text-anchor="middle" font-size="10" fill="var(--fg-muted)">key rotation via Move transactions</text>
+
+    <rect x="35" y="180" width="230" height="48" rx="6" fill="var(--bg)" stroke="var(--seal-border)" stroke-width="1.5"/>
+    <text x="150" y="200" text-anchor="middle" font-size="12" font-weight="600" fill="var(--seal-fg)">Seal Policy Management</text>
+    <text x="150" y="218" text-anchor="middle" font-size="10" fill="var(--fg-muted)">threshold encryption policies</text>
+
+    <rect x="35" y="240" width="230" height="48" rx="6" fill="var(--bg)" stroke="var(--sui-border)" stroke-width="1.5"/>
+    <text x="150" y="260" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">State Management</text>
+    <text x="150" y="278" text-anchor="middle" font-size="10" fill="var(--fg-muted)">object model, parallel execution</text>
+
+    <text x="150" y="315" text-anchor="middle" font-size="11" font-weight="600" fill="var(--sui-fg)">verify_signature()</text>
+    <text x="150" y="333" text-anchor="middle" font-size="10" fill="var(--fg-muted)">Ed25519 + BCS</text>
+
+    <rect x="55" y="355" width="190" height="50" rx="6" fill="var(--bg)" stroke="var(--sui-border)" stroke-width="2"/>
+    <text x="150" y="377" text-anchor="middle" font-size="12" font-weight="700" fill="var(--sui-fg)">EnclaveConfig +</text>
+    <text x="150" y="395" text-anchor="middle" font-size="12" font-weight="700" fill="var(--sui-fg)">Enclave objects</text>
+
+    <!-- Enclave zone (center) -->
+    <rect x="315" y="55" width="230" height="280" rx="12" fill="var(--enclave-bg)" stroke="var(--enclave-border)" stroke-width="2"/>
+    <text x="430" y="82" text-anchor="middle" font-weight="700" font-size="15" fill="var(--enclave-fg)">Nautilus Enclave</text>
+    <text x="430" y="100" text-anchor="middle" font-size="10" fill="var(--fg-muted)">AWS Nitro / Marlin Oyster</text>
+
+    <rect x="335" y="115" width="190" height="40" rx="6" fill="var(--bg)" stroke="var(--enclave-border)" stroke-width="1.5"/>
+    <text x="430" y="140" text-anchor="middle" font-size="12" fill="currentColor">Your Rust Logic</text>
+
+    <rect x="335" y="168" width="190" height="40" rx="6" fill="var(--bg)" stroke="var(--enclave-border)" stroke-width="1.5"/>
+    <text x="430" y="185" text-anchor="middle" font-size="11" fill="currentColor">API Secrets (in memory)</text>
+    <text x="430" y="200" text-anchor="middle" font-size="10" fill="var(--fg-muted)">never on-chain</text>
+
+    <!-- Dual signing -->
+    <rect x="335" y="222" width="190" height="50" rx="6" fill="var(--bg)" stroke="var(--enclave-border)" stroke-width="2"/>
+    <text x="430" y="242" text-anchor="middle" font-size="12" font-weight="700" fill="var(--enclave-fg)">Dual Signing</text>
+    <text x="430" y="260" text-anchor="middle" font-size="10" fill="var(--fg-muted)">Ed25519 &rarr; Sui | secp256k1 &rarr; EVM</text>
+
+    <rect x="335" y="285" width="190" height="35" rx="6" fill="var(--bg)" stroke="var(--enclave-border)" stroke-width="1.5"/>
+    <text x="430" y="308" text-anchor="middle" font-size="11" fill="currentColor">PCR0 + PCR1 + PCR2</text>
+
+    <!-- EVM zone -->
+    <rect x="575" y="15" width="270" height="410" rx="12" fill="var(--evm-bg)" stroke="var(--evm-border)" stroke-width="2"/>
+    <text x="710" y="42" text-anchor="middle" font-weight="700" font-size="15" fill="var(--evm-fg)">EVM (Settlement Layer)</text>
+
+    <rect x="595" y="60" width="230" height="48" rx="6" fill="var(--bg)" stroke="var(--evm-border)" stroke-width="1.5"/>
+    <text x="710" y="80" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">DeFi Settlement</text>
+    <text x="710" y="98" text-anchor="middle" font-size="10" fill="var(--fg-muted)">liquidity, AMMs, lending</text>
+
+    <rect x="595" y="120" width="230" height="48" rx="6" fill="var(--bg)" stroke="var(--evm-border)" stroke-width="1.5"/>
+    <text x="710" y="140" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">ecrecover()</text>
+    <text x="710" y="158" text-anchor="middle" font-size="10" fill="var(--fg-muted)">cheap secp256k1 verification</text>
+
+    <rect x="595" y="180" width="230" height="48" rx="6" fill="var(--bg)" stroke="var(--evm-border)" stroke-width="1.5"/>
+    <text x="710" y="200" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">User Wallets</text>
+    <text x="710" y="218" text-anchor="middle" font-size="10" fill="var(--fg-muted)">MetaMask, existing infra</text>
+
+    <text x="710" y="260" text-anchor="middle" font-size="11" font-weight="600" fill="var(--evm-fg)">Trusts enclave pubkey</text>
+    <text x="710" y="278" text-anchor="middle" font-size="10" fill="var(--fg-muted)">because Sui verified the PCRs</text>
+
+    <rect x="595" y="300" width="230" height="48" rx="6" fill="var(--bg)" stroke="var(--evm-border)" stroke-width="1.5"/>
+    <text x="710" y="320" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">No attestation needed</text>
+    <text x="710" y="338" text-anchor="middle" font-size="10" fill="var(--fg-muted)">Sui did the heavy crypto already</text>
+
+    <!-- Bridge -->
+    <rect x="595" y="370" width="230" height="42" rx="6" fill="var(--bridge-bg)" stroke="var(--bridge-border)" stroke-width="1.5"/>
+    <text x="710" y="390" text-anchor="middle" font-size="12" font-weight="600" fill="var(--bridge-fg)">Bridge (Wormhole / Axelar)</text>
+    <text x="710" y="405" text-anchor="middle" font-size="10" fill="var(--fg-muted)">relays verified state</text>
+
+    <!-- Arrows: Enclave to Sui -->
+    <line x1="315" y1="247" x2="270" y2="247" stroke="var(--sui-border)" stroke-width="2" marker-end="url(#arrSui)"/>
+    <text x="293" y="240" text-anchor="middle" font-size="9" fill="var(--sui-fg)">Ed25519</text>
+    <text x="293" y="260" text-anchor="middle" font-size="9" fill="var(--sui-fg)">+ BCS</text>
+
+    <!-- Arrows: Enclave to EVM -->
+    <line x1="545" y1="247" x2="590" y2="247" stroke="var(--evm-border)" stroke-width="2" marker-end="url(#arrEvm)"/>
+    <text x="567" y="240" text-anchor="middle" font-size="9" fill="var(--evm-fg)">secp256k1</text>
+    <text x="567" y="260" text-anchor="middle" font-size="9" fill="var(--evm-fg)">+ ABI</text>
+
+    <!-- Bridge arrow Sui to EVM -->
+    <line x1="270" y1="392" x2="590" y2="392" stroke="var(--bridge-border)" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+    <text x="430" y="385" text-anchor="middle" font-size="10" fill="var(--bridge-fg)">bridge relays verified status</text>
+  </svg>
+  <figcaption>Sui is the verification root (cheap attestation). The enclave dual-signs for both chains. EVM settles.</figcaption>
+</figure>
+
+<aside class="success">
+  <strong>The cost asymmetry that makes this work:</strong> AWS cert chain verification costs ~70M gas on Solidity (Marlin's optimized Nitro verifier). On Sui/Move, it's cheap enough to do at registration. So Sui becomes the verification root that EVM doesn't have to replicate. The EVM side just runs <code>ecrecover()</code> against a known pubkey &mdash; negligible gas.
+</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="stack">
+<h2>2. The Full Stack &mdash; What No Single EVM Solution Offers</h2>
+
+<figure>
+  <svg viewBox="0 0 700 380" width="700" height="380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four-layer stack: Seal, Nautilus, Sui, EVM">
+    <!-- Layer 4 (bottom): EVM -->
+    <rect x="50" y="290" width="600" height="70" rx="10" fill="var(--evm-bg)" stroke="var(--evm-border)" stroke-width="2.5"/>
+    <text x="110" y="322" font-weight="700" font-size="15" fill="var(--evm-fg)">EVM</text>
+    <text x="110" y="342" font-size="11" fill="var(--fg-muted)">Settlement</text>
+    <text x="370" y="322" text-anchor="middle" font-size="12" fill="currentColor">DeFi settlement where the liquidity is.</text>
+    <text x="370" y="342" text-anchor="middle" font-size="12" fill="currentColor">AMMs, lending, stablecoins, user wallets.</text>
+
+    <!-- Layer 3: Sui -->
+    <rect x="50" y="210" width="600" height="70" rx="10" fill="var(--sui-bg)" stroke="var(--sui-border)" stroke-width="2.5"/>
+    <text x="110" y="242" font-weight="700" font-size="15" fill="var(--sui-fg)">Sui</text>
+    <text x="110" y="262" font-size="11" fill="var(--fg-muted)">Verification</text>
+    <text x="370" y="242" text-anchor="middle" font-size="12" fill="currentColor">Cheap attestation verification + PCR governance.</text>
+    <text x="370" y="262" text-anchor="middle" font-size="12" fill="currentColor">Seal policy management. State objects.</text>
+
+    <!-- Layer 2: Nautilus -->
+    <rect x="50" y="130" width="600" height="70" rx="10" fill="var(--enclave-bg)" stroke="var(--enclave-border)" stroke-width="2.5"/>
+    <text x="110" y="162" font-weight="700" font-size="15" fill="var(--enclave-fg)">Nautilus</text>
+    <text x="110" y="182" font-size="11" fill="var(--fg-muted)">Compute</text>
+    <text x="370" y="162" text-anchor="middle" font-size="12" fill="currentColor">Attested computation over decrypted data inside TEE.</text>
+    <text x="370" y="182" text-anchor="middle" font-size="12" fill="currentColor">API secrets in memory. Dual-sign for both chains.</text>
+
+    <!-- Layer 1 (top): Seal -->
+    <rect x="50" y="50" width="600" height="70" rx="10" fill="var(--seal-bg)" stroke="var(--seal-border)" stroke-width="2.5"/>
+    <text x="110" y="82" font-weight="700" font-size="15" fill="var(--seal-fg)">Seal</text>
+    <text x="110" y="102" font-size="11" fill="var(--fg-muted)">Encryption</text>
+    <text x="370" y="82" text-anchor="middle" font-size="12" fill="currentColor">Encrypted data at rest. Threshold-decryption.</text>
+    <text x="370" y="102" text-anchor="middle" font-size="12" fill="currentColor">Policy-gated access &mdash; enclave decrypts only if policy allows.</text>
+
+    <!-- Title -->
+    <text x="350" y="30" text-anchor="middle" font-weight="700" font-size="16" fill="currentColor">The Combined Stack</text>
+
+    <!-- Downward arrows between layers -->
+    <line x1="350" y1="123" x2="350" y2="130" stroke="var(--diagram-edge)" stroke-width="1.5"/>
+    <line x1="350" y1="203" x2="350" y2="210" stroke="var(--diagram-edge)" stroke-width="1.5"/>
+    <line x1="350" y1="283" x2="350" y2="290" stroke="var(--diagram-edge)" stroke-width="1.5"/>
+  </svg>
+  <figcaption>Four layers, each doing what it does best. No single EVM TEE solution offers all four.</figcaption>
+</figure>
+
+<aside>
+  <strong>Why this combination is unique:</strong> Chainlink Functions can't do Seal (no threshold encryption). Phala doesn't have Seal (different encryption model). Oasis Sapphire does full confidentiality but can't do cross-chain settlement on Ethereum L1. This stack lets you encrypt (Seal), compute privately (Nautilus), verify cheaply (Sui), and settle where the money is (EVM).
+</aside>
+
+<p>The <strong>"not fully confidential" weakness</strong> from the previous analysis becomes addressable here. Seal encrypts data at rest, Nautilus decrypts only inside the TEE, and only the cleartext <em>result</em> crosses to EVM for settlement. The matching/computation is private; the settlement is public. For the "private matching, public settlement" pattern &mdash; dark pools, sealed-bid auctions, confidential DeFi &mdash; this is exactly the right split.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="pattern">
+<h2>3. The Confidential Cross-Chain Pattern</h2>
+
+<p>Here's what a concrete integration looks like:</p>
+
+<figure>
+  <svg viewBox="0 0 820 460" width="820" height="460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Five-step cross-chain flow: encrypt on EVM, decrypt in Nautilus via Seal, verify on Sui, sign for EVM, settle on EVM">
+    <defs>
+      <marker id="arr2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="var(--diagram-edge)"/>
+      </marker>
+    </defs>
+
+    <!-- Step 1 -->
+    <circle cx="40" cy="55" r="18" fill="var(--evm-bg)" stroke="var(--evm-border)" stroke-width="2"/>
+    <text x="40" y="60" text-anchor="middle" font-weight="700" font-size="14" fill="var(--evm-fg)">1</text>
+    <rect x="70" y="25" width="700" height="58" rx="8" fill="var(--evm-bg)" stroke="var(--evm-border)" stroke-width="2"/>
+    <text x="85" y="50" font-weight="700" font-size="13" fill="var(--evm-fg)">User submits encrypted order on EVM</text>
+    <text x="85" y="70" font-size="11" fill="var(--fg-muted)">Order encrypted to Seal policy. Sealed blob stored on-chain or in Walrus. EVM contract records the commitment.</text>
+
+    <line x1="40" y1="78" x2="40" y2="100" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Step 2 -->
+    <circle cx="40" cy="140" r="18" fill="var(--enclave-bg)" stroke="var(--enclave-border)" stroke-width="2"/>
+    <text x="40" y="145" text-anchor="middle" font-weight="700" font-size="14" fill="var(--enclave-fg)">2</text>
+    <rect x="70" y="110" width="700" height="58" rx="8" fill="var(--enclave-bg)" stroke="var(--enclave-border)" stroke-width="2"/>
+    <text x="85" y="135" font-weight="700" font-size="13" fill="var(--enclave-fg)">Nautilus enclave decrypts via Seal, matches/computes</text>
+    <text x="85" y="155" font-size="11" fill="var(--fg-muted)">Enclave requests decryption key from Seal key servers. Policy checks pass (attested PCRs). Computation happens in TEE.</text>
+
+    <line x1="40" y1="163" x2="40" y2="185" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Step 3 -->
+    <circle cx="40" cy="225" r="18" fill="var(--sui-bg)" stroke="var(--sui-border)" stroke-width="2"/>
+    <text x="40" y="230" text-anchor="middle" font-weight="700" font-size="14" fill="var(--sui-fg)">3</text>
+    <rect x="70" y="195" width="700" height="58" rx="8" fill="var(--sui-bg)" stroke="var(--sui-border)" stroke-width="2"/>
+    <text x="85" y="220" font-weight="700" font-size="13" fill="var(--sui-fg)">Sui contract verifies attestation, stores state</text>
+    <text x="85" y="240" font-size="11" fill="var(--fg-muted)">Move contract calls verify_signature() against registered Enclave object. If valid, records matching result. Updates policy state.</text>
+
+    <line x1="40" y1="248" x2="40" y2="270" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Step 4 -->
+    <circle cx="40" cy="310" r="18" fill="var(--enclave-bg)" stroke="var(--enclave-border)" stroke-width="2"/>
+    <text x="40" y="315" text-anchor="middle" font-weight="700" font-size="14" fill="var(--enclave-fg)">4</text>
+    <rect x="70" y="280" width="700" height="58" rx="8" fill="var(--enclave-bg)" stroke="var(--enclave-border)" stroke-width="2"/>
+    <text x="85" y="305" font-weight="700" font-size="13" fill="var(--enclave-fg)">Enclave signs settlement payload with secp256k1</text>
+    <text x="85" y="325" font-size="11" fill="var(--fg-muted)">Second signature using EVM-compatible key. ABI-encoded payload. Same enclave, same attested binary, different signature scheme.</text>
+
+    <line x1="40" y1="333" x2="40" y2="355" stroke="var(--diagram-edge)" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+    <!-- Step 5 -->
+    <circle cx="40" cy="395" r="18" fill="var(--evm-bg)" stroke="var(--evm-border)" stroke-width="2"/>
+    <text x="40" y="400" text-anchor="middle" font-weight="700" font-size="14" fill="var(--evm-fg)">5</text>
+    <rect x="70" y="365" width="700" height="58" rx="8" fill="var(--evm-bg)" stroke="var(--evm-border)" stroke-width="2"/>
+    <text x="85" y="390" font-weight="700" font-size="13" fill="var(--evm-fg)">EVM contract executes settlement with verified result</text>
+    <text x="85" y="410" font-size="11" fill="var(--fg-muted)">Solidity calls ecrecover(). Trusts signer because its pubkey is anchored on Sui with verified PCRs. Settles trades, moves funds.</text>
+
+    <!-- Side annotations -->
+    <text x="785" y="55" text-anchor="end" font-size="10" font-weight="600" fill="var(--evm-fg)">EVM</text>
+    <text x="785" y="140" text-anchor="end" font-size="10" font-weight="600" fill="var(--enclave-fg)">TEE</text>
+    <text x="785" y="225" text-anchor="end" font-size="10" font-weight="600" fill="var(--sui-fg)">SUI</text>
+    <text x="785" y="310" text-anchor="end" font-size="10" font-weight="600" fill="var(--enclave-fg)">TEE</text>
+    <text x="785" y="395" text-anchor="end" font-size="10" font-weight="600" fill="var(--evm-fg)">EVM</text>
+
+    <!-- Data flow annotation -->
+    <rect x="620" y="440" width="170" height="18" rx="3" fill="none" stroke="none"/>
+    <text x="790" y="453" text-anchor="end" font-size="10" fill="var(--fg-muted)">private data never touches EVM</text>
+  </svg>
+  <figcaption>The encrypted order is only cleartext inside the TEE. EVM sees only the settlement result, never the order contents.</figcaption>
+</figure>
+
+<aside>
+  <strong>What stays private:</strong> The order contents, the matching logic, the individual positions &mdash; all inside the enclave. What's public: the settlement result (who owes whom, final amounts). This is exactly the "private matching, public settlement" pattern that dark pools and sealed-bid auctions need.
+</aside>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="weaknesses">
+<h2>4. Honest Weaknesses</h2>
+
+<div class="grid-2">
+  <div class="card" style="border-color: var(--error);">
+    <h4 style="color: var(--error);">Bridge Trust</h4>
+    <p>You're adding Wormhole/Axelar/LayerZero bridge assumptions on top of TEE trust. Every bridge is an attack surface. KelpDAO lost $293M to a DVN bridge failure. The bridge between Sui and EVM is a real, not theoretical, risk vector.</p>
+  </div>
+
+  <div class="card" style="border-color: var(--error);">
+    <h4 style="color: var(--error);">Dual-Sign Is Untested</h4>
+    <p>Having the enclave sign with Ed25519 + BCS for Sui <em>and</em> secp256k1 + ABI for EVM is architecturally clean. But nobody has shipped this in production yet. BCS field ordering bugs are hard enough on one chain &mdash; two serialization formats doubles the surface.</p>
+  </div>
+
+  <div class="card" style="border-color: var(--warning);">
+    <h4 style="color: var(--warning);">Seal Is Early</h4>
+    <p>Threshold key management is live. The "Seal + Nautilus combined pattern" is documented in Sui docs as a design pattern, not as a battle-tested production flow. The key server network is young. Real-world stress testing under adversarial conditions is limited.</p>
+  </div>
+
+  <div class="card" style="border-color: var(--warning);">
+    <h4 style="color: var(--warning);">Why Not Just Marlin Oyster from EVM?</h4>
+    <p>Oyster already does PCR verification on Solidity (~70M gas, optimized). The Sui layer only adds value when you need <strong>Seal</strong> (encryption), or when PCR governance / key rotation benefits from <strong>Move's safety model</strong>. For pure attested compute, Oyster-from-EVM is simpler.</p>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section id="when">
+<h2>5. When This Makes Sense (and When It Doesn't)</h2>
+
+<div class="grid-2">
+  <div class="card" style="border-color: var(--success);">
+    <h4 style="color: var(--success);">Use Nautilus + EVM When</h4>
+    <ul>
+      <li>You need <strong>encrypted state</strong> (Seal) + <strong>attested compute</strong> (Nautilus) + <strong>DeFi settlement</strong> (EVM)</li>
+      <li><strong>Confidential matching engines:</strong> matching is private (Sui side), settlement is public (EVM side)</li>
+      <li>PCR governance / key rotation benefits from <strong>Move's safety model</strong></li>
+      <li><strong>App-specific oracles</strong> feeding verified data to both Sui and EVM dapps</li>
+      <li>You're already building on Sui and want to <strong>reach EVM liquidity</strong></li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-color: var(--error);">
+    <h4 style="color: var(--error);">Don't Bother When</h4>
+    <ul>
+      <li><strong>Pure EVM oracle needs:</strong> just use Marlin Oyster from EVM directly</li>
+      <li><strong>No encryption needed:</strong> TEE alone works fine from EVM via Phala/Oyster</li>
+      <li><strong>Bridge risk is unacceptable</strong> for your threat model</li>
+      <li>You don't need the <strong>Sui state management layer</strong></li>
+      <li><strong>Fully confidential EVM</strong> is the goal &mdash; Oasis Sapphire is purpose-built</li>
+    </ul>
+  </div>
+</div>
+
+<h3>The Decision Heuristic</h3>
+<aside>
+  <p>Ask yourself: <strong>"Does my problem need encryption at rest (Seal) or Move-safety for governance?"</strong></p>
+  <ul style="margin: 0.5rem 0 0 1.2rem;">
+    <li><strong>Yes to either</strong> &rarr; Nautilus + Sui + EVM is worth the complexity. The Sui layer earns its keep.</li>
+    <li><strong>No to both</strong> &rarr; Use Marlin Oyster or Phala directly from EVM. Adding Sui is unnecessary architecture.</li>
+  </ul>
+</aside>
+
+<div class="one-liner" style="margin-top: 2rem;">
+  Nautilus isn't an EVM replacement &mdash; it's the missing trust layer that EVM dapps can plug into when they need attested compute + encrypted state that Solidity alone can't provide.
+</div>
+
+</section>
+
+</main>
+
+<footer>
+  <p>Companion to <a href="./wtf-is-nautilus.html">WTF is Nautilus?</a> &mdash; based on Sui Nautilus docs, Marlin Oyster research, and evm-sui architecture analysis. May 2026.</p>
+</footer>
+
+</body>
+</html>

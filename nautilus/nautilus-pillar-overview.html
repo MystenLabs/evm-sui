@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nautilus DeFi Pillar &mdash; What We Built</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --fg: #1f1f1f;
+      --fg-muted: #6e6e6e;
+      --heading-fg: #1a1a1a;
+      --accent: #1976d2;
+      --border: #e0e0e0;
+      --code-bg: #f0f0f0;
+      --code-fg: #6e3700;
+      --pre-bg: #fafafa;
+      --aside-bg: #f5f5f5;
+      --success: #2e7d32;
+      --warning: #9a5b00;
+      --error: #d32f2f;
+
+      --sui: #2e7d32;
+      --sui-bg: #e8f5e9;
+      --rust: #e65100;
+      --rust-bg: #fff3e0;
+      --sol: #0d47a1;
+      --sol-bg: #e3f2fd;
+      --ts: #6a1b9a;
+      --ts-bg: #f3e5f5;
+      --seal: #ad1457;
+      --seal-bg: #fce4ec;
+      --walrus: #00695c;
+      --walrus-bg: #e0f2f1;
+      --docs: #4e342e;
+      --docs-bg: #efebe9;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --fg: #cccccc;
+        --fg-muted: #9e9e9e;
+        --heading-fg: #e8e8e8;
+        --accent: #4dabf7;
+        --border: #2a2a2a;
+        --code-bg: #2a2a2a;
+        --code-fg: #f0e8d8;
+        --pre-bg: #161616;
+        --aside-bg: #242424;
+        --success: #66bb6a;
+        --warning: #f0c674;
+        --error: #ff7676;
+
+        --sui: #81c784;
+        --sui-bg: #0a2a0a;
+        --rust: #ffcc80;
+        --rust-bg: #2a1f0a;
+        --sol: #90caf9;
+        --sol-bg: #0a1a2e;
+        --ts: #ce93d8;
+        --ts-bg: #2a1a3a;
+        --seal: #f48fb1;
+        --seal-bg: #2a0a1a;
+        --walrus: #80cbc4;
+        --walrus-bg: #0a2a2a;
+        --docs: #bcaaa4;
+        --docs-bg: #2a2420;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--fg);
+      line-height: 1.6; padding: 2rem 1.5rem;
+    }
+    main { max-width: 1000px; margin: 0 auto; }
+    h1, h2, h3 { color: var(--heading-fg); }
+    h1 { font-size: 1.9rem; margin-bottom: 0.3rem; letter-spacing: -0.02em; }
+    h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+    h3 { font-size: 1.1rem; margin: 1.2rem 0 0.4rem; }
+    p { margin: 0.5rem 0; }
+    a { color: var(--accent); }
+    code { background: var(--code-bg); color: var(--code-fg); padding: 0.15em 0.35em; border-radius: 3px; font-size: 0.9em; font-family: "SF Mono", Menlo, Consolas, monospace; }
+    small, figcaption { color: var(--fg-muted); }
+    header { max-width: 1000px; margin: 0 auto 1.5rem; }
+    header p { color: var(--fg-muted); font-size: 1.05rem; }
+    figure { margin: 1.5rem 0; }
+    figcaption { font-size: 0.88rem; margin-top: 0.5rem; text-align: center; }
+    figure svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+    .stats { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.2rem 0; }
+    .stat { background: var(--aside-bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem 1.2rem; flex: 1; min-width: 140px; text-align: center; }
+    .stat-num { font-size: 1.8rem; font-weight: 700; color: var(--accent); display: block; }
+    .stat-label { font-size: 0.82rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+    .card { background: var(--aside-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+    .card h3 { margin-top: 0; }
+    .card ul { margin: 0.4rem 0 0 1.2rem; font-size: 0.9rem; }
+    .card li { margin: 0.15rem 0; }
+
+    .badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; }
+    .badge-sui { background: var(--sui-bg); color: var(--sui); border: 1px solid var(--sui); }
+    .badge-rust { background: var(--rust-bg); color: var(--rust); border: 1px solid var(--rust); }
+    .badge-sol { background: var(--sol-bg); color: var(--sol); border: 1px solid var(--sol); }
+    .badge-ts { background: var(--ts-bg); color: var(--ts); border: 1px solid var(--ts); }
+    .badge-seal { background: var(--seal-bg); color: var(--seal); border: 1px solid var(--seal); }
+    .badge-walrus { background: var(--walrus-bg); color: var(--walrus); border: 1px solid var(--walrus); }
+    .badge-docs { background: var(--docs-bg); color: var(--docs); border: 1px solid var(--docs); }
+    .badge-pass { background: var(--sui-bg); color: var(--sui); border: 1px solid var(--sui); }
+
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    th { background: var(--aside-bg); text-align: left; padding: 0.5rem 0.6rem; border-bottom: 2px solid var(--border); color: var(--fg-muted); font-weight: 600; }
+    td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody tr:nth-child(even) { background: var(--aside-bg); }
+
+    .file-tree { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; line-height: 1.8; background: var(--pre-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.2rem; overflow-x: auto; }
+    .ft-dir { color: var(--accent); font-weight: 600; }
+    .ft-move { color: var(--sui); }
+    .ft-rs { color: var(--rust); }
+    .ft-sol { color: var(--sol); }
+    .ft-ts { color: var(--ts); }
+    .ft-md { color: var(--fg-muted); }
+    .ft-seal { color: var(--seal); }
+    .ft-walrus { color: var(--walrus); }
+
+    footer { max-width: 1000px; margin: 3rem auto 0; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.85rem; }
+
+    @media (max-width: 720px) {
+      body { padding: 1rem; }
+      h1 { font-size: 1.4rem; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .stats { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Nautilus DeFi Pillar &mdash; What We Built</h1>
+  <p>Three self-contained DeFi examples spanning five technology layers, demonstrating Seal + Nautilus + Move + Walrus + EVM settlement stubs.</p>
+</header>
+
+<main>
+
+<section>
+<h2>At a Glance</h2>
+<div class="stats">
+  <div class="stat"><span class="stat-num">61</span><span class="stat-label">Source files</span></div>
+  <div class="stat"><span class="stat-num">~2,400</span><span class="stat-label">Lines of code</span></div>
+  <div class="stat"><span class="stat-num">26</span><span class="stat-label">Tests passing</span></div>
+  <div class="stat"><span class="stat-num">5</span><span class="stat-label">Languages</span></div>
+  <div class="stat"><span class="stat-num">3</span><span class="stat-label">DeFi examples</span></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section>
+<h2>The Three Examples</h2>
+
+<figure>
+  <svg viewBox="0 0 900 400" width="900" height="400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three DeFi examples across five technology layers">
+    <defs>
+      <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="var(--fg-muted)"/>
+      </marker>
+    </defs>
+
+    <!-- Column headers -->
+    <text x="210" y="30" text-anchor="middle" font-weight="700" font-size="15" fill="var(--heading-fg)">Sealed RFQ</text>
+    <text x="210" y="48" text-anchor="middle" font-size="11" fill="var(--fg-muted)">1 taker, N makers, argmin</text>
+
+    <text x="490" y="30" text-anchor="middle" font-weight="700" font-size="15" fill="var(--heading-fg)">Sealed Liquidation</text>
+    <text x="490" y="48" text-anchor="middle" font-size="11" fill="var(--fg-muted)">1 event, N bidders, argmax</text>
+
+    <text x="770" y="30" text-anchor="middle" font-weight="700" font-size="15" fill="var(--heading-fg)">Sealed Batch Swap</text>
+    <text x="770" y="48" text-anchor="middle" font-size="11" fill="var(--fg-muted)">N&times;M crossing at clearing price</text>
+
+    <!-- Row labels -->
+    <text x="55" y="92" text-anchor="middle" font-weight="600" font-size="12" fill="var(--sui)">Move</text>
+    <text x="55" y="152" text-anchor="middle" font-weight="600" font-size="12" fill="var(--rust)">Rust</text>
+    <text x="55" y="212" text-anchor="middle" font-weight="600" font-size="12" fill="var(--seal)">Seal</text>
+    <text x="55" y="272" text-anchor="middle" font-weight="600" font-size="12" fill="var(--sol)">Solidity</text>
+    <text x="55" y="332" text-anchor="middle" font-weight="600" font-size="12" fill="var(--ts)">TypeScript</text>
+
+    <!-- Row backgrounds -->
+    <rect x="100" y="70" width="790" height="40" rx="4" fill="var(--sui-bg)" opacity="0.5"/>
+    <rect x="100" y="130" width="790" height="40" rx="4" fill="var(--rust-bg)" opacity="0.5"/>
+    <rect x="100" y="190" width="790" height="40" rx="4" fill="var(--seal-bg)" opacity="0.5"/>
+    <rect x="100" y="250" width="790" height="40" rx="4" fill="var(--sol-bg)" opacity="0.5"/>
+    <rect x="100" y="310" width="790" height="40" rx="4" fill="var(--ts-bg)" opacity="0.5"/>
+
+    <!-- RFQ column cells -->
+    <rect x="110" y="73" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--sui)" stroke-width="1.5"/>
+    <text x="210" y="95" text-anchor="middle" font-size="11" fill="currentColor">rfq.move <tspan fill="var(--fg-muted)">(94 LOC)</tspan></text>
+
+    <rect x="110" y="133" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--rust)" stroke-width="1.5"/>
+    <text x="210" y="155" text-anchor="middle" font-size="11" fill="currentColor">rfq/ <tspan fill="var(--fg-muted)">(133 LOC, 3 tests)</tspan></text>
+
+    <rect x="110" y="253" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--sol)" stroke-width="1.5"/>
+    <text x="210" y="275" text-anchor="middle" font-size="11" fill="currentColor">RfqSettlement.sol <tspan fill="var(--fg-muted)">(74+77)</tspan></text>
+
+    <rect x="110" y="313" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--ts)" stroke-width="1.5"/>
+    <text x="210" y="335" text-anchor="middle" font-size="11" fill="currentColor">rfq/ <tspan fill="var(--fg-muted)">(3 CLI scripts)</tspan></text>
+
+    <!-- Liquidation column cells -->
+    <rect x="390" y="73" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--sui)" stroke-width="1.5"/>
+    <text x="490" y="95" text-anchor="middle" font-size="11" fill="currentColor">liquidation.move <tspan fill="var(--fg-muted)">(101 LOC)</tspan></text>
+
+    <rect x="390" y="133" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--rust)" stroke-width="1.5"/>
+    <text x="490" y="155" text-anchor="middle" font-size="11" fill="currentColor">liquidation/ <tspan fill="var(--fg-muted)">(127 LOC, 2 tests)</tspan></text>
+
+    <rect x="390" y="253" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--sol)" stroke-width="1.5"/>
+    <text x="490" y="275" text-anchor="middle" font-size="11" fill="currentColor">LiquidationSettlement.sol <tspan fill="var(--fg-muted)">(82+80)</tspan></text>
+
+    <rect x="390" y="313" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--ts)" stroke-width="1.5"/>
+    <text x="490" y="335" text-anchor="middle" font-size="11" fill="currentColor">liquidation/ <tspan fill="var(--fg-muted)">(3 CLI scripts)</tspan></text>
+
+    <!-- Batch Swap column cells -->
+    <rect x="670" y="73" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--sui)" stroke-width="1.5"/>
+    <text x="770" y="95" text-anchor="middle" font-size="11" fill="currentColor">batch_swap.move <tspan fill="var(--fg-muted)">(91 LOC)</tspan></text>
+
+    <rect x="670" y="133" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--rust)" stroke-width="1.5"/>
+    <text x="770" y="155" text-anchor="middle" font-size="11" fill="currentColor">batch_swap/ <tspan fill="var(--fg-muted)">(175 LOC, 3 tests)</tspan></text>
+
+    <rect x="670" y="253" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--sol)" stroke-width="1.5"/>
+    <text x="770" y="275" text-anchor="middle" font-size="11" fill="currentColor">BatchSwapSettlement.sol <tspan fill="var(--fg-muted)">(75+74)</tspan></text>
+
+    <rect x="670" y="313" width="200" height="34" rx="5" fill="var(--bg)" stroke="var(--ts)" stroke-width="1.5"/>
+    <text x="770" y="335" text-anchor="middle" font-size="11" fill="currentColor">batch-swap/ <tspan fill="var(--fg-muted)">(2 CLI scripts)</tspan></text>
+
+    <!-- Seal row: shared across all three -->
+    <rect x="110" y="193" width="760" height="34" rx="5" fill="var(--bg)" stroke="var(--seal)" stroke-width="1.5"/>
+    <text x="490" y="215" text-anchor="middle" font-size="11" fill="currentColor">seal_bootstrap.rs <tspan fill="var(--fg-muted)">(295 LOC, 2 tests)</tspan> + seal_policy.move <tspan fill="var(--fg-muted)">(49 LOC)</tspan> + walrus.rs <tspan fill="var(--fg-muted)">(94 LOC)</tspan></text>
+
+    <!-- Shared infra labels -->
+    <text x="490" y="375" text-anchor="middle" font-size="11" fill="var(--fg-muted)">+ enclave.move (209 LOC, vendored) + common.rs (72 LOC) + main.rs (44 LOC) + lib.rs (68 LOC)</text>
+    <text x="490" y="393" text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent)">Shared infrastructure used by all three examples</text>
+  </svg>
+  <figcaption>Each column is one DeFi example. Each row is one technology layer. The Seal+Walrus row spans all three &mdash; shared infrastructure.</figcaption>
+</figure>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section>
+<h2>The Three DeFi Primitives</h2>
+
+<div class="grid-3">
+  <div class="card" style="border-top: 3px solid var(--sui);">
+    <h3>N1 &middot; Sealed RFQ</h3>
+    <p style="font-size:0.9rem;color:var(--fg-muted)">Request for Quote &mdash; simplest matching</p>
+    <ul>
+      <li>1 taker requests a price</li>
+      <li>N makers submit quotes via TLS</li>
+      <li>Enclave picks <strong>lowest price</strong> (argmin)</li>
+      <li>Walrus stores full quote set as proof</li>
+      <li>Solidity stub: token swap settlement</li>
+    </ul>
+    <p style="margin-top:0.6rem"><span class="badge badge-sui">Move 94 LOC</span> <span class="badge badge-rust">Rust 133 LOC</span> <span class="badge badge-sol">Sol 151 LOC</span></p>
+  </div>
+
+  <div class="card" style="border-top: 3px solid var(--rust);">
+    <h3>N2 &middot; Sealed Liquidation</h3>
+    <p style="font-size:0.9rem;color:var(--fg-muted)">Sealed-bid auction &mdash; different economics</p>
+    <ul>
+      <li>Position becomes undercollateralized</li>
+      <li>N liquidators submit sealed bids</li>
+      <li>Enclave picks <strong>highest bonus</strong> (argmax on bps)</li>
+      <li>Walrus stores all bids as proof</li>
+      <li>Solidity stub: lending protocol liquidation</li>
+    </ul>
+    <p style="margin-top:0.6rem"><span class="badge badge-sui">Move 101 LOC</span> <span class="badge badge-rust">Rust 127 LOC</span> <span class="badge badge-sol">Sol 162 LOC</span></p>
+  </div>
+
+  <div class="card" style="border-top: 3px solid var(--sol);">
+    <h3>N3 &middot; Sealed Batch Swap</h3>
+    <p style="font-size:0.9rem;color:var(--fg-muted)">Crossing-order match &mdash; most complex</p>
+    <ul>
+      <li>N buyers + M sellers submit intents</li>
+      <li>Sort buys desc, sells asc by limit price</li>
+      <li>Find <strong>clearing price</strong> at crossing point</li>
+      <li>Fill all orders within limits</li>
+      <li>Solidity stub: atomic batch settlement</li>
+    </ul>
+    <p style="margin-top:0.6rem"><span class="badge badge-sui">Move 91 LOC</span> <span class="badge badge-rust">Rust 175 LOC</span> <span class="badge badge-sol">Sol 149 LOC</span></p>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section>
+<h2>Test Results</h2>
+
+<table>
+  <thead>
+    <tr><th>Layer</th><th>Tests</th><th>What They Verify</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-rust">Rust &middot; RFQ</span></td>
+      <td><span class="badge badge-pass">3 pass</span></td>
+      <td>Argmin quote selection, expired-quote filtering, BCS serde round-trip</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-rust">Rust &middot; Liquidation</span></td>
+      <td><span class="badge badge-pass">2 pass</span></td>
+      <td>Argmax bid selection, BCS serde round-trip</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-rust">Rust &middot; Batch Swap</span></td>
+      <td><span class="badge badge-pass">3 pass</span></td>
+      <td>Crossing-order match, no-crossing detection, BCS serde round-trip</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-seal">Rust &middot; Seal</span></td>
+      <td><span class="badge badge-pass">2 pass</span></td>
+      <td>Checkpoint encrypt/decrypt round-trip, deterministic wallet address</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-sol">Solidity &middot; RFQ</span></td>
+      <td><span class="badge badge-pass">4 pass</span></td>
+      <td>Settlement stores+emits, duplicate revert, unauthorized revert, unknown query</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-sol">Solidity &middot; Liquidation</span></td>
+      <td><span class="badge badge-pass">4 pass</span></td>
+      <td>Settlement stores+emits, duplicate revert, unauthorized revert, unknown query</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-sol">Solidity &middot; Batch Swap</span></td>
+      <td><span class="badge badge-pass">4 pass</span></td>
+      <td>Settlement stores+emits, duplicate revert, unauthorized revert, unknown query</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-sui">Move</span></td>
+      <td><span class="badge badge-pass">5 build</span></td>
+      <td>enclave, rfq, liquidation, batch-swap, seal-policy all compile clean</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section>
+<h2>Shared Infrastructure</h2>
+
+<div class="grid-3">
+  <div class="card" style="border-left: 3px solid var(--sui);">
+    <h3>enclave.move</h3>
+    <p style="font-size:0.9rem">209 LOC &middot; vendored from MystenLabs/nautilus</p>
+    <ul>
+      <li><code>EnclaveConfig&lt;T&gt;</code> &mdash; PCR storage</li>
+      <li><code>Enclave&lt;T&gt;</code> &mdash; pubkey storage</li>
+      <li><code>verify_signature()</code> &mdash; Ed25519 + BCS</li>
+      <li><code>IntentMessage&lt;T&gt;</code> &mdash; signed payload wrapper</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-left: 3px solid var(--seal);">
+    <h3>seal_bootstrap.rs</h3>
+    <p style="font-size:0.9rem">295 LOC &middot; two-step Seal key load</p>
+    <ul>
+      <li><code>init_seal_key_load</code> &mdash; FetchKeyRequest</li>
+      <li><code>complete_seal_key_load</code> &mdash; cache keys</li>
+      <li><code>encrypt_checkpoint</code> &mdash; local IBE (no network)</li>
+      <li><code>decrypt_checkpoint</code> &mdash; requires cached keys</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-left: 3px solid var(--walrus);">
+    <h3>walrus.rs</h3>
+    <p style="font-size:0.9rem">94 LOC &middot; HTTP blob client</p>
+    <ul>
+      <li><code>upload()</code> &mdash; PUT to publisher</li>
+      <li><code>fetch()</code> &mdash; GET from aggregator</li>
+      <li>Handles newlyCreated + alreadyCertified</li>
+      <li>Configurable endpoints + epoch count</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section>
+<h2>Directory Structure</h2>
+<div class="file-tree">
+<span class="ft-dir">nautilus/</span><br>
+&nbsp;&nbsp;<span class="ft-md">README.md</span> &middot; NAUTILUS_LOCAL_DEV.md &middot; NAUTILUS_EVM.md<br>
+&nbsp;&nbsp;wtf-is-nautilus.html &middot; nautilus-evm-trust-layer.html<br>
+<br>
+&nbsp;&nbsp;<span class="ft-dir">move/</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dir">enclave/</span> <span class="ft-move">enclave.move</span> <span style="color:var(--fg-muted)">(209 LOC, vendored)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dir">rfq/</span> <span class="ft-move">rfq.move</span> <span style="color:var(--fg-muted)">(94 LOC)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dir">liquidation/</span> <span class="ft-move">liquidation.move</span> <span style="color:var(--fg-muted)">(101 LOC)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dir">batch-swap/</span> <span class="ft-move">batch_swap.move</span> <span style="color:var(--fg-muted)">(91 LOC)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dir">seal-policy/</span> <span class="ft-seal">seal_policy.move</span> <span style="color:var(--fg-muted)">(49 LOC)</span><br>
+<br>
+&nbsp;&nbsp;<span class="ft-dir">enclave-server/</span> <span style="color:var(--fg-muted)">Cargo.toml (features: rfq | liquidation | batch-swap)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-rs">common.rs</span> &middot; <span class="ft-rs">main.rs</span> &middot; <span class="ft-rs">lib.rs</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-seal">seal_bootstrap.rs</span> <span style="color:var(--fg-muted)">(295 LOC)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-walrus">walrus.rs</span> <span style="color:var(--fg-muted)">(94 LOC)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dir">rfq/</span> <span class="ft-rs">mod.rs</span> + <span class="ft-rs">types.rs</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dir">liquidation/</span> <span class="ft-rs">mod.rs</span> + <span class="ft-rs">types.rs</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-dir">batch_swap/</span> <span class="ft-rs">mod.rs</span> + <span class="ft-rs">types.rs</span><br>
+<br>
+&nbsp;&nbsp;<span class="ft-dir">contracts/</span> <span style="color:var(--fg-muted)">Foundry project</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="ft-sol">RfqSettlement.sol</span> &middot; <span class="ft-sol">LiquidationSettlement.sol</span> &middot; <span class="ft-sol">BatchSwapSettlement.sol</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--fg-muted)">+ 3 test files (12 tests total)</span><br>
+<br>
+&nbsp;&nbsp;<span class="ft-dir">rfq/</span> <span class="ft-ts">submit-rfq.ts</span> &middot; <span class="ft-ts">submit-quote.ts</span> &middot; <span class="ft-ts">settle.ts</span><br>
+&nbsp;&nbsp;<span class="ft-dir">liquidation/</span> <span class="ft-ts">submit-position.ts</span> &middot; <span class="ft-ts">submit-bid.ts</span> &middot; <span class="ft-ts">settle.ts</span><br>
+&nbsp;&nbsp;<span class="ft-dir">batch-swap/</span> <span class="ft-ts">submit-intent.ts</span> &middot; <span class="ft-ts">settle-batch.ts</span><br>
+<br>
+<span class="ft-dir">docs/</span><br>
+&nbsp;&nbsp;<span class="ft-md">nautilus-rfq.html</span> &middot; <span class="ft-md">nautilus-liquidation.html</span> &middot; <span class="ft-md">nautilus-batch-swap.html</span><br>
+&nbsp;&nbsp;<span style="color:var(--fg-muted)">index.html updated with Nautilus section + nav links</span>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<section>
+<h2>How the Pieces Connect</h2>
+
+<figure>
+  <svg viewBox="0 0 800 300" width="800" height="300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data flow: User submits via TLS to Rust enclave, enclave signs with Ed25519, Move contract verifies, Walrus stores proofs, Solidity stub shows EVM shape">
+    <defs>
+      <marker id="a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="var(--fg-muted)"/>
+      </marker>
+    </defs>
+
+    <!-- User -->
+    <rect x="10" y="110" width="100" height="50" rx="6" fill="var(--ts-bg)" stroke="var(--ts)" stroke-width="2"/>
+    <text x="60" y="133" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">User</text>
+    <text x="60" y="148" text-anchor="middle" font-size="10" fill="var(--fg-muted)">TS CLI</text>
+
+    <line x1="115" y1="135" x2="160" y2="135" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#a2)"/>
+    <text x="137" y="128" text-anchor="middle" font-size="9" fill="var(--fg-muted)">TLS</text>
+
+    <!-- Enclave -->
+    <rect x="165" y="70" width="170" height="130" rx="8" fill="var(--rust-bg)" stroke="var(--rust)" stroke-width="2"/>
+    <text x="250" y="95" text-anchor="middle" font-weight="700" font-size="13" fill="var(--rust)">Nautilus Enclave</text>
+    <text x="250" y="115" text-anchor="middle" font-size="10" fill="currentColor">Matching logic</text>
+    <text x="250" y="132" text-anchor="middle" font-size="10" fill="currentColor">BCS serialize</text>
+    <text x="250" y="149" text-anchor="middle" font-size="10" fill="currentColor">Ed25519 sign</text>
+    <text x="250" y="170" text-anchor="middle" font-size="10" fill="var(--seal)">Seal encrypt (local)</text>
+    <text x="250" y="187" text-anchor="middle" font-size="10" fill="var(--walrus)">Walrus upload</text>
+
+    <!-- To Sui -->
+    <line x1="340" y1="110" x2="400" y2="110" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#a2)"/>
+    <text x="370" y="103" text-anchor="middle" font-size="9" fill="var(--fg-muted)">signed</text>
+
+    <!-- Sui -->
+    <rect x="405" y="80" width="170" height="60" rx="8" fill="var(--sui-bg)" stroke="var(--sui)" stroke-width="2"/>
+    <text x="490" y="105" text-anchor="middle" font-weight="700" font-size="13" fill="var(--sui)">Sui Move</text>
+    <text x="490" y="125" text-anchor="middle" font-size="10" fill="currentColor">verify_signature() + settle</text>
+
+    <!-- To EVM -->
+    <line x1="580" y1="110" x2="630" y2="110" stroke="var(--fg-muted)" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#a2)"/>
+    <text x="605" y="103" text-anchor="middle" font-size="9" fill="var(--fg-muted)">bridge</text>
+
+    <!-- EVM -->
+    <rect x="635" y="80" width="150" height="60" rx="8" fill="var(--sol-bg)" stroke="var(--sol)" stroke-width="2"/>
+    <text x="710" y="105" text-anchor="middle" font-weight="700" font-size="13" fill="var(--sol)">EVM (stub)</text>
+    <text x="710" y="125" text-anchor="middle" font-size="10" fill="currentColor">ecrecover + settle</text>
+
+    <!-- Walrus -->
+    <rect x="405" y="200" width="170" height="50" rx="8" fill="var(--walrus-bg)" stroke="var(--walrus)" stroke-width="2"/>
+    <text x="490" y="223" text-anchor="middle" font-weight="700" font-size="12" fill="var(--walrus)">Walrus</text>
+    <text x="490" y="240" text-anchor="middle" font-size="10" fill="currentColor">checkpoints + trade proofs</text>
+
+    <line x1="250" y1="205" x2="250" y2="225" stroke="var(--fg-muted)" stroke-width="1.5"/>
+    <line x1="250" y1="225" x2="400" y2="225" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#a2)"/>
+
+    <!-- Seal key servers -->
+    <rect x="165" y="250" width="170" height="40" rx="6" fill="var(--seal-bg)" stroke="var(--seal)" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="250" y="275" text-anchor="middle" font-size="11" fill="var(--seal)">Seal key servers (on restart)</text>
+
+    <!-- Docs -->
+    <rect x="635" y="200" width="150" height="50" rx="8" fill="var(--docs-bg)" stroke="var(--docs)" stroke-width="1.5"/>
+    <text x="710" y="223" text-anchor="middle" font-weight="600" font-size="12" fill="var(--docs)">GitHub Pages</text>
+    <text x="710" y="240" text-anchor="middle" font-size="10" fill="currentColor">3 walkthrough pages</text>
+  </svg>
+  <figcaption>Full data flow: user submits via TS CLI &rarr; Rust enclave matches + signs &rarr; Move verifies &rarr; Solidity stub shows EVM shape. Walrus stores proofs. Seal encrypts checkpoints.</figcaption>
+</figure>
+</section>
+
+</main>
+
+<footer>
+  <p>Built for the <a href="../README.md">Nautilus DeFi Pillar</a> of evm-sui (MystenLabs/evm-wal). May 2026. Companion to <a href="./wtf-is-nautilus.html">WTF is Nautilus?</a> and <a href="./nautilus-evm-trust-layer.html">Nautilus + EVM Trust Layer</a>.</p>
+</footer>
+
+</body>
+</html>

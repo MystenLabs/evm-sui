@@ -1,0 +1,9 @@
+[package]
+name = "rfq"
+edition = "2024"
+
+[dependencies]
+enclave = { local = "../enclave" }
+
+[addresses]
+rfq = "0x0"
