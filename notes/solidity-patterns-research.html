@@ -130,6 +130,7 @@ footer { max-width: 960px; margin: 3rem auto 0; border-top: 1px solid var(--bord
   <a href="#findings">Key findings</a>
   <a href="#security">Security canon</a>
   <a href="#sui-coverage">Sui docs coverage audit</a>
+  <a href="#oz-sui">OZ for Sui</a>
   <a href="#chapter2">Chapter 2 candidates</a>
   <a href="#caveats">Caveats</a>
   <a href="#sources">Sources</a>
@@ -224,24 +225,39 @@ footer { max-width: 960px; margin: 3rem auto 0; border-top: 1px solid var(--bord
   </table>
 </section>
 
+<section id="oz-sui">
+  <h2>OpenZeppelin Contracts for Sui — the familiarity bridge</h2>
+  <p>Design decision for chapter 2: <strong>use <a href="https://docs.openzeppelin.com/contracts-sui">OpenZeppelin Contracts for Sui</a> (v1.x, audited) wherever it applies</strong>, because Solidity developers already trust and recognize OZ APIs. Audited section-by-section on 2026-07-13. The library ships four packages:</p>
+  <table>
+    <thead><tr><th>Package</th><th>Modules</th><th>Solidity analog</th><th>Chapter 2 relevance</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Access</strong> (<code>openzeppelin_access</code>)</td><td><code>access_control</code> (RBAC: <code>AccessControl</code>, <code>Auth</code>), <code>two_step_transfer</code>, <code>delayed_transfer</code></td><td><code>AccessControl</code> roles; <code>Ownable2Step</code>; timelocked ownership transfer</td><td>Snippet #3 — role-based access control with OZ-familiar semantics, layered over Sui capability objects</td></tr>
+      <tr><td><strong>Integer Math</strong></td><td>Overflow-safe arithmetic with explicit rounding + decimal scaling helpers</td><td>SafeMath / <code>Math.mulDiv</code> / OZ Math utils</td><td>Any DeFi-math snippet (vesting schedules, fees); pairs with the "SafeMath is moot, but rounding still isn't" narrative</td></tr>
+      <tr><td><strong>Fixed-Point Math</strong></td><td>9-decimal fixed-point types <code>UD30x9</code>, <code>SD29x9</code></td><td>PRB-Math / WAD-style fixed point</td><td>Rates, prices, signed balance deltas — flash-loan fee and governance-weight snippets</td></tr>
+      <tr><td><strong>Utilities</strong></td><td>Embeddable rate limiters</td><td>Rate-limiting / circuit-breaker adjacent patterns</td><td>Emergency-stop/pausable snippet companion</td></tr>
+    </tbody>
+  </table>
+  <aside><p><strong>What OZ Sui deliberately does NOT ship is itself a teaching point:</strong> no ERC-20/721 modules (Sui's native <code>coin</code>/Currency Standard is the token layer), no proxy/upgrade modules (package upgrades are native), no reentrancy guard (moot in Move). OZ for Sui only fills the gaps the platform doesn't cover — the inverse of Ethereum, where OZ ships everything. Each snippet should say which side of that line it sits on.</p></aside>
+</section>
+
 <section id="chapter2">
   <h2>Chapter 2 candidate snippet set (proposal)</h2>
-  <p>Ordered by (prevalence × how much the official docs leave unsaid). Each entry = one Solidity snippet + one idiomatic Sui Move snippet. Sui-side mappings below are preliminary — to be validated with sui-pilot during the planning/implementation phase.</p>
+  <p>Ordered by (prevalence × how much the official docs leave unsaid). Each entry = one Solidity snippet + one idiomatic Sui Move snippet. <strong>Where OpenZeppelin Contracts for Sui applies, prefer it</strong> (marked OZ✓). Sui-side mappings below are preliminary — to be validated with sui-pilot during the planning/implementation phase.</p>
   <table>
     <thead><tr><th>#</th><th>Use case</th><th>Solidity side</th><th>Sui side (preliminary)</th><th>Why include</th></tr></thead>
     <tbody>
       <tr><td>1</td><td>Fungible token</td><td>ERC-20 (OZ)</td><td><code>coin::create_currency</code> / Currency Standard</td><td>#1 measured pattern; docs cover concept, not code</td></tr>
       <tr><td>2</td><td>NFT</td><td>ERC-721 (OZ)</td><td>Object + <code>display::Display</code></td><td>Top-tier; repo already has ERC-721 showcases to reuse</td></tr>
-      <tr><td>3</td><td>Admin access control</td><td><code>Ownable</code> / <code>AccessControl</code></td><td>Capability objects (<code>AdminCap</code>)</td><td>#3 measured; the flagship mental-model shift</td></tr>
+      <tr><td>3</td><td>Admin access control</td><td><code>Ownable</code> / <code>AccessControl</code></td><td>Capability objects (<code>AdminCap</code>) + OZ✓ <code>openzeppelin_access::access_control</code> for roles, <code>two_step_transfer</code> for Ownable2Step</td><td>#3 measured; the flagship mental-model shift, with an OZ-familiar landing spot</td></tr>
       <tr><td>4</td><td>Upgrades</td><td>UUPS/Transparent proxy</td><td>Package upgrade + versioned shared object</td><td>Top-tier; Solidity side is genuinely painful → strong contrast</td></tr>
       <tr><td>5</td><td>Factory / clones</td><td>Factory + ERC-1167 clone</td><td>Plain object instantiation (no factory needed)</td><td>&gt;90% of deployments; completely absent from official docs</td></tr>
       <tr><td>6</td><td>Escrow / swap</td><td>Escrow contract</td><td>Shared-object escrow / hot potato</td><td>Absent from docs; showcases object ownership beautifully</td></tr>
-      <tr><td>7</td><td>Vesting / time lock</td><td>OZ <code>VestingWallet</code></td><td>Time-locked object + <code>Clock</code></td><td>Absent from docs; common real ask</td></tr>
+      <tr><td>7</td><td>Vesting / time lock</td><td>OZ <code>VestingWallet</code></td><td>Time-locked object + <code>Clock</code>; OZ✓ integer/fixed-point math for schedule arithmetic</td><td>Absent from docs; common real ask</td></tr>
       <tr><td>8</td><td>Multisig</td><td>Safe-style contract multisig</td><td>Native protocol multisig keys</td><td>Sui answer needs no contract at all — striking</td></tr>
       <tr><td>9</td><td>Airdrop / claims</td><td>Merkle distributor</td><td>Direct parallel transfers / claim objects</td><td>Absent from docs; parallelism story</td></tr>
       <tr><td>10</td><td>Gasless UX</td><td>EIP-2612 permit / meta-tx</td><td>Sponsored transactions</td><td>Absent from docs; big UX differentiator</td></tr>
-      <tr><td>11</td><td>Flash loan</td><td>Aave-style callback loan</td><td>Hot-potato pattern</td><td>Canonical Move pattern with no EVM equivalent mechanics</td></tr>
-      <tr><td>12</td><td>Security canon</td><td>CEI + reentrancy guard + SafeMath</td><td>"Why these don't exist here" explainer</td><td>Narrative piece anchoring the whole chapter</td></tr>
+      <tr><td>11</td><td>Flash loan</td><td>Aave-style callback loan</td><td>Hot-potato pattern; OZ✓ <code>UD30x9</code> fixed-point for fee math</td><td>Canonical Move pattern with no EVM equivalent mechanics</td></tr>
+      <tr><td>12</td><td>Security canon</td><td>CEI + reentrancy guard + SafeMath</td><td>"Why these don't exist here" explainer; OZ✓ integer math + rate limiter for what still matters (rounding, throttling)</td><td>Narrative piece anchoring the whole chapter</td></tr>
       <tr><td>13</td><td>Governance</td><td>OZ Governor</td><td>Shared-object voting</td><td>Only 1k+ OZ deployments — lowest priority of the set</td></tr>
     </tbody>
   </table>
@@ -285,6 +301,7 @@ footer { max-width: 960px; margin: 3rem auto 0; border-top: 1px solid var(--bord
       <li><a href="https://consensys.github.io/smart-contract-best-practices/">Consensys smart-contract best practices (archived; successor scsfg.io)</a></li>
       <li><a href="https://docs.openzeppelin.com/impact/contracts-impact">OpenZeppelin contracts impact stats (self-reported)</a></li>
       <li><a href="https://docs.sui.io/concepts/sui-for-ethereum">docs.sui.io — Sui for Ethereum devs (audited live 2026-07-13)</a></li>
+      <li><a href="https://docs.openzeppelin.com/contracts-sui">OpenZeppelin Contracts for Sui v1.x (audited live 2026-07-13)</a></li>
     </ul>
   </details>
   <details>
