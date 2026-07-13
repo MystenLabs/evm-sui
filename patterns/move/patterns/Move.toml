@@ -1,0 +1,13 @@
+[package]
+name = "patterns"
+edition = "2024"
+
+# Solidity-patterns -> Sui teaching showcase.
+#
+# We lean on OpenZeppelin Contracts for Sui wherever it maps cleanly, because
+# Solidity devs already trust OZ. Only the two OZ packages we actually use are
+# declared here; the Sui framework (Sui, MoveStdlib) is an *implicit* dependency
+# on Sui 1.45+, so there is no explicit `Sui = { ... }` line to maintain.
+[dependencies]
+openzeppelin_access = { git = "https://github.com/OpenZeppelin/contracts-sui.git", subdir = "contracts/access", rev = "v1.4.0" }
+openzeppelin_math = { git = "https://github.com/OpenZeppelin/contracts-sui.git", subdir = "math/core", rev = "v1.4.0" }

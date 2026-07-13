@@ -1,0 +1,2445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Everyday Solidity, done on Sui · 13 patterns side by side</title>
+<meta name="description" content="Thirteen of the most common Solidity/EVM patterns — tokens, access control, upgrades, factories, escrow, vesting, multisig, airdrops, permit, flash loans, governance — each paired with its idiomatic Sui Move equivalent." />
+<style>
+
+/* ─── design tokens ────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light dark;
+  /* light (default) */
+  --bg: #ffffff;
+  --bg-soft: #f6f8fa;
+  --bg-card: #ffffff;
+  --bg-elev: #f0f2f5;
+  --line: #d1d9e0;
+  --line-soft: #e8ecf0;
+  --text: #1f2328;
+  --text-soft: #656d76;
+  --text-dim: #8b949e;
+  --accent: #0969da;
+  --accent-soft: rgba(9, 105, 218, 0.08);
+  --accent-line: rgba(9, 105, 218, 0.25);
+  --warn: #9a6700;
+  --warn-soft: rgba(154, 103, 0, 0.08);
+  --good: #1a7f37;
+  --good-soft: rgba(26, 127, 55, 0.08);
+  --bad: #cf222e;
+  --bad-soft: rgba(207, 34, 46, 0.08);
+  --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --maxw: 1120px;
+  /* syntax highlighting */
+  --syn-kw: #a626a4;
+  --syn-str: #50a14f;
+  --syn-num: #4078f2;
+  --syn-fn: #c18401;
+  --syn-type: #0184bc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #07080b;
+    --bg-soft: #0d1015;
+    --bg-card: #11151b;
+    --bg-elev: #161b22;
+    --line: #1f2630;
+    --line-soft: #161c25;
+    --text: #e6edf3;
+    --text-soft: #9aa6b2;
+    --text-dim: #5e6a78;
+    --accent: #4da2ff;
+    --accent-soft: rgba(77, 162, 255, 0.12);
+    --accent-line: rgba(77, 162, 255, 0.35);
+    --warn: #f0b429;
+    --warn-soft: rgba(240, 180, 41, 0.1);
+    --good: #4ade80;
+    --good-soft: rgba(74, 222, 128, 0.1);
+    --bad: #f87171;
+    --bad-soft: rgba(248, 113, 113, 0.1);
+    --syn-kw: #c792ea;
+    --syn-str: #c3e88d;
+    --syn-num: #82aaff;
+    --syn-fn: #ffcb6b;
+    --syn-type: #89ddff;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 120ms ease; }
+a:hover { border-bottom-color: var(--accent); }
+
+::selection { background: var(--accent-soft); color: var(--text); }
+
+/* ─── shell ────────────────────────────────────────────────────────────── */
+.shell { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+/* ─── top rail ─────────────────────────────────────────────────────────── */
+.rail {
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  position: sticky; top: 0; z-index: 10;
+  backdrop-filter: blur(8px);
+}
+.rail-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0;
+  font-size: 13px;
+  color: var(--text-soft);
+  letter-spacing: 0.02em;
+}
+.rail .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; }
+.rail .brand a { color: inherit; border: 0; }
+.rail .brand svg { display: block; }
+.rail .nav { display: flex; align-items: center; gap: 20px; font-family: var(--mono); font-size: 12px; }
+.rail .nav a { color: var(--text-soft); }
+.rail .nav a:hover { color: var(--text); }
+.rail .crumbs { font-family: var(--mono); font-size: 12px; }
+.rail .crumbs span { color: var(--text-dim); }
+.rail .crumbs em { color: var(--text-soft); font-style: normal; }
+.rail .crumbs strong { color: var(--text); font-weight: 500; }
+
+/* ─── hero ─────────────────────────────────────────────────────────────── */
+.hero { padding: 80px 0 56px; border-bottom: 1px solid var(--line); position: relative; overflow: hidden; }
+.hero::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(1100px 400px at 20% -10%, rgba(77, 162, 255, 0.10), transparent 60%),
+              radial-gradient(800px 280px at 90% 30%, rgba(77, 162, 255, 0.06), transparent 60%);
+  pointer-events: none;
+}
+.hero-inner { position: relative; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); padding: 6px 12px; border: 1px solid var(--accent-line); border-radius: 999px;
+  background: var(--accent-soft);
+}
+h1 {
+  font-size: clamp(36px, 5.4vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  margin: 24px 0 18px;
+  max-width: 22ch;
+}
+h1 em { font-style: normal; color: var(--accent); }
+.lede {
+  font-size: 19px; line-height: 1.55; color: var(--text-soft); max-width: 68ch; margin: 0 0 28px;
+}
+.meta {
+  display: flex; flex-wrap: wrap; gap: 24px;
+  font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.meta strong { color: var(--text-soft); font-weight: 500; }
+
+/* ─── sections ─────────────────────────────────────────────────────────── */
+section { padding: 72px 0; border-bottom: 1px solid var(--line); }
+section.tight { padding: 56px 0; }
+.section-head {
+  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+.section-num {
+  font-family: var(--mono); font-size: 12px; color: var(--accent);
+  letter-spacing: 0.16em; text-transform: uppercase;
+}
+h2 {
+  font-size: clamp(26px, 3vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+  margin: 0;
+  max-width: 24ch;
+}
+h3 { font-size: 20px; font-weight: 600; margin: 0 0 10px; letter-spacing: -0.01em; }
+h4 { font-size: 14px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
+.section-sub {
+  color: var(--text-soft);
+  max-width: 64ch;
+  font-size: 17px;
+  margin: 14px 0 0;
+}
+p { color: var(--text-soft); font-size: 16px; line-height: 1.65; }
+p strong { color: var(--text); font-weight: 600; }
+ul, ol { color: var(--text-soft); padding-left: 22px; line-height: 1.7; }
+li { margin-bottom: 6px; }
+li strong { color: var(--text); }
+code {
+  font-family: var(--mono);
+  color: var(--text);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+/* ─── pain anchor strip ────────────────────────────────────────────────── */
+.pain-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+}
+@media (max-width: 880px) { .pain-grid { grid-template-columns: 1fr; } }
+.pain-card {
+  border: 1px solid var(--line);
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 22px 22px 20px;
+  position: relative;
+}
+.pain-card .stat {
+  font-family: var(--mono);
+  font-size: 11px; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.pain-card blockquote {
+  margin: 0 0 14px; padding: 0;
+  font-size: 16px; line-height: 1.5; color: var(--text);
+  font-weight: 500;
+}
+.pain-card cite {
+  font-style: normal; font-size: 12px; color: var(--text-soft); font-family: var(--mono);
+}
+.pain-card .corner {
+  position: absolute; top: 0; right: 0; padding: 6px 10px;
+  border-left: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  border-radius: 0 10px 0 10px;
+  font-family: var(--mono); font-size: 11px; color: var(--bad);
+  background: var(--bad-soft);
+}
+
+/* ─── thesis grid (two-column) ─────────────────────────────────────────── */
+.thesis-grid {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: start;
+}
+@media (max-width: 880px) { .thesis-grid { grid-template-columns: 1fr; gap: 28px; } }
+.thesis-grid p { color: var(--text-soft); font-size: 17px; line-height: 1.65; margin: 0 0 18px; }
+.thesis-grid p strong { color: var(--text); font-weight: 600; }
+.thesis-grid .callout {
+  border-left: 2px solid var(--accent);
+  padding: 4px 0 4px 20px;
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.thesis-grid .callout em { color: var(--accent); font-style: normal; }
+
+.pillars { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.pillar {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 16px 18px;
+  background: var(--bg-soft);
+  display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: start;
+}
+.pillar svg { margin-top: 2px; }
+.pillar h4 { margin: 0 0 4px; font-size: 14px; color: var(--text); font-weight: 600; }
+.pillar p { margin: 0; font-size: 14px; color: var(--text-soft); line-height: 1.55; }
+
+/* ─── template recap (two-column) ──────────────────────────────────────── */
+.template {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: stretch;
+}
+@media (max-width: 880px) { .template { grid-template-columns: 1fr; } }
+.template > div { display: flex; flex-direction: column; }
+.template h3 { margin: 0 0 10px; font-size: 18px; font-weight: 600; }
+.template p { color: var(--text-soft); margin: 0 0 16px; }
+
+/* ─── code blocks ──────────────────────────────────────────────────────── */
+pre, code { font-family: var(--mono); }
+pre.code {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 0;
+}
+pre.code code { background: transparent; border: 0; padding: 0; }
+pre.code .k { color: var(--syn-kw); }
+pre.code .s { color: var(--syn-str); }
+pre.code .n { color: var(--syn-num); }
+pre.code .c { color: var(--text-dim); font-style: italic; }
+pre.code .f { color: var(--syn-fn); }
+pre.code .t { color: var(--syn-type); }
+
+/* ─── showcase cards (used on landing) ─────────────────────────────────── */
+.showcase {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-soft) 100%);
+  overflow: hidden;
+  margin: 0 0 28px;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+.showcase:hover { border-color: var(--accent-line); }
+.showcase-head {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-elev);
+}
+.showcase-head .num {
+  font-family: var(--mono); font-size: 13px; color: var(--accent);
+  letter-spacing: 0.16em;
+}
+.showcase-head h3 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.showcase-head h3 a { color: inherit; border-bottom: 0; }
+.showcase-head h3 a:hover { color: var(--accent); }
+.showcase-head .tag {
+  font-family: var(--mono); font-size: 11px; color: var(--text-soft);
+  border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+.showcase-body {
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: 0;
+}
+@media (max-width: 980px) { .showcase-body { grid-template-columns: 1fr; } }
+.showcase-prose, .showcase-code {
+  padding: 24px 28px;
+}
+.showcase-prose { border-right: 1px solid var(--line); }
+@media (max-width: 980px) { .showcase-prose { border-right: none; border-bottom: 1px solid var(--line); } }
+
+.showcase-prose h4 {
+  margin: 0 0 8px; font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.16em; text-transform: uppercase; font-family: var(--mono);
+  font-weight: 500;
+}
+.showcase-prose .pain-quote {
+  border-left: 2px solid var(--bad);
+  padding: 2px 0 2px 14px;
+  margin: 0 0 18px;
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.showcase-prose .pain-quote em { color: var(--text-soft); font-style: normal; font-size: 12px; display: block; margin-top: 6px; }
+.showcase-prose .fix {
+  color: var(--text-soft); font-size: 15px; line-height: 1.65; margin: 0 0 18px;
+}
+.showcase-prose .fix strong { color: var(--text); font-weight: 600; }
+.showcase-prose .effort {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px;
+}
+.pill {
+  font-family: var(--mono); font-size: 11px;
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--text-soft); background: var(--bg-soft);
+  letter-spacing: 0.04em;
+}
+.pill.good { color: var(--good); border-color: rgba(74, 222, 128, 0.3); background: var(--good-soft); }
+.pill.accent { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.pill.warn { color: var(--warn); border-color: rgba(240, 180, 41, 0.3); background: var(--warn-soft); }
+.pill.bad { color: var(--bad); border-color: rgba(248, 113, 113, 0.3); background: var(--bad-soft); }
+
+.showcase-code .caption {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+/* ─── flow diagrams ───────────────────────────────────────────────────── */
+.flow {
+  margin: 16px 0 0;
+  border-top: 1px dashed var(--line);
+  padding-top: 16px;
+}
+.flow-row {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; align-items: center;
+  font-family: var(--mono); font-size: 11px;
+}
+.flow-row .box {
+  padding: 8px 6px; border: 1px solid var(--line); border-radius: 6px;
+  text-align: center; background: var(--bg-elev); color: var(--text-soft);
+  line-height: 1.3;
+}
+.flow-row .box.accent { border-color: var(--accent-line); color: var(--accent); background: var(--accent-soft); }
+.flow-row .arrow { text-align: center; color: var(--text-dim); }
+
+/* ─── comparison matrix ────────────────────────────────────────────────── */
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table.matrix {
+  width: 100%; border-collapse: collapse; font-size: 13.5px;
+  min-width: 760px;
+}
+table.matrix th, table.matrix td {
+  text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top;
+}
+table.matrix thead th {
+  background: var(--bg-elev); color: var(--text); font-weight: 600;
+  font-size: 13px; letter-spacing: 0.02em; position: sticky; top: 0;
+}
+table.matrix tbody td:first-child { color: var(--text); font-weight: 500; width: 28%; }
+table.matrix tbody td { color: var(--text-soft); }
+table.matrix tbody tr:last-child td { border-bottom: none; }
+table.matrix td.pain { color: var(--bad); }
+table.matrix td.fix { color: var(--good); }
+table.matrix td code { font-size: 0.85em; }
+
+/* ─── sequencing ladder ───────────────────────────────────────────────── */
+.ladder { display: grid; grid-template-columns: 1fr; gap: 12px; counter-reset: rung; }
+.rung {
+  display: grid; grid-template-columns: 56px 1fr auto; gap: 16px; align-items: center;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bg-card);
+  padding: 16px 20px;
+}
+.rung::before {
+  counter-increment: rung; content: counter(rung, decimal-leading-zero);
+  font-family: var(--mono); font-size: 18px; color: var(--accent);
+  letter-spacing: 0.04em;
+}
+.rung h4 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.rung p { margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.5; }
+.rung .estimate { font-family: var(--mono); font-size: 12px; color: var(--text-soft); white-space: nowrap; }
+@media (max-width: 720px) {
+  .rung { grid-template-columns: 40px 1fr; }
+  .rung .estimate { grid-column: 1 / -1; text-align: left; padding-left: 56px; }
+}
+
+/* ─── walkthrough steps (showcase pages) ──────────────────────────────── */
+.step {
+  display: grid; grid-template-columns: 56px 1fr; gap: 22px;
+  padding: 22px 0; border-top: 1px solid var(--line);
+}
+.step:first-child { border-top: 0; padding-top: 0; }
+.step .num {
+  font-family: var(--mono); font-size: 20px; color: var(--accent);
+  letter-spacing: 0.04em; line-height: 1; padding-top: 2px;
+}
+.step h3 { margin: 0 0 8px; }
+.step p { margin: 0 0 12px; }
+.step p:last-child { margin-bottom: 0; }
+.step pre.code { margin: 12px 0 0; }
+.step .pill { margin-right: 6px; }
+@media (max-width: 720px) {
+  .step { grid-template-columns: 1fr; gap: 8px; }
+}
+
+/* ─── env table (showcase walkthroughs) ────────────────────────────────── */
+table.env {
+  width: 100%; border-collapse: collapse; font-size: 13.5px;
+  border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  margin: 12px 0 0;
+}
+table.env th, table.env td {
+  text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top;
+}
+table.env thead th {
+  background: var(--bg-elev); color: var(--text); font-weight: 600; font-size: 12px;
+  letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--mono);
+}
+table.env tbody td:first-child { font-family: var(--mono); color: var(--accent); white-space: nowrap; }
+table.env tbody td { color: var(--text-soft); }
+table.env tbody tr:last-child td { border-bottom: none; }
+
+/* ─── notice (warnings) ───────────────────────────────────────────────── */
+.notice {
+  border: 1px solid rgba(240, 180, 41, 0.3);
+  background: var(--warn-soft);
+  border-left: 3px solid var(--warn);
+  padding: 16px 20px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.notice strong { color: var(--warn); }
+.notice.bad { border-color: rgba(248, 113, 113, 0.3); background: var(--bad-soft); border-left-color: var(--bad); }
+.notice.bad strong { color: var(--bad); }
+
+/* ─── sibling nav (prev/next on showcase pages) ───────────────────────── */
+.siblings {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) { .siblings { grid-template-columns: 1fr; } }
+.sibling {
+  display: block;
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px 20px;
+  background: var(--bg-card);
+  color: var(--text);
+  transition: border-color 200ms ease;
+}
+.sibling:hover { border-color: var(--accent-line); border-bottom-color: var(--accent-line); }
+.sibling .label {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  margin: 0 0 6px;
+}
+.sibling .title { font-size: 16px; color: var(--text); font-weight: 600; line-height: 1.3; }
+.sibling.next { text-align: right; }
+.sibling.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ─── source-file list ────────────────────────────────────────────────── */
+.sources { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.sources a {
+  display: block;
+  font-family: var(--mono); font-size: 13px;
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px 14px;
+  background: var(--bg-soft);
+  color: var(--text-soft);
+}
+.sources a:hover { color: var(--text); border-color: var(--accent-line); }
+.sources a strong { color: var(--accent); margin-right: 8px; }
+
+/* ─── caveats list (what this is NOT) ─────────────────────────────────── */
+.caveats { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.caveats li {
+  list-style: none; padding: 14px 18px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg-soft);
+}
+.caveats ul { padding-left: 0; margin: 0; }
+
+/* ─── footer ──────────────────────────────────────────────────────────── */
+footer { padding: 56px 0 80px; color: var(--text-soft); font-size: 14px; }
+footer .foot-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 48px; }
+@media (max-width: 720px) { footer .foot-grid { grid-template-columns: 1fr; gap: 24px; } }
+footer h5 { margin: 0 0 10px; color: var(--text); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--mono); }
+footer ul { margin: 0; padding: 0; list-style: none; }
+footer li { padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+footer li:last-child { border-bottom: none; }
+footer code { font-size: 12px; color: var(--text-dim); background: transparent; border: 0; padding: 0; }
+
+
+/* ─── hub cards (landing page) ────────────────────────────────────────── */
+.hub-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+}
+@media (max-width: 880px) { .hub-grid { grid-template-columns: 1fr; } }
+.hub-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-soft) 100%);
+  padding: 36px 32px;
+  transition: border-color 200ms ease;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.hub-card:hover { border-color: var(--accent-line); border-bottom-color: var(--accent-line); }
+.hub-card .hub-eyebrow {
+  font-family: var(--mono); font-size: 11px; color: var(--accent);
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.hub-card h3 { font-size: 24px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.hub-card h3 a { color: inherit; border: 0; }
+.hub-card h3 a:hover { color: var(--accent); }
+.hub-card p { color: var(--text-soft); font-size: 15px; line-height: 1.6; margin: 0; }
+.hub-card .hub-meta {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto;
+}
+
+</style>
+<style>
+  /* patterns page — extends the shared token system inherited above */
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 980px) { .pair { grid-template-columns: 1fr; } }
+  .col { border: 1px solid var(--line); border-radius: 10px; background: var(--bg-card); overflow: hidden; }
+  .col-tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .col-tag.sol { color: var(--warn); background: var(--warn-soft); }
+  .col-tag.move { color: var(--accent); background: var(--accent-soft); }
+  .codehead { display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 14px; border-bottom: 1px solid var(--line-soft); background: var(--bg-soft); }
+  .codehead .fname { font-family: var(--mono); font-size: 11px; color: var(--text-soft); }
+  .codehead .lang { font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.1em; }
+  pre.code { margin: 0; padding: 16px 14px; overflow-x: auto; font-family: var(--mono);
+    font-size: 12.5px; line-height: 1.55; color: var(--text); background: var(--bg-soft); max-height: 560px; }
+  pre.code code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; white-space: pre; }
+  .warn-strip { border: 1px solid rgba(240,180,41,0.35); background: var(--warn-soft); color: var(--text);
+    border-radius: 8px; padding: 12px 16px; margin: 0 0 20px; font-size: 14px; }
+  .warn-strip code { color: var(--warn); }
+  .toc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 880px) { .toc-grid { grid-template-columns: repeat(2, 1fr); } }
+  .toc-card { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line);
+    border-radius: 8px; padding: 14px 16px; background: var(--bg-card); color: var(--text); }
+  .toc-card:hover { border-color: var(--accent-line); }
+  .toc-num { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .toc-title { font-size: 14px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="rail">
+  <div class="shell rail-inner">
+    <span class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" stroke="#4da2ff" stroke-width="1.4" />
+        <path d="M12 4 C 8 8, 8 14, 12 20 C 16 14, 16 8, 12 4 Z" fill="#4da2ff" fill-opacity="0.85" />
+      </svg>
+      <a href="./">Walrus - EVM Integrations</a>
+    </span>
+    <span class="nav">
+      <a href="./">Home</a>
+      <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
+    </span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="shell hero-inner">
+    <span class="eyebrow">Chapter 2 · Solidity → Sui</span>
+    <h1>Everyday Solidity, <em>done on Sui</em>.</h1>
+    <p class="lede">
+      Thirteen of the most common Solidity/EVM patterns — ranked by real-world prevalence — each paired with
+      its idiomatic Sui Move equivalent. Read the left column in a language you know; read the right to see how
+      the object model, capabilities, and native features change the shape of the answer. Where
+      <a href="https://docs.openzeppelin.com/contracts-sui">OpenZeppelin Contracts for Sui</a> applies, we use it.
+    </p>
+    <div class="meta">
+      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/patterns">patterns/</a></span>
+      <span><strong>Solidity:</strong> Foundry · OZ v5 · 15 passing tests</span>
+      <span><strong>Sui:</strong> Move 2024 · OZ Contracts for Sui</span>
+    </div>
+  </div>
+</header>
+
+<section class="tight">
+  <div class="shell">
+    <div class="section-head"><span class="section-num">Index</span><h2>The thirteen patterns</h2></div>
+    <div class="toc-grid">
+<a class="toc-card" href="#p01"><span class="toc-num">01</span><span class="toc-title">Fungible token</span></a>
+<a class="toc-card" href="#p02"><span class="toc-num">02</span><span class="toc-title">NFT</span></a>
+<a class="toc-card" href="#p03"><span class="toc-num">03</span><span class="toc-title">Access control</span></a>
+<a class="toc-card" href="#p04"><span class="toc-num">04</span><span class="toc-title">Upgradeability</span></a>
+<a class="toc-card" href="#p05"><span class="toc-num">05</span><span class="toc-title">Factory / clones</span></a>
+<a class="toc-card" href="#p06"><span class="toc-num">06</span><span class="toc-title">Escrow</span></a>
+<a class="toc-card" href="#p07"><span class="toc-num">07</span><span class="toc-title">Vesting</span></a>
+<a class="toc-card" href="#p08"><span class="toc-num">08</span><span class="toc-title">Multisig</span></a>
+<a class="toc-card" href="#p09"><span class="toc-num">09</span><span class="toc-title">Merkle airdrop</span></a>
+<a class="toc-card" href="#p10"><span class="toc-num">10</span><span class="toc-title">Gasless UX</span></a>
+<a class="toc-card" href="#p11"><span class="toc-num">11</span><span class="toc-title">Flash loan</span></a>
+<a class="toc-card" href="#p12"><span class="toc-num">12</span><span class="toc-title">Security canon</span></a>
+<a class="toc-card" href="#p13"><span class="toc-num">13</span><span class="toc-title">Governance</span></a>
+    </div>
+  </div>
+</section>
+
+
+<section id="p01">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 01</span>
+      <h2>Fungible token</h2>
+    </div>
+    <p class="section-sub">ERC-20 keeps every balance in one contract mapping; nobody holds anything. On Sui, <code>Coin&lt;T&gt;</code> objects <em>are</em> the balances and holders own them directly.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/01_FungibleToken.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {ERC20} from &quot;@openzeppelin/contracts/token/ERC20/ERC20.sol&quot;;
+import {Ownable} from &quot;@openzeppelin/contracts/access/Ownable.sol&quot;;
+
+/// @title 01 — Fungible token (ERC-20)
+/// @notice The single most deployed pattern on EVM chains (OpenZeppelin Tokens:
+///         150k+ verified deployments). All balances live in ONE contract as a
+///         `mapping(address =&gt; uint256)`; holders never custody anything.
+/// @dev Sui counterpart: `patterns/move/patterns/sources/fungible_token.move` —
+///      `coin::create_currency` mints `Coin&lt;T&gt;` objects that holders own
+///      directly; there is no balances mapping to read or corrupt.
+contract PatternToken is ERC20, Ownable {
+    constructor(address admin) ERC20(&quot;Pattern Token&quot;, &quot;PTRN&quot;) Ownable(admin) {}
+
+    /// The `onlyOwner` mint gate is the piece Sui replaces with possession of
+    /// the `TreasuryCap` object — an unforgeable capability, not an if-check.
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
+
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/fungible_token.move</span><span class="lang">move</span></div><pre class="code move"><code>/// ERC-20 equivalent.
+///
+/// Solidity habit: an ERC-20 is one contract that owns a `mapping(address =&gt;
+/// uint256) balances` and a `totalSupply`. Every transfer mutates that shared
+/// map, so every transfer contends on the same storage slot.
+///
+/// Sui idiom: there is no balances mapping. A fungible currency is a *type*
+/// `FUNGIBLE_TOKEN`, and each holder owns `Coin&lt;FUNGIBLE_TOKEN&gt;` objects that
+/// literally ARE the balance. Transfers move objects between owners on the fast
+/// path, so unrelated transfers never contend. Minting authority is a
+/// `TreasuryCap&lt;T&gt;` object (a capability) rather than an `onlyOwner` modifier.
+module patterns::fungible_token;
+
+use sui::coin::{Self, TreasuryCap};
+
+/// The One-Time Witness: a struct named exactly like the module, uppercased.
+/// The Sui VM instantiates exactly one value of this type at publish and hands
+/// it to `init`, guaranteeing the currency is registered once and only once.
+public struct FUNGIBLE_TOKEN has drop {}
+
+/// Runs once at publish. `create_currency` consumes the OTW and returns the
+/// mint/burn authority plus the immutable metadata object.
+///
+/// Note: the newer Currency Standard (`sui::coin_registry::new_currency_with_otw`)
+/// supersedes `coin::create_currency`; we use the classic call here because it is
+/// the one Solidity devs meet first. `#[allow(deprecated_usage)]` keeps the lesson
+/// noise-free.
+#[allow(deprecated_usage)]
+fun init(witness: FUNGIBLE_TOKEN, ctx: &amp;mut TxContext) {
+    let (treasury, metadata) = coin::create_currency(
+        witness,
+        6, // decimals
+        b&quot;GOLD&quot;,
+        b&quot;Gold Token&quot;,
+        b&quot;An ERC-20-style fungible token on Sui&quot;,
+        option::none(),
+        ctx,
+    );
+    // Metadata is frozen (read-only forever); the TreasuryCap goes to the
+    // publisher, who now holds the sole right to mint and burn.
+    transfer::public_freeze_object(metadata);
+    transfer::public_transfer(treasury, ctx.sender());
+}
+
+/// `mint` is gated by *ownership of the TreasuryCap*, not a role check. Whoever
+/// holds `&amp;mut TreasuryCap` is the minter; there is nothing else to verify.
+public fun mint(
+    treasury: &amp;mut TreasuryCap&lt;FUNGIBLE_TOKEN&gt;,
+    amount: u64,
+    recipient: address,
+    ctx: &amp;mut TxContext,
+) {
+    let coin = coin::mint(treasury, amount, ctx);
+    transfer::public_transfer(coin, recipient);
+}
+
+/// Burning consumes a Coin object; supply drops by its value. No allowance
+/// dance — you can only burn coins you own and pass in.
+public fun burn(treasury: &amp;mut TreasuryCap&lt;FUNGIBLE_TOKEN&gt;, coin: coin::Coin&lt;FUNGIBLE_TOKEN&gt;) {
+    coin::burn(treasury, coin);
+}
+
+#[test]
+fun test_mint_and_burn() {
+    use sui::test_scenario;
+    let admin = @0xA;
+    let mut sc = test_scenario::begin(admin);
+    // Simulate publish.
+    init(FUNGIBLE_TOKEN {}, sc.ctx());
+
+    sc.next_tx(admin);
+    let mut treasury = sc.take_from_sender&lt;TreasuryCap&lt;FUNGIBLE_TOKEN&gt;&gt;();
+    mint(&amp;mut treasury, 1000, admin, sc.ctx());
+    assert!(coin::total_supply(&amp;treasury) == 1000);
+
+    sc.next_tx(admin);
+    let coin = sc.take_from_sender&lt;coin::Coin&lt;FUNGIBLE_TOKEN&gt;&gt;();
+    burn(&amp;mut treasury, coin);
+    assert!(coin::total_supply(&amp;treasury) == 0);
+
+    sc.return_to_sender(treasury);
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p02">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 02</span>
+      <h2>NFT</h2>
+    </div>
+    <p class="section-sub">One contract per ERC-721 collection, metadata behind a URI. On Sui each NFT is a first-class object and <code>Display</code> renders metadata natively.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/02_Nft.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {ERC721URIStorage, ERC721} from &quot;@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol&quot;;
+import {Ownable} from &quot;@openzeppelin/contracts/access/Ownable.sol&quot;;
+
+/// @title 02 — NFT (ERC-721)
+/// @notice One contract per collection; token ownership is a row in the
+///         contract&#x27;s `_owners` mapping and metadata is a URI the contract
+///         points at. Marketplaces must be trusted to honor royalties.
+/// @dev Sui counterpart: `nft.move` — every NFT is a first-class object with
+///      its own on-chain ID and fields; `Display` renders metadata natively
+///      and royalty policies are enforced by the chain (kiosk), not goodwill.
+contract PatternNFT is ERC721URIStorage, Ownable {
+    uint256 private _nextId;
+
+    constructor(address admin) ERC721(&quot;Pattern NFT&quot;, &quot;PNFT&quot;) Ownable(admin) {}
+
+    function mint(address to, string calldata uri) external onlyOwner returns (uint256 id) {
+        id = ++_nextId;
+        _safeMint(to, id);
+        _setTokenURI(id, uri);
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/nft.move</span><span class="lang">move</span></div><pre class="code move"><code>/// ERC-721 equivalent.
+///
+/// Solidity habit: an ERC-721 is one contract holding `mapping(uint256 =&gt;
+/// address) owners` and `mapping(uint256 =&gt; string) tokenURIs`. A &quot;token&quot; is
+/// just a row keyed by `tokenId`; it has no independent existence.
+///
+/// Sui idiom: there is no collection contract and no owner mapping. Each NFT is
+/// a first-class object with its own `UID`; ownership is a property of the
+/// object recorded by the runtime, not a row we maintain. `display::Display`
+/// tells wallets/explorers how to render every object of this type at once,
+/// replacing per-token `tokenURI` strings.
+module patterns::nft;
+
+use std::string::{Self, String};
+use sui::display;
+use sui::package;
+
+/// The NFT itself. `key + store` means it is a standalone object that can also
+/// be wrapped, traded in a kiosk, or held in another object.
+public struct Nft has key, store {
+    id: UID,
+    name: String,
+    image_url: String,
+}
+
+/// OTW so we can claim the `Publisher` needed to configure Display.
+public struct NFT has drop {}
+
+fun init(otw: NFT, ctx: &amp;mut TxContext) {
+    let publisher = package::claim(otw, ctx);
+
+    // One Display object describes rendering for *every* Nft. The `{name}` and
+    // `{image_url}` templates read fields off each object at query time.
+    let mut disp = display::new&lt;Nft&gt;(&amp;publisher, ctx);
+    disp.add(string::utf8(b&quot;name&quot;), string::utf8(b&quot;{name}&quot;));
+    disp.add(string::utf8(b&quot;image_url&quot;), string::utf8(b&quot;{image_url}&quot;));
+    disp.update_version();
+
+    transfer::public_transfer(publisher, ctx.sender());
+    transfer::public_transfer(disp, ctx.sender());
+}
+
+/// Mint = allocate a fresh object and transfer it. No global counter, no
+/// `_mint` bookkeeping — the object&#x27;s `UID` is its unique id. Declared `entry`
+/// (not `public`) so it is PTB-callable but not composable from other packages —
+/// the idiomatic form for a leaf mint.
+entry fun mint(name: vector&lt;u8&gt;, image_url: vector&lt;u8&gt;, recipient: address, ctx: &amp;mut TxContext) {
+    let nft = Nft {
+        id: object::new(ctx),
+        name: string::utf8(name),
+        image_url: string::utf8(image_url),
+    };
+    transfer::transfer(nft, recipient);
+}
+
+/// Burning is just deleting the object; its `UID` must be consumed explicitly.
+public fun burn(nft: Nft) {
+    let Nft { id, name: _, image_url: _ } = nft;
+    id.delete();
+}
+
+#[test]
+fun test_mint() {
+    use sui::test_scenario;
+    let user = @0xB;
+    let mut sc = test_scenario::begin(user);
+    mint(b&quot;Sword #1&quot;, b&quot;https://img/1.png&quot;, user, sc.ctx());
+
+    sc.next_tx(user);
+    let nft = sc.take_from_sender&lt;Nft&gt;();
+    assert!(nft.name == string::utf8(b&quot;Sword #1&quot;));
+    burn(nft);
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p03">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 03</span>
+      <h2>Access control</h2>
+    </div>
+    <p class="section-sub"><code>Ownable</code>/<code>AccessControl</code> gate on "is msg.sender on the list?". Sui checks possession of a capability <em>object</em> — OpenZeppelin Contracts for Sui layers familiar roles on top.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/03_AccessControl.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {Ownable2Step, Ownable} from &quot;@openzeppelin/contracts/access/Ownable2Step.sol&quot;;
+import {AccessControl} from &quot;@openzeppelin/contracts/access/AccessControl.sol&quot;;
+
+/// @title 03 — Access control (Ownable / AccessControl)
+/// @notice #3 most-deployed OZ category (115k+). Every privileged path is an
+///         identity check: &quot;is msg.sender on the list?&quot; — the list being a
+///         storage slot an attacker only needs one bug to rewrite.
+/// @dev Sui counterpart: `access_control.move` — authority is an OBJECT you
+///      hold (`AdminCap`), checked by the type system at call time. The
+///      OZ-for-Sui `openzeppelin_access` package layers familiar role-based
+///      semantics (and two-step transfer) on top of that capability model.
+
+/// Single-admin flavor. `Ownable2Step` = transfer must be accepted by the
+/// recipient, preventing ownership burns via typo&#x27;d addresses.
+contract OwnedVault is Ownable2Step {
+    uint256 public parameter;
+
+    constructor(address admin) Ownable(admin) {}
+
+    function setParameter(uint256 value) external onlyOwner {
+        parameter = value;
+    }
+}
+
+/// Multi-role flavor: separate roles per privilege, admin can grant/revoke.
+contract RoleGuardedVault is AccessControl {
+    bytes32 public constant SETTER_ROLE = keccak256(&quot;SETTER_ROLE&quot;);
+    bytes32 public constant DRAINER_ROLE = keccak256(&quot;DRAINER_ROLE&quot;);
+
+    uint256 public parameter;
+
+    constructor(address admin) {
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+    }
+
+    function setParameter(uint256 value) external onlyRole(SETTER_ROLE) {
+        parameter = value;
+    }
+
+    function drain(address payable to) external onlyRole(DRAINER_ROLE) {
+        to.transfer(address(this).balance);
+    }
+
+    receive() external payable {}
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/access_control.move</span><span class="lang">move</span></div><pre class="code move"><code>/// Ownable / AccessControl equivalent — shown two ways.
+///
+/// Solidity habit: `Ownable` stores an `owner` address and guards functions
+/// with `onlyOwner`; `AccessControl` keeps `mapping(bytes32 =&gt; RoleData)` and
+/// guards with `onlyRole(ROLE)`. Both compare `msg.sender` against stored state.
+///
+/// Sui idiom: authority is an *object you hold*, not an address you match.
+///  (a) The native one-liner: an `AdminCap` capability object. Owning it IS the
+///      permission — no address comparison, no storage read.
+///  (b) When you need many named roles with on-chain grant/revoke, reach for
+///      OpenZeppelin&#x27;s `access_control`, which Solidity devs already know.
+module patterns::access_control;
+
+use openzeppelin_access::access_control::{Self, AccessControl, Auth};
+
+// =========================================================================
+// (a) Native capability pattern — the idiomatic &quot;Ownable&quot;
+// =========================================================================
+
+/// Holding this object is the entire authorization proof. Transfer it to hand
+/// over ownership; there is no `transferOwnership` bookkeeping to write.
+public struct AdminCap has key, store { id: UID }
+
+/// A privileged action. The `&amp;AdminCap` parameter is the guard: you cannot call
+/// this without owning the cap, and the compiler enforces it. No `require`.
+public fun admin_only_action(_cap: &amp;AdminCap): u64 {
+    42
+}
+
+// =========================================================================
+// (b) Role-based access with OpenZeppelin AccessControl
+// =========================================================================
+
+/// The OTW doubles as OpenZeppelin&#x27;s *root role* (its default admin role).
+public struct ACCESS_CONTROL has drop {}
+
+/// An extra role, defined in this same module (OZ requires home-module roles).
+public struct MinterRole {}
+
+fun init(otw: ACCESS_CONTROL, ctx: &amp;mut TxContext) {
+    // Native side: mint the AdminCap and give it to the publisher.
+    transfer::public_transfer(AdminCap { id: object::new(ctx) }, ctx.sender());
+
+    // OZ side: stand up the role registry. `new` makes the sender the default
+    // admin (root role), with a 1-day timelock on future admin transfers.
+    let mut registry = access_control::new(otw, 86_400_000, ctx);
+    // The root admin grants itself MinterRole so it can mint auth witnesses.
+    registry.grant_role&lt;_, MinterRole&gt;(ctx.sender(), ctx);
+    transfer::public_share_object(registry);
+}
+
+/// Grant MinterRole to `account`. Caller must already hold the role&#x27;s admin
+/// (the root role) — OZ checks that inside `grant_role`.
+public fun grant_minter(registry: &amp;mut AccessControl&lt;ACCESS_CONTROL&gt;, account: address, ctx: &amp;mut TxContext) {
+    registry.grant_role&lt;_, MinterRole&gt;(account, ctx);
+}
+
+/// A role-gated action. `Auth&lt;MinterRole&gt;` is an unforgeable proof minted only
+/// by `new_auth` to an address that currently holds MinterRole.
+public fun minter_only_action(_auth: &amp;Auth&lt;MinterRole&gt;): u64 {
+    7
+}
+
+#[test]
+fun test_both_patterns() {
+    use sui::test_scenario;
+    let admin = @0xA;
+    let mut sc = test_scenario::begin(admin);
+    init(ACCESS_CONTROL {}, sc.ctx());
+
+    sc.next_tx(admin);
+    // (a) native cap
+    let cap = sc.take_from_sender&lt;AdminCap&gt;();
+    assert!(admin_only_action(&amp;cap) == 42);
+    sc.return_to_sender(cap);
+
+    // (b) OZ role
+    let registry = sc.take_shared&lt;AccessControl&lt;ACCESS_CONTROL&gt;&gt;();
+    let auth = registry.new_auth&lt;_, MinterRole&gt;(sc.ctx());
+    assert!(minter_only_action(&amp;auth) == 7);
+    test_scenario::return_shared(registry);
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p04">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 04</span>
+      <h2>Upgradeability</h2>
+    </div>
+    <p class="section-sub">UUPS proxies <code>delegatecall</code> an implementation so code changes while storage stays — append-only forever. Sui upgrades packages natively; the chain enforces layout compatibility.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/04_UpgradeableCounter.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {UUPSUpgradeable} from &quot;@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol&quot;;
+import {Initializable} from &quot;@openzeppelin/contracts/proxy/utils/Initializable.sol&quot;;
+
+/// @title 04 — Upgradeable contract (UUPS proxy)
+/// @notice Upgradeability on EVM is a workaround: an ERC-1967 proxy
+///         `delegatecall`s an implementation, so code can change while state
+///         stays put. The cost: constructors don&#x27;t run (initializers instead),
+///         storage layout is append-only forever, and a storage collision
+///         bricks the contract. 98.24% of upgradeable proxies never upgrade.
+/// @dev Sui counterpart: `versioned.move` — package upgrades are NATIVE and
+///      `UpgradeCap`-mediated; the chain enforces layout compatibility, no
+///      delegatecall exists. Only shared-object versioning remains your job.
+contract CounterV1 is Initializable, UUPSUpgradeable {
+    // Storage layout is the contract&#x27;s real ABI now: V2+ may only APPEND.
+    address public owner;
+    uint256 public count;
+
+    /// Implementations must never be initialized directly — only via proxy.
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address owner_) external initializer {
+        owner = owner_;
+    }
+
+    function increment() external {
+        count += 1;
+    }
+
+    function _authorizeUpgrade(address) internal view override {
+        require(msg.sender == owner, &quot;not owner&quot;);
+    }
+}
+
+/// V2 repeats V1&#x27;s layout verbatim (owner, count), then appends. Reordering
+/// or retyping either field would silently corrupt live state.
+contract CounterV2 is Initializable, UUPSUpgradeable {
+    address public owner; // slot 0 — unchanged
+    uint256 public count; // slot 1 — unchanged
+    uint256 public step;  // slot 2 — appended by V2
+
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initializeV2(uint256 step_) external reinitializer(2) {
+        step = step_;
+    }
+
+    function increment() external {
+        count += step;
+    }
+
+    function _authorizeUpgrade(address) internal view override {
+        require(msg.sender == owner, &quot;not owner&quot;);
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/versioned.move</span><span class="lang">move</span></div><pre class="code move"><code>/// Upgradeable-proxy equivalent.
+///
+/// Solidity habit: to upgrade you deploy a proxy that `delegatecall`s into a
+/// logic contract, and you must hand-manage a storage layout that both versions
+/// agree on. Get the layout wrong and you get a *storage collision* that
+/// silently corrupts state. There is no first-class notion of &quot;the code changed
+/// but the data is the same&quot;.
+///
+/// Sui idiom: packages are upgraded natively — `sui client upgrade` publishes a
+/// new version at a new address while old versions stay callable forever. There
+/// is no delegatecall and no shared storage layout, so storage collisions are
+/// impossible. What you DO manage is a version gate: bump a `VERSION` constant
+/// each upgrade and stamp your shared objects, so old code paths refuse to run
+/// against migrated state.
+module patterns::versioned;
+
+/// Bumped by hand on every breaking upgrade. Entry points assert against it.
+const VERSION: u64 = 1;
+
+#[error(code = 0)]
+const EWrongVersion: vector&lt;u8&gt; = b&quot;Object version does not match package version&quot;;
+
+/// The long-lived shared state. `version` records which package version last
+/// migrated it.
+public struct Config has key {
+    id: UID,
+    version: u64,
+    value: u64,
+}
+
+/// Authority to run migrations — a capability, so upgrade rights are an object
+/// you hold, not an address you compare.
+public struct AdminCap has key, store { id: UID }
+
+fun init(ctx: &amp;mut TxContext) {
+    transfer::public_transfer(AdminCap { id: object::new(ctx) }, ctx.sender());
+    transfer::share_object(Config { id: object::new(ctx), version: VERSION, value: 0 });
+}
+
+/// Every entry point calls this first. After an upgrade, a stale `Config` (still
+/// at the old version) makes the new code abort until `migrate` runs — the Sui
+/// analogue of guarding against a not-yet-migrated proxy.
+fun assert_version(config: &amp;Config) {
+    assert!(config.version == VERSION, EWrongVersion);
+}
+
+/// A normal, version-guarded operation.
+public fun set_value(config: &amp;mut Config, value: u64) {
+    assert_version(config);
+    config.value = value;
+}
+
+/// Run once after publishing an upgrade. Gated by the AdminCap; bumps the stored
+/// version so guarded entry points start accepting the object again. Add any
+/// data-shape migration here.
+public fun migrate(_cap: &amp;AdminCap, config: &amp;mut Config) {
+    assert!(config.version &lt; VERSION, EWrongVersion);
+    config.version = VERSION;
+}
+
+#[test]
+fun test_version_gate() {
+    use sui::test_scenario;
+    let admin = @0xA;
+    let mut sc = test_scenario::begin(admin);
+    init(sc.ctx());
+
+    sc.next_tx(admin);
+    let mut config = sc.take_shared&lt;Config&gt;();
+    set_value(&amp;mut config, 99); // passes: versions match
+    assert!(config.value == 99);
+    test_scenario::return_shared(config);
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p05">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 05</span>
+      <h2>Factory / clones</h2>
+    </div>
+    <p class="section-sub">Factories mint &gt;90% of EVM contracts via 45-byte ERC-1167 clones. On Sui the pattern vanishes: one package serves unlimited object instances.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/05_Factory.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {Clones} from &quot;@openzeppelin/contracts/proxy/Clones.sol&quot;;
+import {Initializable} from &quot;@openzeppelin/contracts/proxy/utils/Initializable.sol&quot;;
+
+/// @title 05 — Factory + minimal-proxy clones (ERC-1167)
+/// @notice The #1 operational pattern by volume: factories have minted &gt;90% of
+///         all contracts on Ethereum since 2020. Because deploying bytecode is
+///         expensive, factories stamp out 45-byte ERC-1167 clones that
+///         delegatecall one shared implementation (Uniswap pairs, Safe
+///         wallets, NFT drops all work this way).
+/// @dev Sui counterpart: `no_factory.move` — the entire pattern evaporates.
+///      One published package serves unlimited instances; &quot;deploying an
+///      account&quot; is just creating an object. No clones, no delegatecall.
+contract UserAccount is Initializable {
+    address public owner;
+
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address owner_) external initializer {
+        owner = owner_;
+    }
+
+    function withdraw(uint256 amount) external {
+        require(msg.sender == owner, &quot;not owner&quot;);
+        (bool ok,) = owner.call{value: amount}(&quot;&quot;);
+        require(ok, &quot;transfer failed&quot;);
+    }
+
+    receive() external payable {}
+}
+
+contract AccountFactory {
+    address public immutable implementation;
+    mapping(address user =&gt; address account) public accountOf;
+
+    event AccountCreated(address indexed user, address account);
+
+    constructor() {
+        implementation = address(new UserAccount());
+    }
+
+    function createAccount() external returns (address account) {
+        require(accountOf[msg.sender] == address(0), &quot;already created&quot;);
+        account = Clones.clone(implementation); // 45-byte proxy, ~41k gas
+        UserAccount(payable(account)).initialize(msg.sender);
+        accountOf[msg.sender] = account;
+        emit AccountCreated(msg.sender, account);
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/no_factory.move</span><span class="lang">move</span></div><pre class="code move"><code>/// Factory / ERC-1167 minimal-proxy equivalent.
+///
+/// Solidity habit: to give every user their own contract instance you deploy a
+/// factory that `CREATE`s (or `CREATE2` clones via ERC-1167) a fresh contract
+/// per instance. Each clone costs a deployment and lives at its own address.
+///
+/// Sui idiom: there are no per-instance deployments. One published package is
+/// the code for *unlimited* instances; an &quot;instance&quot; is just an object you
+/// allocate with `object::new`. The `create` function below is the entire
+/// factory — no clone bytecode, no CREATE2 address prediction, no registry.
+module patterns::no_factory;
+
+/// The per-user instance. Publishing the package once lets anyone mint as many
+/// of these as they like.
+public struct Vault has key, store {
+    id: UID,
+    owner: address,
+    balance: u64,
+}
+
+/// &quot;Deploy a new instance&quot; = allocate an object and transfer it. This single
+/// package call replaces an ERC-1167 clone factory.
+public fun create(ctx: &amp;mut TxContext): Vault {
+    Vault { id: object::new(ctx), owner: ctx.sender(), balance: 0 }
+}
+
+/// Convenience entry: create one and send it to the caller.
+entry fun create_and_keep(ctx: &amp;mut TxContext) {
+    let vault = create(ctx);
+    transfer::transfer(vault, ctx.sender());
+}
+
+public fun owner(vault: &amp;Vault): address { vault.owner }
+
+#[test]
+fun test_many_instances() {
+    use sui::test_scenario;
+    let a = @0xA;
+    let mut sc = test_scenario::begin(a);
+    // One package, three independent instances — no extra deployments.
+    let v1 = create(sc.ctx());
+    let v2 = create(sc.ctx());
+    let v3 = create(sc.ctx());
+    assert!(v1.owner == a &amp;&amp; v2.owner == a &amp;&amp; v3.owner == a);
+    transfer::transfer(v1, a);
+    transfer::transfer(v2, a);
+    transfer::transfer(v3, a);
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p06">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 06</span>
+      <h2>Escrow</h2>
+    </div>
+    <p class="section-sub">The EVM escrow takes custody and must hand assets back correctly on every path. On Sui the item is a shared object that can't be silently dropped.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/06_Escrow.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {IERC721} from &quot;@openzeppelin/contracts/token/ERC721/IERC721.sol&quot;;
+import {ReentrancyGuard} from &quot;@openzeppelin/contracts/utils/ReentrancyGuard.sol&quot;;
+
+/// @title 06 — Escrow (trustless NFT-for-ETH sale)
+/// @notice The contract takes CUSTODY: the seller&#x27;s NFT sits inside the
+///         escrow&#x27;s own address until the buyer pays. Both parties must trust
+///         this code with their assets, and every path (accept/cancel) must
+///         hand them back correctly.
+/// @dev Sui counterpart: `escrow.move` — the item is wrapped in a shared
+///      object; ownership mechanics are language-level (no `transferFrom`
+///      approval dance) and the escrow cannot &quot;forget&quot; to return an object —
+///      Move objects can&#x27;t be silently dropped.
+contract NftEscrow is ReentrancyGuard {
+    struct Deal {
+        address seller;
+        IERC721 nft;
+        uint256 tokenId;
+        uint256 price;
+    }
+
+    uint256 private _nextDealId;
+    mapping(uint256 dealId =&gt; Deal) public deals;
+
+    event Listed(uint256 indexed dealId, address indexed seller, uint256 price);
+    event Sold(uint256 indexed dealId, address indexed buyer);
+    event Cancelled(uint256 indexed dealId);
+
+    /// Seller must have called `nft.approve(escrow, tokenId)` first — the
+    /// two-transaction approval dance Sui eliminates.
+    function list(IERC721 nft, uint256 tokenId, uint256 price) external returns (uint256 dealId) {
+        dealId = ++_nextDealId;
+        deals[dealId] = Deal(msg.sender, nft, tokenId, price);
+        nft.transferFrom(msg.sender, address(this), tokenId);
+        emit Listed(dealId, msg.sender, price);
+    }
+
+    function buy(uint256 dealId) external payable nonReentrant {
+        Deal memory deal = deals[dealId];
+        require(deal.seller != address(0), &quot;no deal&quot;);
+        require(msg.value == deal.price, &quot;wrong price&quot;);
+        delete deals[dealId]; // effects before interactions
+        deal.nft.transferFrom(address(this), msg.sender, deal.tokenId);
+        (bool ok,) = deal.seller.call{value: msg.value}(&quot;&quot;);
+        require(ok, &quot;pay failed&quot;);
+        emit Sold(dealId, msg.sender);
+    }
+
+    function cancel(uint256 dealId) external nonReentrant {
+        Deal memory deal = deals[dealId];
+        require(msg.sender == deal.seller, &quot;not seller&quot;);
+        delete deals[dealId];
+        deal.nft.transferFrom(address(this), deal.seller, deal.tokenId);
+        emit Cancelled(dealId);
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/escrow.move</span><span class="lang">move</span></div><pre class="code move"><code>/// Trustless swap escrow.
+///
+/// Solidity habit: an escrow contract holds both sides&#x27; assets in its own
+/// storage and tracks who deposited what in mappings, trusting its own logic to
+/// release correctly. Reentrancy and approval bugs live here.
+///
+/// Sui idiom: the escrow is a shared object that *owns* the offered item by
+/// wrapping it. The counterparty atomically pays the asked amount and receives
+/// the item in one transaction; if they never show up, the creator cancels and
+/// the wrapped item is returned. The item cannot leak — it is a resource the
+/// compiler forces us to route to exactly one owner.
+module patterns::escrow;
+
+use sui::coin::Coin;
+use sui::sui::SUI;
+
+#[error(code = 0)]
+const EWrongAmount: vector&lt;u8&gt; = b&quot;Payment does not match the asked price&quot;;
+
+#[error(code = 1)]
+const ENotCreator: vector&lt;u8&gt; = b&quot;Only the creator can cancel&quot;;
+
+/// Shared escrow. `T: key + store` is the offered item, wrapped inside. Generic
+/// over T, so one module escrows NFTs, coins, or anything ownable.
+public struct Escrow&lt;T: key + store&gt; has key {
+    id: UID,
+    creator: address,
+    asked: u64, // required SUI payment, in MIST
+    item: T,
+}
+
+/// Offer `item` for `asked` MIST. Shares the escrow so any buyer can take it.
+public fun create&lt;T: key + store&gt;(item: T, asked: u64, ctx: &amp;mut TxContext) {
+    let escrow = Escrow&lt;T&gt; { id: object::new(ctx), creator: ctx.sender(), asked, item };
+    transfer::share_object(escrow);
+}
+
+/// Buyer pays exactly `asked` and receives the item — atomic. Payment goes to
+/// the creator; nothing is left half-done because the whole tx reverts on abort.
+public fun swap&lt;T: key + store&gt;(escrow: Escrow&lt;T&gt;, payment: Coin&lt;SUI&gt;): T {
+    let Escrow { id, creator, asked, item } = escrow;
+    assert!(payment.value() == asked, EWrongAmount);
+    transfer::public_transfer(payment, creator);
+    id.delete();
+    // Return the unwrapped item; the buyer (caller) decides where it lands.
+    item
+}
+
+/// Creator reclaims the item if no swap happened.
+public fun cancel&lt;T: key + store&gt;(escrow: Escrow&lt;T&gt;, ctx: &amp;mut TxContext): T {
+    let Escrow { id, creator, asked: _, item } = escrow;
+    assert!(ctx.sender() == creator, ENotCreator);
+    id.delete();
+    item
+}
+
+#[test_only]
+public struct Gizmo has key, store { id: UID }
+
+#[test]
+fun test_swap_happy_path() {
+    use sui::test_scenario;
+    use sui::coin;
+    let seller = @0xA;
+    let buyer = @0xB;
+    let mut sc = test_scenario::begin(seller);
+
+    let gizmo = Gizmo { id: object::new(sc.ctx()) };
+    create(gizmo, 500, sc.ctx());
+
+    sc.next_tx(buyer);
+    let escrow = sc.take_shared&lt;Escrow&lt;Gizmo&gt;&gt;();
+    let payment = coin::mint_for_testing&lt;SUI&gt;(500, sc.ctx());
+    let item = swap(escrow, payment);
+    transfer::public_transfer(item, buyer);
+
+    // Seller received the 500 MIST payment.
+    sc.next_tx(seller);
+    let paid = sc.take_from_sender&lt;coin::Coin&lt;SUI&gt;&gt;();
+    assert!(paid.value() == 500);
+    sc.return_to_sender(paid);
+    sc.end();
+}
+
+#[test]
+fun test_cancel_returns_item() {
+    use sui::test_scenario;
+    let seller = @0xA;
+    let mut sc = test_scenario::begin(seller);
+    let gizmo = Gizmo { id: object::new(sc.ctx()) };
+    create(gizmo, 500, sc.ctx());
+
+    sc.next_tx(seller);
+    let escrow = sc.take_shared&lt;Escrow&lt;Gizmo&gt;&gt;();
+    let item = cancel(escrow, sc.ctx());
+    transfer::public_transfer(item, seller);
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p07">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 07</span>
+      <h2>Vesting</h2>
+    </div>
+    <p class="section-sub">OZ <code>VestingWallet</code> releases linearly over time. On Sui the wallet is an object the beneficiary owns, using OpenZeppelin Contracts for Sui's finance package and the on-chain <code>Clock</code>.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/07_Vesting.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {VestingWallet} from &quot;@openzeppelin/contracts/finance/VestingWallet.sol&quot;;
+
+/// @title 07 — Vesting (linear release over time)
+/// @notice OZ&#x27;s `VestingWallet` holds ETH/ERC-20 and releases it linearly
+///         between `start` and `start + duration`. The beneficiary calls
+///         `release()` to pull whatever has vested so far.
+/// @dev Sui counterpart: `vesting.move` — uses OpenZeppelin Contracts for
+///      Sui&#x27;s `openzeppelin_finance::vesting_wallet_linear`, the same mental
+///      model ported to objects: the wallet IS an object the beneficiary
+///      owns, and time comes from the on-chain `Clock`.
+contract TeamVesting is VestingWallet {
+    constructor(address beneficiary, uint64 startTimestamp, uint64 durationSeconds)
+        VestingWallet(beneficiary, startTimestamp, durationSeconds)
+    {}
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/vesting.move</span><span class="lang">move</span></div><pre class="code move"><code>/// VestingWallet equivalent — linear vesting with a cliff-free straight line.
+///
+/// Solidity habit: OpenZeppelin&#x27;s `VestingWallet` streams a balance to a
+/// beneficiary as `block.timestamp` advances, tracking `released` in storage.
+///
+/// Sui idiom: same idea, but time comes from the shared `Clock` object (passed
+/// by reference) and the locked funds live as a `Balance&lt;C&gt;` wrapped inside the
+/// wallet object rather than in a contract&#x27;s storage slot.
+///
+/// OZ ships this for Sui too — `openzeppelin_finance::vesting_wallet_linear`
+/// (`create_and_share` + `release`). It is the production choice, but its payout
+/// path routes through Sui&#x27;s newer funds-accumulator (`balance::send_funds`),
+/// which is heavier than a teaching snippet needs. We implement the same linear
+/// curve natively here so the mechanics stay legible; reach for the OZ package
+/// in real code.
+module patterns::vesting;
+
+use sui::balance::Balance;
+use sui::clock::Clock;
+use sui::coin::{Self, Coin};
+
+#[error(code = 0)]
+const EZeroDuration: vector&lt;u8&gt; = b&quot;Vesting duration must be positive&quot;;
+
+/// Shared vesting wallet. `phantom C` brands which currency it streams.
+public struct VestingWallet&lt;phantom C&gt; has key {
+    id: UID,
+    beneficiary: address,
+    start_ms: u64,
+    duration_ms: u64,
+    total: u64,     // original grant size, for the linear formula
+    released: u64,  // cumulative amount already claimed
+    locked: Balance&lt;C&gt;,
+}
+
+/// Fund and share a wallet that vests `funds` linearly from `start_ms` over
+/// `duration_ms`.
+public fun create&lt;C&gt;(
+    funds: Coin&lt;C&gt;,
+    beneficiary: address,
+    start_ms: u64,
+    duration_ms: u64,
+    ctx: &amp;mut TxContext,
+) {
+    assert!(duration_ms &gt; 0, EZeroDuration);
+    let total = funds.value();
+    let wallet = VestingWallet&lt;C&gt; {
+        id: object::new(ctx),
+        beneficiary,
+        start_ms,
+        duration_ms,
+        total,
+        released: 0,
+        locked: funds.into_balance(),
+    };
+    transfer::share_object(wallet);
+}
+
+/// Cumulative amount vested by `now_ms` — a straight line clamped to `[0, total]`.
+/// Uses u128 intermediates so `total * elapsed` cannot overflow.
+public fun vested_amount&lt;C&gt;(wallet: &amp;VestingWallet&lt;C&gt;, now_ms: u64): u64 {
+    if (now_ms &lt;= wallet.start_ms) return 0;
+    let elapsed = now_ms - wallet.start_ms;
+    if (elapsed &gt;= wallet.duration_ms) return wallet.total;
+    (((wallet.total as u128) * (elapsed as u128)) / (wallet.duration_ms as u128)) as u64
+}
+
+/// Claim everything vested-but-not-yet-released and send it to the beneficiary.
+public fun claim&lt;C&gt;(wallet: &amp;mut VestingWallet&lt;C&gt;, clock: &amp;Clock, ctx: &amp;mut TxContext) {
+    let releasable = wallet.vested_amount(clock.timestamp_ms()) - wallet.released;
+    if (releasable == 0) return;
+    wallet.released = wallet.released + releasable;
+    let payout = coin::from_balance(wallet.locked.split(releasable), ctx);
+    transfer::public_transfer(payout, wallet.beneficiary);
+}
+
+public fun released&lt;C&gt;(wallet: &amp;VestingWallet&lt;C&gt;): u64 { wallet.released }
+
+#[test]
+fun test_linear_claim_over_time() {
+    use sui::test_scenario;
+    use sui::clock;
+    use sui::sui::SUI;
+    let beneficiary = @0xB;
+    let mut sc = test_scenario::begin(beneficiary);
+
+    let mut clk = clock::create_for_testing(sc.ctx());
+    // 1000 tokens vesting from t=0 over 100 ms.
+    let funds = coin::mint_for_testing&lt;SUI&gt;(1000, sc.ctx());
+    create(funds, beneficiary, 0, 100, sc.ctx());
+
+    // Halfway: 500 vested.
+    sc.next_tx(beneficiary);
+    let mut wallet = sc.take_shared&lt;VestingWallet&lt;SUI&gt;&gt;();
+    clk.set_for_testing(50);
+    claim(&amp;mut wallet, &amp;clk, sc.ctx());
+    assert!(wallet.released == 500);
+
+    // Fully vested and past the end: remaining 500 released.
+    clk.set_for_testing(200);
+    claim(&amp;mut wallet, &amp;clk, sc.ctx());
+    assert!(wallet.released == 1000);
+
+    test_scenario::return_shared(wallet);
+    clk.destroy_for_testing();
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p08">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 08</span>
+      <h2>Multisig</h2>
+    </div>
+    <p class="section-sub">Shared custody on EVM is a Safe contract with a confirmation transaction per co-signer. On Sui multisig is a <em>native key scheme</em> — signatures combine off-chain, no contract at all.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/08_Multisig.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+/// @title 08 — Multisig wallet (M-of-N approval)
+/// @notice On EVM, shared custody requires a CONTRACT (Safe being the
+///         canonical one): owners submit a transaction, co-owners confirm
+///         on-chain (each confirmation is its own transaction + gas), and
+///         once the threshold is met anyone can execute.
+/// @dev Sui counterpart: `patterns/native/multisig.sh` — NO contract at all.
+///      Multisig is a native key scheme: an address can BE a k-of-n composite
+///      of ed25519/secp256k1 keys, signatures are combined off-chain, and the
+///      combined transaction is a single normal transaction.
+contract MultisigWallet {
+    address[] public owners;
+    mapping(address =&gt; bool) public isOwner;
+    uint256 public immutable threshold;
+
+    struct Transaction {
+        address to;
+        uint256 value;
+        bytes data;
+        uint256 confirmations;
+        bool executed;
+    }
+
+    Transaction[] public transactions;
+    mapping(uint256 txId =&gt; mapping(address owner =&gt; bool)) public confirmed;
+
+    event Submitted(uint256 indexed txId, address indexed by);
+    event Confirmed(uint256 indexed txId, address indexed by);
+    event Executed(uint256 indexed txId);
+
+    modifier onlyOwner() {
+        require(isOwner[msg.sender], &quot;not owner&quot;);
+        _;
+    }
+
+    constructor(address[] memory owners_, uint256 threshold_) {
+        require(owners_.length &gt;= threshold_ &amp;&amp; threshold_ &gt; 0, &quot;bad threshold&quot;);
+        for (uint256 i = 0; i &lt; owners_.length; i++) {
+            require(owners_[i] != address(0) &amp;&amp; !isOwner[owners_[i]], &quot;bad owner&quot;);
+            isOwner[owners_[i]] = true;
+        }
+        owners = owners_;
+        threshold = threshold_;
+    }
+
+    function submit(address to, uint256 value, bytes calldata data) external onlyOwner returns (uint256 txId) {
+        txId = transactions.length;
+        transactions.push(Transaction(to, value, data, 0, false));
+        emit Submitted(txId, msg.sender);
+    }
+
+    /// Each confirmation is an on-chain transaction — the coordination cost
+    /// Sui moves off-chain into signature aggregation.
+    function confirm(uint256 txId) external onlyOwner {
+        require(!confirmed[txId][msg.sender], &quot;already confirmed&quot;);
+        confirmed[txId][msg.sender] = true;
+        transactions[txId].confirmations += 1;
+        emit Confirmed(txId, msg.sender);
+    }
+
+    function execute(uint256 txId) external onlyOwner {
+        Transaction storage txn = transactions[txId];
+        require(!txn.executed, &quot;executed&quot;);
+        require(txn.confirmations &gt;= threshold, &quot;below threshold&quot;);
+        txn.executed = true;
+        (bool ok,) = txn.to.call{value: txn.value}(txn.data);
+        require(ok, &quot;call failed&quot;);
+        emit Executed(txId);
+    }
+
+    receive() external payable {}
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">native/multisig.sh</span><span class="lang">bash</span></div><pre class="code bash"><code>#!/usr/bin/env bash
+# 08 — Multisig, the Sui way: NO CONTRACT.
+#
+# On EVM a multisig is a deployed contract (Safe): owners submit, co-owners
+# confirm on-chain (a transaction each), then anyone executes. See
+# ../solidity/src/08_Multisig.sol.
+#
+# On Sui, multisig is a NATIVE address scheme. A multisig address is literally
+# a k-of-n combination of public keys (ed25519 / secp256k1 / secp256r1).
+# Signatures are gathered OFF-CHAIN and combined into one signature; the
+# resulting transaction is an ordinary transaction from an ordinary address.
+# No contract to deploy, audit, or pay coordination gas to.
+set -euo pipefail
+
+# 1. Define the multisig: three signers, threshold 2, equal weights.
+#    (In practice each signer runs this with their own key in the keystore.)
+sui keytool multi-sig-address \
+  --pks   &quot;$PK1&quot; &quot;$PK2&quot; &quot;$PK3&quot; \
+  --weights 1 1 1 \
+  --threshold 2
+# → prints the multisig Sui address. Fund it like any other address.
+
+# 2. Build a transaction FROM the multisig address (e.g. a transfer) and
+#    serialize it to base64 (unsigned tx bytes):
+TX_BYTES=$(sui client transfer-sui \
+  --to &quot;$RECIPIENT&quot; --sui-coin-object-id &quot;$COIN&quot; --gas-budget 3000000 \
+  --serialize-unsigned-transaction)
+
+# 3. Each of two signers signs the SAME bytes independently (off-chain):
+SIG1=$(sui keytool sign --address &quot;$SIGNER1&quot; --data &quot;$TX_BYTES&quot; --json | jq -r .suiSignature)
+SIG2=$(sui keytool sign --address &quot;$SIGNER2&quot; --data &quot;$TX_BYTES&quot; --json | jq -r .suiSignature)
+
+# 4. Combine the partial signatures into ONE multisig signature:
+MULTISIG_SIG=$(sui keytool multi-sig-combine-partial-sig \
+  --pks &quot;$PK1&quot; &quot;$PK2&quot; &quot;$PK3&quot; --weights 1 1 1 --threshold 2 \
+  --sigs &quot;$SIG1&quot; &quot;$SIG2&quot; --json | jq -r .multisigSerialized)
+
+# 5. Submit as a single normal transaction:
+sui client execute-signed-tx --tx-bytes &quot;$TX_BYTES&quot; --signatures &quot;$MULTISIG_SIG&quot;
+
+# That&#x27;s the whole feature. The &quot;M-of-N confirmations&quot; loop that costs a
+# transaction per co-signer on EVM happens here as free off-chain signing.
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p09">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 09</span>
+      <h2>Merkle airdrop</h2>
+    </div>
+    <p class="section-sub">Pushing to thousands of recipients is too costly, so EVM airdrops publish a merkle root and make claimers prove membership. Sui's parallelism makes direct distribution viable — no proofs.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/09_MerkleAirdrop.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {MerkleProof} from &quot;@openzeppelin/contracts/utils/cryptography/MerkleProof.sol&quot;;
+import {IERC20} from &quot;@openzeppelin/contracts/token/ERC20/IERC20.sol&quot;;
+import {SafeERC20} from &quot;@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol&quot;;
+
+/// @title 09 — Merkle airdrop (claim with proof)
+/// @notice Pushing tokens to 10,000 recipients costs the SENDER prohibitive
+///         gas, so EVM airdrops invert the flow: publish one merkle root,
+///         make each recipient prove membership and pay their own claim gas.
+/// @dev Sui counterpart: `airdrop.move` — parallel execution + cheap object
+///      creation make DIRECT distribution viable again: the sender batch-
+///      creates Claim objects (or transfers Coins outright) in parallel
+///      transactions. No proofs, no claim site, no unclaimed remainder.
+contract MerkleAirdrop {
+    using SafeERC20 for IERC20;
+
+    IERC20 public immutable token;
+    bytes32 public immutable merkleRoot;
+    mapping(address =&gt; bool) public claimed;
+
+    event Claimed(address indexed account, uint256 amount);
+
+    constructor(IERC20 token_, bytes32 merkleRoot_) {
+        token = token_;
+        merkleRoot = merkleRoot_;
+    }
+
+    function claim(address account, uint256 amount, bytes32[] calldata proof) external {
+        require(!claimed[account], &quot;already claimed&quot;);
+        // OZ standard double-hashed leaf: keccak256(keccak256(abi.encode(...)))
+        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(account, amount))));
+        require(MerkleProof.verify(proof, merkleRoot, leaf), &quot;bad proof&quot;);
+        claimed[account] = true;
+        token.safeTransfer(account, amount);
+        emit Claimed(account, amount);
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/airdrop.move</span><span class="lang">move</span></div><pre class="code move"><code>/// Merkle-distributor equivalent.
+///
+/// Solidity habit: airdropping to thousands of addresses on-chain is too
+/// expensive, so you publish a Merkle root and make each recipient submit a
+/// proof to `claim`. The proof machinery exists only to compress a big list into
+/// one storage slot.
+///
+/// Sui idiom: you can just create one small `Claim` object per recipient and
+/// transfer it directly to them. Transfers touch independent objects, so the
+/// batch parallelizes instead of contending on a shared contract — no Merkle
+/// root, no proofs, no per-claim verification. Recipients later &quot;open&quot; their
+/// claim to get a `Coin`.
+module patterns::airdrop;
+
+use sui::balance::Balance;
+use sui::coin::{Self, Coin};
+
+#[error(code = 0)]
+const ELengthMismatch: vector&lt;u8&gt; = b&quot;recipients and amounts must be the same length&quot;;
+
+/// A pre-funded claim ticket, owned by its recipient.
+public struct Claim&lt;phantom C&gt; has key, store {
+    id: UID,
+    funds: Balance&lt;C&gt;,
+}
+
+/// Split `funds` into one `Claim` per recipient and transfer each directly.
+/// Any remainder is returned to the sender as a `Coin`.
+#[allow(lint(self_transfer))] // returning the funder&#x27;s own leftover coin is intentional
+public fun airdrop&lt;C&gt;(
+    mut funds: Coin&lt;C&gt;,
+    recipients: vector&lt;address&gt;,
+    amounts: vector&lt;u64&gt;,
+    ctx: &amp;mut TxContext,
+) {
+    assert!(recipients.length() == amounts.length(), ELengthMismatch);
+    let mut i = 0;
+    let n = recipients.length();
+    while (i &lt; n) {
+        let amount = amounts[i];
+        let claim = Claim&lt;C&gt; { id: object::new(ctx), funds: funds.balance_mut().split(amount) };
+        transfer::public_transfer(claim, recipients[i]);
+        i = i + 1;
+    };
+    // Return the leftover (possibly zero) coin to the funder.
+    transfer::public_transfer(funds, ctx.sender());
+}
+
+/// Recipient opens their claim, receiving a spendable `Coin`.
+public fun claim&lt;C&gt;(ticket: Claim&lt;C&gt;, ctx: &amp;mut TxContext): Coin&lt;C&gt; {
+    let Claim { id, funds } = ticket;
+    id.delete();
+    coin::from_balance(funds, ctx)
+}
+
+/// Value still locked in a claim ticket.
+public fun value&lt;C&gt;(ticket: &amp;Claim&lt;C&gt;): u64 { ticket.funds.value() }
+
+#[test]
+fun test_airdrop_and_claim() {
+    use sui::test_scenario;
+    use sui::sui::SUI;
+    let funder = @0xA;
+    let alice = @0xA1;
+    let bob = @0xB2;
+    let mut sc = test_scenario::begin(funder);
+
+    let funds = coin::mint_for_testing&lt;SUI&gt;(1000, sc.ctx());
+    airdrop(funds, vector[alice, bob], vector[300, 700], sc.ctx());
+
+    // Alice opens her claim and gets exactly 300.
+    sc.next_tx(alice);
+    let ticket = sc.take_from_sender&lt;Claim&lt;SUI&gt;&gt;();
+    assert!(value(&amp;ticket) == 300);
+    let coin = claim(ticket, sc.ctx());
+    assert!(coin.value() == 300);
+    transfer::public_transfer(coin, alice);
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p10">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 10</span>
+      <h2>Gasless UX</h2>
+    </div>
+    <p class="section-sub">EIP-2612 <code>permit</code> replaces an <code>approve</code> tx with a signed message, per token. Sui makes gas sponsorship native to <em>every</em> transaction — no per-asset opt-in.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/10_Permit.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {ERC20Permit, ERC20} from &quot;@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol&quot;;
+import {IERC20Permit} from &quot;@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol&quot;;
+import {IERC20} from &quot;@openzeppelin/contracts/token/ERC20/IERC20.sol&quot;;
+import {SafeERC20} from &quot;@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol&quot;;
+
+/// @title 10 — Gasless approval (EIP-2612 permit / meta-transactions)
+/// @notice EVM UX problem: before a dapp can move your tokens you must send
+///         an `approve()` transaction — which costs ETH the new user doesn&#x27;t
+///         have. `permit` replaces it with an off-chain EIP-712 signature a
+///         relayer submits, paying the gas for you.
+/// @dev Sui counterpart: `patterns/native/sponsored-tx.ts` — the platform
+///      solves the general problem: a sponsor sets the gas payment on ANY
+///      transaction (no approvals exist to begin with — you own your Coins).
+///      No per-token opt-in, no signature-replay surface in app code.
+contract PermitToken is ERC20Permit {
+    constructor(uint256 supply) ERC20(&quot;Permit Token&quot;, &quot;PMT&quot;) ERC20Permit(&quot;Permit Token&quot;) {
+        _mint(msg.sender, supply);
+    }
+}
+
+/// A dapp contract pulling deposits with a single user signature.
+contract PermitDeposits {
+    using SafeERC20 for IERC20;
+
+    mapping(address =&gt; uint256) public deposited;
+
+    function depositWithPermit(
+        IERC20 token,
+        address owner,
+        uint256 amount,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        // try/catch: front-running the permit call must not brick the deposit
+        try IERC20Permit(address(token)).permit(owner, address(this), amount, deadline, v, r, s) {} catch {}
+        token.safeTransferFrom(owner, address(this), amount);
+        deposited[owner] += amount;
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">native/sponsored-tx.ts</span><span class="lang">typescript</span></div><pre class="code typescript"><code>// 10 — Gasless UX, the Sui way: sponsored transactions.
+//
+// On EVM, letting a user act without holding ETH means EIP-2612 `permit`: the
+// user signs an off-chain approval, a relayer submits it and pays gas, and the
+// dapp pulls tokens with that signature. It is PER-TOKEN (each token must
+// implement permit) and only covers approvals. See ../solidity/src/10_Permit.sol.
+//
+// On Sui, gas sponsorship is a NATIVE property of every transaction: a
+// transaction has a gas owner distinct from its sender. The sponsor supplies
+// the gas coin and co-signs; the user signs the transaction contents. This
+// works for ANY action, not just token approvals, and needs no per-asset
+// opt-in (users own their Coins outright — there are no approvals to grant).
+//
+// Requires @mysten/sui. Illustrative — wire real keypairs / a sponsor service.
+import { SuiClient, getFullnodeUrl } from &quot;@mysten/sui/client&quot;;
+import { Transaction } from &quot;@mysten/sui/transactions&quot;;
+import { Ed25519Keypair } from &quot;@mysten/sui/keypairs/ed25519&quot;;
+
+const client = new SuiClient({ url: getFullnodeUrl(&quot;testnet&quot;) });
+
+export async function sponsoredTransfer(
+  user: Ed25519Keypair,      // the gasless end-user — holds no SUI
+  sponsor: Ed25519Keypair,   // pays gas on the user&#x27;s behalf
+  recipient: string,
+) {
+  const userAddr = user.getPublicKey().toSuiAddress();
+  const sponsorAddr = sponsor.getPublicKey().toSuiAddress();
+
+  // 1. Build the transaction the USER wants (move a Coin they own).
+  const tx = new Transaction();
+  tx.setSender(userAddr);
+  const [coin] = tx.splitCoins(tx.gas, [1_000_000]);
+  tx.transferObjects([coin], recipient);
+
+  // 2. The SPONSOR provides the gas payment and is set as gas owner.
+  tx.setGasOwner(sponsorAddr);
+  const sponsorCoins = await client.getCoins({ owner: sponsorAddr });
+  tx.setGasPayment(
+    sponsorCoins.data.slice(0, 1).map((c) =&gt; ({
+      objectId: c.coinObjectId,
+      version: c.version,
+      digest: c.digest,
+    })),
+  );
+
+  // 3. Build once, then BOTH parties sign the same bytes.
+  const bytes = await tx.build({ client });
+  const userSig = (await user.signTransaction(bytes)).signature;
+  const sponsorSig = (await sponsor.signTransaction(bytes)).signature;
+
+  // 4. Submit with both signatures. The user never touched SUI.
+  return client.executeTransactionBlock({
+    transactionBlock: bytes,
+    signature: [userSig, sponsorSig],
+  });
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p11">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 11</span>
+      <h2>Flash loan</h2>
+    </div>
+    <p class="section-sub">ERC-3156 requires a callback and checks balances after — the re-entry surface behind many exploits. Sui's hot-potato <code>Receipt</code> has no abilities, so the tx literally cannot end unpaid.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/11_FlashLoan.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {ERC20FlashMint, ERC20} from &quot;@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol&quot;;
+import {IERC3156FlashBorrower} from &quot;@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol&quot;;
+import {IERC3156FlashLender} from &quot;@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol&quot;;
+import {IERC20} from &quot;@openzeppelin/contracts/token/ERC20/IERC20.sol&quot;;
+
+/// @title 11 — Flash loan (ERC-3156)
+/// @notice Borrow with zero collateral as long as you repay within the same
+///         transaction. On EVM this REQUIRES a callback: the lender calls
+///         `onFlashLoan` on your contract and CHECKS BALANCES AFTER — the
+///         exact dynamic-dispatch re-entry surface behind a long list of
+///         DeFi exploits.
+/// @dev Sui counterpart: `flash_loan.move` — the &quot;hot potato&quot; pattern. The
+///      loan returns a `Receipt` struct with NO abilities: it cannot be
+///      stored, copied, or dropped, so the transaction literally cannot end
+///      until `repay` consumes it. Repayment is a type-system guarantee, not
+///      a balance check, and there is no callback to re-enter.
+contract FlashToken is ERC20FlashMint {
+    constructor(uint256 supply) ERC20(&quot;Flash Token&quot;, &quot;FLT&quot;) {
+        _mint(msg.sender, supply);
+    }
+
+    /// 0.1% flash fee (default is 0). Fee is burned by _flashFeeReceiver=0.
+    function _flashFee(address, uint256 amount) internal pure override returns (uint256) {
+        return amount / 1000;
+    }
+}
+
+/// Minimal borrower: receives tokens, does its arbitrage (elided), approves
+/// principal + fee back to the lender.
+contract FlashBorrower is IERC3156FlashBorrower {
+    bytes32 private constant CALLBACK_OK = keccak256(&quot;ERC3156FlashBorrower.onFlashLoan&quot;);
+
+    function onFlashLoan(
+        address initiator,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata
+    ) external override returns (bytes32) {
+        require(initiator == address(this), &quot;untrusted initiator&quot;);
+        // ... use `amount` for arbitrage/liquidation/refinancing here ...
+        IERC20(token).approve(msg.sender, amount + fee);
+        return CALLBACK_OK;
+    }
+
+    function borrow(IERC3156FlashLender lender, address token, uint256 amount) external {
+        lender.flashLoan(this, token, amount, &quot;&quot;);
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/flash_loan.move</span><span class="lang">move</span></div><pre class="code move"><code>/// Flash loan via the hot-potato pattern.
+///
+/// Solidity habit: a flash loan sends funds to the borrower, calls back into
+/// their contract, then checks `balanceAfter &gt;= balanceBefore + fee` — trusting
+/// a reentrant callback and a balance assertion to enforce repayment.
+///
+/// Sui idiom: `borrow` hands out the coin AND a `Receipt` that has *no
+/// abilities* — it can&#x27;t be copied, dropped, or stored. The only way to make
+/// the transaction compile is to pass the Receipt back to `repay` in the same
+/// PTB. The type system enforces repayment; there is no callback and no
+/// reentrancy surface.
+module patterns::flash_loan;
+
+use sui::balance::Balance;
+use sui::coin::{Self, Coin};
+use sui::sui::SUI;
+
+#[error(code = 0)]
+const ERepayWrongAmount: vector&lt;u8&gt; = b&quot;Repayment must equal principal plus fee&quot;;
+
+const FEE_BPS: u64 = 30; // 0.30%
+
+/// Shared lending pool.
+public struct Pool has key {
+    id: UID,
+    reserve: Balance&lt;SUI&gt;,
+}
+
+/// The hot potato. No `key`, `store`, `copy`, or `drop`: it MUST be consumed by
+/// `repay` before the transaction can end.
+public struct Receipt {
+    amount: u64,
+    fee: u64,
+}
+
+/// Seed a pool with initial liquidity.
+public fun create(seed: Coin&lt;SUI&gt;, ctx: &amp;mut TxContext) {
+    transfer::share_object(Pool { id: object::new(ctx), reserve: seed.into_balance() });
+}
+
+/// Borrow `amount`. Returns the funds plus a Receipt that pins the debt.
+public fun borrow(pool: &amp;mut Pool, amount: u64, ctx: &amp;mut TxContext): (Coin&lt;SUI&gt;, Receipt) {
+    let fee = (((amount as u128) * (FEE_BPS as u128)) / 10_000) as u64;
+    let loan = coin::from_balance(pool.reserve.split(amount), ctx);
+    (loan, Receipt { amount, fee })
+}
+
+/// Repay principal + fee, consuming the Receipt. Only this call can retire it,
+/// so a transaction that borrows must reach here or fail to compile.
+public fun repay(pool: &amp;mut Pool, payment: Coin&lt;SUI&gt;, receipt: Receipt) {
+    let Receipt { amount, fee } = receipt;
+    assert!(payment.value() == amount + fee, ERepayWrongAmount);
+    pool.reserve.join(payment.into_balance());
+}
+
+public fun reserve(pool: &amp;Pool): u64 { pool.reserve.value() }
+
+#[test]
+fun test_borrow_repay_with_fee() {
+    use sui::test_scenario;
+    let user = @0xA;
+    let mut sc = test_scenario::begin(user);
+
+    let seed = coin::mint_for_testing&lt;SUI&gt;(10_000, sc.ctx());
+    create(seed, sc.ctx());
+
+    sc.next_tx(user);
+    let mut pool = sc.take_shared&lt;Pool&gt;();
+    let (mut loan, receipt) = borrow(&amp;mut pool, 1_000, sc.ctx());
+    // fee = 1000 * 30 / 10000 = 3
+    assert!(receipt.fee == 3);
+
+    // Top up the loan with the fee (simulating profit) and repay.
+    let fee_coin = coin::mint_for_testing&lt;SUI&gt;(3, sc.ctx());
+    loan.join(fee_coin);
+    repay(&amp;mut pool, loan, receipt);
+
+    // Pool grew by the fee.
+    assert!(reserve(&amp;pool) == 10_003);
+    test_scenario::return_shared(pool);
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p12">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 12</span>
+      <h2>Security canon</h2>
+    </div>
+    <p class="section-sub">CEI, reentrancy guards and SafeMath defend against dynamic dispatch and silent overflow. Move has neither — most of the canon is moot; what remains is rounding and access.</p>
+    <div class="warn-strip">⚠️ <code>VulnerableVault</code> in the Solidity file is deliberately exploitable — a teaching artifact. Never deploy it.</div>
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/12_SecurityPatterns.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {ReentrancyGuard} from &quot;@openzeppelin/contracts/utils/ReentrancyGuard.sol&quot;;
+import {Pausable} from &quot;@openzeppelin/contracts/utils/Pausable.sol&quot;;
+import {Ownable} from &quot;@openzeppelin/contracts/access/Ownable.sol&quot;;
+
+/// @title 12 — The security canon (CEI, reentrancy guard, pull payments, pausable)
+/// @notice The defensive patterns every Solidity dev drills, and WHY: any
+///         external call can hand control to attacker code that re-enters
+///         you mid-state-change (the DAO hack). Defenses: order code as
+///         checks-effects-interactions, add a reentrancy mutex, prefer pull
+///         over push payments, keep a circuit breaker.
+/// @dev Sui counterpart: `security.move` — most of this canon is MOOT. Move
+///      has no dynamic dispatch, no fallback code on transfers, and native
+///      overflow aborts: reentrancy guards, CEI discipline and SafeMath have
+///      nothing to defend against. What still matters: rounding direction,
+///      access control, and pausability — see the Move module.
+
+/// ⚠️ INTENTIONALLY VULNERABLE — teaching artifact, never deploy.
+/// Interaction (the call) happens BEFORE the effect (zeroing the balance):
+/// the recipient&#x27;s fallback can re-enter withdraw() and drain the vault.
+contract VulnerableVault {
+    mapping(address =&gt; uint256) public balances;
+
+    function deposit() external payable {
+        balances[msg.sender] += msg.value;
+    }
+
+    function withdraw() external {
+        uint256 amount = balances[msg.sender];
+        (bool ok,) = msg.sender.call{value: amount}(&quot;&quot;); // interaction first ❌
+        require(ok, &quot;send failed&quot;);
+        balances[msg.sender] = 0;                         // effect last ❌
+    }
+}
+
+/// The hardened version: CEI order + mutex + circuit breaker.
+contract HardenedVault is ReentrancyGuard, Pausable, Ownable {
+    mapping(address =&gt; uint256) public balances;
+
+    constructor(address admin) Ownable(admin) {}
+
+    function deposit() external payable whenNotPaused {
+        balances[msg.sender] += msg.value;
+    }
+
+    function withdraw() external nonReentrant whenNotPaused {
+        uint256 amount = balances[msg.sender]; // check
+        balances[msg.sender] = 0;              // effect
+        (bool ok,) = msg.sender.call{value: amount}(&quot;&quot;); // interaction last ✓
+        require(ok, &quot;send failed&quot;);
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/security.move</span><span class="lang">move</span></div><pre class="code move"><code>/// Why three Solidity security staples are largely moot in Move — and the one
+/// that still matters (rounding).
+///
+/// 1. Reentrancy guards (`nonReentrant`). Reentrancy needs dynamic dispatch: an
+///    external call that re-enters your function mid-execution. Move has no
+///    dynamic dispatch and no fallback functions — a module calls only functions
+///    known at compile time, and a called module cannot call back into yours
+///    unless you already depend on it (no cycles allowed). There is no reentrant
+///    edge to guard.
+///
+/// 2. Checks-Effects-Interactions. CEI exists to avoid reentrancy and to avoid
+///    losing funds to a failing external call. In Move, assets are resources: a
+///    `Coin` you hold cannot vanish, and a transfer is not a callback. The
+///    ordering discipline is unnecessary for the reentrancy reason above.
+///
+/// 3. SafeMath / OpenZeppelin `Math`. Move&#x27;s integer arithmetic *aborts* on
+///    overflow and underflow at the VM level — `a + b` past `u64::MAX` reverts
+///    the transaction. There is no silent wraparound to defend against, so no
+///    SafeMath wrapper is needed for basic ops.
+///
+/// What DOES still bite you: rounding direction in `mul_div`. Integer division
+/// truncates, and rounding the wrong way lets value leak from a pool to a user
+/// (or vice versa). OpenZeppelin&#x27;s math library for Sui makes the direction
+/// explicit — round *against* the party that could exploit the residue.
+module patterns::security;
+
+// `u64` is also a primitive type name, so alias the OZ module to avoid shadowing.
+use openzeppelin_math::u64 as oz_u64;
+use openzeppelin_math::rounding;
+
+#[error(code = 0)]
+const EOverflow: vector&lt;u8&gt; = b&quot;mul_div result does not fit in u64&quot;;
+
+/// ERC-4626-style share issuance: how many pool shares does `assets` buy?
+///
+/// `shares = assets * total_shares / total_assets`, rounded DOWN so the
+/// depositor never receives a fractional share the pool didn&#x27;t back — the
+/// residue stays with the pool, never in the user&#x27;s favor. Overflow of the
+/// intermediate product is handled by OZ (widened internally); a result too big
+/// for `u64` returns `none`, which we turn into an explicit abort.
+public fun shares_for_deposit(assets: u64, total_shares: u64, total_assets: u64): u64 {
+    let result = oz_u64::mul_div(assets, total_shares, total_assets, rounding::down());
+    assert!(result.is_some(), EOverflow);
+    result.destroy_some()
+}
+
+#[test]
+fun test_rounds_down() {
+    // 10 assets * 3 shares / 7 assets = 4.28... -&gt; rounds down to 4.
+    assert!(shares_for_deposit(10, 3, 7) == 4);
+    // Exact division is unaffected.
+    assert!(shares_for_deposit(100, 5, 10) == 50);
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<section id="p13">
+  <div class="shell">
+    <div class="section-head">
+      <span class="section-num">Pattern 13</span>
+      <h2>Governance</h2>
+    </div>
+    <p class="section-sub">Token-weighted propose/vote/execute. On Sui a shared <code>Proposal</code> object is mutated concurrently by voters, with the <code>Clock</code> as deadline.</p>
+    
+    <div class="pair">
+      <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/13_Governance.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {IERC20} from &quot;@openzeppelin/contracts/token/ERC20/IERC20.sol&quot;;
+
+/// @title 13 — Governance (token voting)
+/// @notice Minimal token-weighted governor: propose, vote until a deadline,
+///         execute if yes &gt; no. Production systems use OZ Governor +
+///         ERC20Votes checkpoints so votes snapshot past balances (this
+///         minimal version reads LIVE balances — flash-loan-manipulable,
+///         kept simple deliberately; see comment in castVote).
+/// @dev Sui counterpart: `governance.move` — a shared Proposal object that
+///      voters mutate concurrently; the on-chain `Clock` provides the
+///      deadline and votes are recorded per-address in the object itself.
+contract MiniGovernor {
+    IERC20 public immutable token;
+    uint256 public constant VOTING_PERIOD = 3 days;
+
+    struct Proposal {
+        string description;
+        uint256 deadline;
+        uint256 yesVotes;
+        uint256 noVotes;
+        bool executed;
+    }
+
+    Proposal[] public proposals;
+    mapping(uint256 proposalId =&gt; mapping(address voter =&gt; bool)) public hasVoted;
+
+    event Proposed(uint256 indexed id, string description);
+    event Voted(uint256 indexed id, address indexed voter, bool support, uint256 weight);
+    event ExecutionApproved(uint256 indexed id);
+
+    constructor(IERC20 token_) {
+        token = token_;
+    }
+
+    function propose(string calldata description) external returns (uint256 id) {
+        id = proposals.length;
+        proposals.push(Proposal(description, block.timestamp + VOTING_PERIOD, 0, 0, false));
+        emit Proposed(id, description);
+    }
+
+    function castVote(uint256 id, bool support) external {
+        Proposal storage p = proposals[id];
+        require(block.timestamp &lt; p.deadline, &quot;voting over&quot;);
+        require(!hasVoted[id][msg.sender], &quot;already voted&quot;);
+        hasVoted[id][msg.sender] = true;
+        // Live balance as weight — real governors use ERC20Votes checkpoints
+        // to stop borrow-vote-return manipulation.
+        uint256 weight = token.balanceOf(msg.sender);
+        if (support) p.yesVotes += weight;
+        else p.noVotes += weight;
+        emit Voted(id, msg.sender, support, weight);
+    }
+
+    function execute(uint256 id) external {
+        Proposal storage p = proposals[id];
+        require(block.timestamp &gt;= p.deadline, &quot;voting open&quot;);
+        require(!p.executed, &quot;executed&quot;);
+        require(p.yesVotes &gt; p.noVotes, &quot;rejected&quot;);
+        p.executed = true;
+        // Real governors queue the proposal&#x27;s calldata in a timelock here.
+        emit ExecutionApproved(id);
+    }
+}
+</code></pre></div>
+      <div class="col col-move"><div class="col-tag move">Move · Sui</div><div class="codehead"><span class="fname">move/patterns/sources/governance.move</span><span class="lang">move</span></div><pre class="code move"><code>/// Minimal Governor equivalent.
+///
+/// Solidity habit: a Governor contract stores proposals in mappings, tracks
+/// `hasVoted[proposalId][voter]` to stop double-voting, and gates execution on
+/// `block.number &gt; deadline`.
+///
+/// Sui idiom: a proposal is a shared object. Double-voting is prevented by a
+/// `VecSet&lt;address&gt;` of voters held right in the object, and the deadline is
+/// read from the shared `Clock`. Execution simply checks the clock and tally —
+/// the same logic, minus the storage-slot bookkeeping.
+module patterns::governance;
+
+use sui::clock::Clock;
+use sui::vec_set::{Self, VecSet};
+
+#[error(code = 0)]
+const EVotingClosed: vector&lt;u8&gt; = b&quot;Voting period has ended&quot;;
+#[error(code = 1)]
+const EAlreadyVoted: vector&lt;u8&gt; = b&quot;Address has already voted&quot;;
+#[error(code = 2)]
+const EStillVoting: vector&lt;u8&gt; = b&quot;Voting period has not ended yet&quot;;
+#[error(code = 3)]
+const ENotPassed: vector&lt;u8&gt; = b&quot;Proposal did not pass&quot;;
+
+/// A shared, one-address-one-vote proposal.
+public struct Proposal has key {
+    id: UID,
+    deadline_ms: u64,
+    yes: u64,
+    no: u64,
+    voted: VecSet&lt;address&gt;, // enforces one vote per address
+    executed: bool,
+}
+
+public fun create(deadline_ms: u64, ctx: &amp;mut TxContext) {
+    transfer::share_object(Proposal {
+        id: object::new(ctx),
+        deadline_ms,
+        yes: 0,
+        no: 0,
+        voted: vec_set::empty(),
+        executed: false,
+    });
+}
+
+/// Cast a vote. One address, one vote — the `voted` set rejects repeats.
+public fun vote(proposal: &amp;mut Proposal, support: bool, clock: &amp;Clock, ctx: &amp;mut TxContext) {
+    assert!(clock.timestamp_ms() &lt; proposal.deadline_ms, EVotingClosed);
+    let voter = ctx.sender();
+    assert!(!proposal.voted.contains(&amp;voter), EAlreadyVoted);
+    proposal.voted.insert(voter);
+    if (support) proposal.yes = proposal.yes + 1 else proposal.no = proposal.no + 1;
+}
+
+/// Execute after the deadline if yes-votes lead. Returns whether it passed;
+/// real governance would perform the enacted action here.
+public fun execute(proposal: &amp;mut Proposal, clock: &amp;Clock): bool {
+    assert!(clock.timestamp_ms() &gt;= proposal.deadline_ms, EStillVoting);
+    assert!(proposal.yes &gt; proposal.no, ENotPassed);
+    proposal.executed = true;
+    true
+}
+
+public fun tally(proposal: &amp;Proposal): (u64, u64) { (proposal.yes, proposal.no) }
+
+#[test]
+fun test_vote_and_execute() {
+    use sui::test_scenario;
+    use sui::clock;
+    let a = @0xA;
+    let b = @0xB;
+    let mut sc = test_scenario::begin(a);
+    let mut clk = clock::create_for_testing(sc.ctx());
+    clk.set_for_testing(0);
+
+    create(100, sc.ctx());
+
+    // Two distinct addresses vote yes.
+    sc.next_tx(a);
+    let mut proposal = sc.take_shared&lt;Proposal&gt;();
+    vote(&amp;mut proposal, true, &amp;clk, sc.ctx());
+    sc.next_tx(b);
+    vote(&amp;mut proposal, true, &amp;clk, sc.ctx());
+    let (yes, no) = tally(&amp;proposal);
+    assert!(yes == 2 &amp;&amp; no == 0);
+
+    // After the deadline it executes.
+    clk.set_for_testing(150);
+    assert!(execute(&amp;mut proposal, &amp;clk));
+
+    test_scenario::return_shared(proposal);
+    clk.destroy_for_testing();
+    sc.end();
+}
+</code></pre></div>
+    </div>
+  </div>
+</section>
+
+<footer class="hero" style="border-top:1px solid var(--line);border-bottom:0;padding:56px 0;">
+  <div class="shell hero-inner">
+    <p class="section-sub" style="margin:0;">
+      Pattern selection from a prevalence-ranked deep-research report. Two patterns (multisig, gasless) have no
+      contract on Sui — the platform provides them — so their right column is a shell/TS snippet, which is the lesson.
+      See <a href="https://github.com/MystenLabs/evm-wal/tree/main/patterns">patterns/README.md</a> to build and test both sides.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
