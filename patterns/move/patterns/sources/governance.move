@@ -21,6 +21,8 @@ const EAlreadyVoted: vector<u8> = b"Address has already voted";
 const EStillVoting: vector<u8> = b"Voting period has not ended yet";
 #[error(code = 3)]
 const ENotPassed: vector<u8> = b"Proposal did not pass";
+#[error(code = 4)]
+const EAlreadyExecuted: vector<u8> = b"Proposal has already been executed";
 
 /// A shared, one-address-one-vote proposal.
 public struct Proposal has key {
@@ -57,6 +59,7 @@ public fun vote(proposal: &mut Proposal, support: bool, clock: &Clock, ctx: &mut
 public fun execute(proposal: &mut Proposal, clock: &Clock): bool {
     assert!(clock.timestamp_ms() >= proposal.deadline_ms, EStillVoting);
     assert!(proposal.yes > proposal.no, ENotPassed);
+    assert!(!proposal.executed, EAlreadyExecuted); // mirrors Solidity's require(!p.executed)
     proposal.executed = true;
     true
 }

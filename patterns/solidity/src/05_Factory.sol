@@ -6,7 +6,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 
 /// @title 05 — Factory + minimal-proxy clones (ERC-1167)
 /// @notice The #1 operational pattern by volume: factories have minted >90% of
-///         all contracts on Ethereum since 2020. Because deploying bytecode is
+///         all contracts on Ethereum and Polygon since 2020. Because deploying bytecode is
 ///         expensive, factories stamp out 45-byte ERC-1167 clones that
 ///         delegatecall one shared implementation (Uniswap pairs, Safe
 ///         wallets, NFT drops all work this way).

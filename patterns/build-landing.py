@@ -22,7 +22,7 @@ PATTERNS = [
     ("02", "NFT", "One contract per ERC-721 collection, metadata behind a URI. On Sui each NFT is a first-class object and <code>Display</code> renders metadata natively.", "02_Nft.sol", "nft.move", MOVE / "nft.move"),
     ("03", "Access control", "<code>Ownable</code>/<code>AccessControl</code> gate on \"is msg.sender on the list?\". Sui checks possession of a capability <em>object</em> — OpenZeppelin Contracts for Sui layers familiar roles on top.", "03_AccessControl.sol", "access_control.move", MOVE / "access_control.move"),
     ("04", "Upgradeability", "UUPS proxies <code>delegatecall</code> an implementation so code changes while storage stays — append-only forever. Sui upgrades packages natively; the chain enforces layout compatibility.", "04_UpgradeableCounter.sol", "versioned.move", MOVE / "versioned.move"),
-    ("05", "Factory / clones", "Factories mint &gt;90% of EVM contracts via 45-byte ERC-1167 clones. On Sui the pattern vanishes: one package serves unlimited object instances.", "05_Factory.sol", "no_factory.move", MOVE / "no_factory.move"),
+    ("05", "Factory / clones", "Factories mint &gt;90% of all EVM contracts (Ethereum + Polygon since 2020); the cheapest ones stamp out 45-byte ERC-1167 clones. On Sui the pattern vanishes: one package serves unlimited object instances.", "05_Factory.sol", "no_factory.move", MOVE / "no_factory.move"),
     ("06", "Escrow", "The EVM escrow takes custody and must hand assets back correctly on every path. On Sui the item is a shared object that can't be silently dropped.", "06_Escrow.sol", "escrow.move", MOVE / "escrow.move"),
     ("07", "Vesting", "OZ <code>VestingWallet</code> releases linearly over time. On Sui the wallet is an object the beneficiary owns, releasing against the on-chain <code>Clock</code> — the same mental model OpenZeppelin Contracts for Sui's finance package packages for production.", "07_Vesting.sol", "vesting.move", MOVE / "vesting.move"),
     ("08", "Multisig", "Shared custody on EVM is a Safe contract with a confirmation transaction per co-signer. On Sui multisig is a <em>native key scheme</em> — signatures combine off-chain, no contract at all.", "08_Multisig.sol", "native/multisig.sh", NATIVE / "multisig.sh"),
@@ -160,7 +160,7 @@ DOC = f"""<!doctype html>
     </span>
     <span class="nav">
       <a href="./">Home</a>
-      <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
 </div>
@@ -176,7 +176,7 @@ DOC = f"""<!doctype html>
       <a href="https://docs.openzeppelin.com/contracts-sui">OpenZeppelin Contracts for Sui</a> applies, we use it.
     </p>
     <div class="meta">
-      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/patterns">patterns/</a></span>
+      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/patterns">patterns/</a></span>
       <span><strong>Solidity:</strong> Foundry · OZ v5 · 15 passing tests</span>
       <span><strong>Sui:</strong> Move 2024 · OZ Contracts for Sui</span>
     </div>
@@ -199,7 +199,7 @@ DOC = f"""<!doctype html>
     <p class="section-sub" style="margin:0;">
       Pattern selection from a prevalence-ranked deep-research report. Two patterns (multisig, gasless) have no
       contract on Sui — the platform provides them — so their right column is a shell/TS snippet, which is the lesson.
-      See <a href="https://github.com/MystenLabs/evm-wal/tree/main/patterns">patterns/README.md</a> to build and test both sides.
+      See <a href="https://github.com/MystenLabs/evm-sui/tree/main/patterns">patterns/README.md</a> to build and test both sides.
     </p>
   </div>
 </footer>

@@ -26,10 +26,13 @@ export async function sponsoredTransfer(
   const userAddr = user.getPublicKey().toSuiAddress();
   const sponsorAddr = sponsor.getPublicKey().toSuiAddress();
 
-  // 1. Build the transaction the USER wants (move a Coin they own).
+  // 1. Build the transaction the USER wants (move a Coin the user owns).
+  //    Split from one of the user's OWN coins — NOT tx.gas, which the sponsor
+  //    pays for. The user spends their asset; the sponsor only covers gas.
   const tx = new Transaction();
   tx.setSender(userAddr);
-  const [coin] = tx.splitCoins(tx.gas, [1_000_000]);
+  const userCoins = await client.getCoins({ owner: userAddr });
+  const [coin] = tx.splitCoins(userCoins.data[0].coinObjectId, [1_000_000]);
   tx.transferObjects([coin], recipient);
 
   // 2. The SPONSOR provides the gas payment and is set as gas owner.

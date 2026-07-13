@@ -33,6 +33,12 @@ contract FlashToken is ERC20FlashMint {
 contract FlashBorrower is IERC3156FlashBorrower {
     bytes32 private constant CALLBACK_OK = keccak256("ERC3156FlashBorrower.onFlashLoan");
 
+    IERC3156FlashLender public immutable lender;
+
+    constructor(IERC3156FlashLender lender_) {
+        lender = lender_;
+    }
+
     function onFlashLoan(
         address initiator,
         address token,
@@ -40,13 +46,16 @@ contract FlashBorrower is IERC3156FlashBorrower {
         uint256 fee,
         bytes calldata
     ) external override returns (bytes32) {
+        // Two mandatory ERC-3156 checks: only our known lender may invoke the
+        // callback, and the loan must have been initiated by us.
+        require(msg.sender == address(lender), "untrusted lender");
         require(initiator == address(this), "untrusted initiator");
         // ... use `amount` for arbitrage/liquidation/refinancing here ...
         IERC20(token).approve(msg.sender, amount + fee);
         return CALLBACK_OK;
     }
 
-    function borrow(IERC3156FlashLender lender, address token, uint256 amount) external {
+    function borrow(address token, uint256 amount) external {
         lender.flashLoan(this, token, amount, "");
     }
 }

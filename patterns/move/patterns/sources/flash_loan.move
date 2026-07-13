@@ -17,6 +17,8 @@ use sui::sui::SUI;
 
 #[error(code = 0)]
 const ERepayWrongAmount: vector<u8> = b"Repayment must equal principal plus fee";
+#[error(code = 1)]
+const EWrongPool: vector<u8> = b"Receipt must be repaid to its issuing pool";
 
 const FEE_BPS: u64 = 30; // 0.30%
 
@@ -29,6 +31,7 @@ public struct Pool has key {
 /// The hot potato. No `key`, `store`, `copy`, or `drop`: it MUST be consumed by
 /// `repay` before the transaction can end.
 public struct Receipt {
+    pool_id: ID, // pins the debt to the pool that issued it
     amount: u64,
     fee: u64,
 }
@@ -42,13 +45,14 @@ public fun create(seed: Coin<SUI>, ctx: &mut TxContext) {
 public fun borrow(pool: &mut Pool, amount: u64, ctx: &mut TxContext): (Coin<SUI>, Receipt) {
     let fee = (((amount as u128) * (FEE_BPS as u128)) / 10_000) as u64;
     let loan = coin::from_balance(pool.reserve.split(amount), ctx);
-    (loan, Receipt { amount, fee })
+    (loan, Receipt { pool_id: object::id(pool), amount, fee })
 }
 
 /// Repay principal + fee, consuming the Receipt. Only this call can retire it,
 /// so a transaction that borrows must reach here or fail to compile.
 public fun repay(pool: &mut Pool, payment: Coin<SUI>, receipt: Receipt) {
-    let Receipt { amount, fee } = receipt;
+    let Receipt { pool_id, amount, fee } = receipt;
+    assert!(pool_id == object::id(pool), EWrongPool);
     assert!(payment.value() == amount + fee, ERepayWrongAmount);
     pool.reserve.join(payment.into_balance());
 }

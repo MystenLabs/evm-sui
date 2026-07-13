@@ -19,6 +19,8 @@ const VERSION: u64 = 1;
 
 #[error(code = 0)]
 const EWrongVersion: vector<u8> = b"Object version does not match package version";
+#[error(code = 1)]
+const EAlreadyMigrated: vector<u8> = b"Object is already at the current version";
 
 /// The long-lived shared state. `version` records which package version last
 /// migrated it.
@@ -54,7 +56,7 @@ public fun set_value(config: &mut Config, value: u64) {
 /// version so guarded entry points start accepting the object again. Add any
 /// data-shape migration here.
 public fun migrate(_cap: &AdminCap, config: &mut Config) {
-    assert!(config.version < VERSION, EWrongVersion);
+    assert!(config.version < VERSION, EAlreadyMigrated);
     config.version = VERSION;
 }
 

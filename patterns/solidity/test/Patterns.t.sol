@@ -197,13 +197,13 @@ contract PatternsTest is Test {
     // 11 — flash loan
     function test_11_flash_loan_repays_with_fee() public {
         FlashToken token = new FlashToken(1_000_000);
-        FlashBorrower borrower = new FlashBorrower();
+        FlashBorrower borrower = new FlashBorrower(IERC3156FlashLender(address(token)));
         uint256 loan = 100_000;
         uint256 fee = token.flashFee(address(token), loan);
         assertEq(fee, 100); // 0.1%
         // fund borrower with the fee so it can repay principal + fee
         token.transfer(address(borrower), fee);
-        borrower.borrow(IERC3156FlashLender(address(token)), address(token), loan);
+        borrower.borrow(address(token), loan);
         // loan repaid + fee burned: supply shrinks by the fee
         assertEq(token.totalSupply(), 1_000_000 - fee);
     }

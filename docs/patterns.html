@@ -592,7 +592,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </span>
     <span class="nav">
       <a href="./">Home</a>
-      <a href="https://github.com/MystenLabs/evm-wal">GitHub</a>
+      <a href="https://github.com/MystenLabs/evm-sui">GitHub</a>
     </span>
   </div>
 </div>
@@ -608,7 +608,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <a href="https://docs.openzeppelin.com/contracts-sui">OpenZeppelin Contracts for Sui</a> applies, we use it.
     </p>
     <div class="meta">
-      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-wal/tree/main/patterns">patterns/</a></span>
+      <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/patterns">patterns/</a></span>
       <span><strong>Solidity:</strong> Foundry · OZ v5 · 15 passing tests</span>
       <span><strong>Sui:</strong> Move 2024 · OZ Contracts for Sui</span>
     </div>
@@ -1112,6 +1112,8 @@ const VERSION: u64 = 1;
 
 #[error(code = 0)]
 const EWrongVersion: vector&lt;u8&gt; = b&quot;Object version does not match package version&quot;;
+#[error(code = 1)]
+const EAlreadyMigrated: vector&lt;u8&gt; = b&quot;Object is already at the current version&quot;;
 
 /// The long-lived shared state. `version` records which package version last
 /// migrated it.
@@ -1147,7 +1149,7 @@ public fun set_value(config: &amp;mut Config, value: u64) {
 /// version so guarded entry points start accepting the object again. Add any
 /// data-shape migration here.
 public fun migrate(_cap: &amp;AdminCap, config: &amp;mut Config) {
-    assert!(config.version &lt; VERSION, EWrongVersion);
+    assert!(config.version &lt; VERSION, EAlreadyMigrated);
     config.version = VERSION;
 }
 
@@ -1176,7 +1178,7 @@ fun test_version_gate() {
       <span class="section-num">Pattern 05</span>
       <h2>Factory / clones</h2>
     </div>
-    <p class="section-sub">Factories mint &gt;90% of EVM contracts via 45-byte ERC-1167 clones. On Sui the pattern vanishes: one package serves unlimited object instances.</p>
+    <p class="section-sub">Factories mint &gt;90% of all EVM contracts (Ethereum + Polygon since 2020); the cheapest ones stamp out 45-byte ERC-1167 clones. On Sui the pattern vanishes: one package serves unlimited object instances.</p>
     
     <div class="pair">
       <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/05_Factory.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
@@ -1187,7 +1189,7 @@ import {Initializable} from &quot;@openzeppelin/contracts/proxy/utils/Initializa
 
 /// @title 05 — Factory + minimal-proxy clones (ERC-1167)
 /// @notice The #1 operational pattern by volume: factories have minted &gt;90% of
-///         all contracts on Ethereum since 2020. Because deploying bytecode is
+///         all contracts on Ethereum and Polygon since 2020. Because deploying bytecode is
 ///         expensive, factories stamp out 45-byte ERC-1167 clones that
 ///         delegatecall one shared implementation (Uniswap pairs, Safe
 ///         wallets, NFT drops all work this way).
@@ -1945,10 +1947,13 @@ export async function sponsoredTransfer(
   const userAddr = user.getPublicKey().toSuiAddress();
   const sponsorAddr = sponsor.getPublicKey().toSuiAddress();
 
-  // 1. Build the transaction the USER wants (move a Coin they own).
+  // 1. Build the transaction the USER wants (move a Coin the user owns).
+  //    Split from one of the user&#x27;s OWN coins — NOT tx.gas, which the sponsor
+  //    pays for. The user spends their asset; the sponsor only covers gas.
   const tx = new Transaction();
   tx.setSender(userAddr);
-  const [coin] = tx.splitCoins(tx.gas, [1_000_000]);
+  const userCoins = await client.getCoins({ owner: userAddr });
+  const [coin] = tx.splitCoins(userCoins.data[0].coinObjectId, [1_000_000]);
   tx.transferObjects([coin], recipient);
 
   // 2. The SPONSOR provides the gas payment and is set as gas owner.
@@ -2022,6 +2027,12 @@ contract FlashToken is ERC20FlashMint {
 contract FlashBorrower is IERC3156FlashBorrower {
     bytes32 private constant CALLBACK_OK = keccak256(&quot;ERC3156FlashBorrower.onFlashLoan&quot;);
 
+    IERC3156FlashLender public immutable lender;
+
+    constructor(IERC3156FlashLender lender_) {
+        lender = lender_;
+    }
+
     function onFlashLoan(
         address initiator,
         address token,
@@ -2029,13 +2040,16 @@ contract FlashBorrower is IERC3156FlashBorrower {
         uint256 fee,
         bytes calldata
     ) external override returns (bytes32) {
+        // Two mandatory ERC-3156 checks: only our known lender may invoke the
+        // callback, and the loan must have been initiated by us.
+        require(msg.sender == address(lender), &quot;untrusted lender&quot;);
         require(initiator == address(this), &quot;untrusted initiator&quot;);
         // ... use `amount` for arbitrage/liquidation/refinancing here ...
         IERC20(token).approve(msg.sender, amount + fee);
         return CALLBACK_OK;
     }
 
-    function borrow(IERC3156FlashLender lender, address token, uint256 amount) external {
+    function borrow(address token, uint256 amount) external {
         lender.flashLoan(this, token, amount, &quot;&quot;);
     }
 }
@@ -2059,6 +2073,8 @@ use sui::sui::SUI;
 
 #[error(code = 0)]
 const ERepayWrongAmount: vector&lt;u8&gt; = b&quot;Repayment must equal principal plus fee&quot;;
+#[error(code = 1)]
+const EWrongPool: vector&lt;u8&gt; = b&quot;Receipt must be repaid to its issuing pool&quot;;
 
 const FEE_BPS: u64 = 30; // 0.30%
 
@@ -2071,6 +2087,7 @@ public struct Pool has key {
 /// The hot potato. No `key`, `store`, `copy`, or `drop`: it MUST be consumed by
 /// `repay` before the transaction can end.
 public struct Receipt {
+    pool_id: ID, // pins the debt to the pool that issued it
     amount: u64,
     fee: u64,
 }
@@ -2084,13 +2101,14 @@ public fun create(seed: Coin&lt;SUI&gt;, ctx: &amp;mut TxContext) {
 public fun borrow(pool: &amp;mut Pool, amount: u64, ctx: &amp;mut TxContext): (Coin&lt;SUI&gt;, Receipt) {
     let fee = (((amount as u128) * (FEE_BPS as u128)) / 10_000) as u64;
     let loan = coin::from_balance(pool.reserve.split(amount), ctx);
-    (loan, Receipt { amount, fee })
+    (loan, Receipt { pool_id: object::id(pool), amount, fee })
 }
 
 /// Repay principal + fee, consuming the Receipt. Only this call can retire it,
 /// so a transaction that borrows must reach here or fail to compile.
 public fun repay(pool: &amp;mut Pool, payment: Coin&lt;SUI&gt;, receipt: Receipt) {
-    let Receipt { amount, fee } = receipt;
+    let Receipt { pool_id, amount, fee } = receipt;
+    assert!(pool_id == object::id(pool), EWrongPool);
     assert!(payment.value() == amount + fee, ERepayWrongAmount);
     pool.reserve.join(payment.into_balance());
 }
@@ -2356,6 +2374,8 @@ const EAlreadyVoted: vector&lt;u8&gt; = b&quot;Address has already voted&quot;;
 const EStillVoting: vector&lt;u8&gt; = b&quot;Voting period has not ended yet&quot;;
 #[error(code = 3)]
 const ENotPassed: vector&lt;u8&gt; = b&quot;Proposal did not pass&quot;;
+#[error(code = 4)]
+const EAlreadyExecuted: vector&lt;u8&gt; = b&quot;Proposal has already been executed&quot;;
 
 /// A shared, one-address-one-vote proposal.
 public struct Proposal has key {
@@ -2392,6 +2412,7 @@ public fun vote(proposal: &amp;mut Proposal, support: bool, clock: &amp;Clock, c
 public fun execute(proposal: &amp;mut Proposal, clock: &amp;Clock): bool {
     assert!(clock.timestamp_ms() &gt;= proposal.deadline_ms, EStillVoting);
     assert!(proposal.yes &gt; proposal.no, ENotPassed);
+    assert!(!proposal.executed, EAlreadyExecuted); // mirrors Solidity&#x27;s require(!p.executed)
     proposal.executed = true;
     true
 }
@@ -2437,7 +2458,7 @@ fun test_vote_and_execute() {
     <p class="section-sub" style="margin:0;">
       Pattern selection from a prevalence-ranked deep-research report. Two patterns (multisig, gasless) have no
       contract on Sui — the platform provides them — so their right column is a shell/TS snippet, which is the lesson.
-      See <a href="https://github.com/MystenLabs/evm-wal/tree/main/patterns">patterns/README.md</a> to build and test both sides.
+      See <a href="https://github.com/MystenLabs/evm-sui/tree/main/patterns">patterns/README.md</a> to build and test both sides.
     </p>
   </div>
 </footer>
