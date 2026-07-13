@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Everyday Solidity: Pattern Prevalence Research &amp; Sui Mapping Gaps</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1f1f1f;
+  --fg-muted: #6e6e6e;
+  --heading-fg: #1a1a1a;
+  --accent: #1976d2;
+  --border: #e0e0e0;
+  --code-bg: #f0f0f0;
+  --code-fg: #6e3700;
+  --pre-bg: #fafafa;
+  --aside-bg: #f5f5f5;
+  --success: #2e7d32;
+  --warning: #9a5b00;
+  --error: #d32f2f;
+  --tier1: #1976d2;
+  --tier2: #6a4fb3;
+  --tier3: #9a5b00;
+  --covered-bg: #e6f2e7;
+  --partial-bg: #f5edd8;
+  --absent-bg: #fbe9e9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1e1e;
+    --fg: #cccccc;
+    --fg-muted: #9e9e9e;
+    --heading-fg: #e8e8e8;
+    --accent: #4dabf7;
+    --border: #2a2a2a;
+    --code-bg: #2a2a2a;
+    --code-fg: #f0e8d8;
+    --pre-bg: #161616;
+    --aside-bg: #242424;
+    --success: #66bb6a;
+    --warning: #f0c674;
+    --error: #ff7676;
+    --tier1: #4dabf7;
+    --tier2: #b39ddb;
+    --tier3: #f0c674;
+    --covered-bg: #1d2f1f;
+    --partial-bg: #322a17;
+    --absent-bg: #331d1d;
+  }
+}
+@media print {
+  :root {
+    color-scheme: light;
+    --bg: #ffffff; --fg: #1f1f1f; --fg-muted: #6e6e6e; --heading-fg: #1a1a1a;
+    --accent: #1976d2; --border: #e0e0e0; --code-bg: #f0f0f0; --code-fg: #6e3700;
+    --pre-bg: #fafafa; --aside-bg: #f5f5f5; --success: #2e7d32; --warning: #9a5b00;
+    --error: #d32f2f; --tier1: #1976d2; --tier2: #6a4fb3; --tier3: #9a5b00;
+    --covered-bg: #e6f2e7; --partial-bg: #f5edd8; --absent-bg: #fbe9e9;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55; margin: 0; padding: 2rem 1.25rem 4rem;
+}
+main { max-width: 960px; margin: 0 auto; }
+header { max-width: 960px; margin: 0 auto 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1rem; }
+h1, h2, h3, h4 { color: var(--heading-fg); line-height: 1.25; }
+h1 { font-size: 1.7rem; margin: 0 0 .35rem; }
+h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+h3 { font-size: 1.05rem; margin-top: 1.6rem; }
+a { color: var(--accent); }
+small, figcaption, .meta { color: var(--fg-muted); }
+code { background: var(--code-bg); color: var(--code-fg); padding: .1em .35em; border-radius: 3px; font-size: .92em; }
+pre { background: var(--pre-bg); border: 1px solid var(--border); padding: .8rem 1rem; overflow-x: auto; border-radius: 4px; }
+aside { background: var(--aside-bg); border-left: 3px solid var(--accent); padding: .6rem .9rem; margin: 1rem 0; border-radius: 0 4px 4px 0; }
+aside.success { border-left-color: var(--success); }
+aside.warning { border-left-color: var(--warning); }
+aside.error   { border-left-color: var(--error); }
+table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .93rem; }
+th, td { border: 1px solid var(--border); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+th { color: var(--fg-muted); font-weight: 600; background: var(--aside-bg); }
+.badge {
+  display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .03em;
+  padding: .1em .55em; border-radius: 999px; border: 1.5px solid; white-space: nowrap;
+}
+.badge.t1 { color: var(--tier1); border-color: var(--tier1); }
+.badge.t2 { color: var(--tier2); border-color: var(--tier2); }
+.badge.t3 { color: var(--tier3); border-color: var(--tier3); }
+.badge.conf { color: var(--success); border-color: var(--success); }
+.badge.ref  { color: var(--error); border-color: var(--error); }
+td.covered { background: var(--covered-bg); }
+td.partial { background: var(--partial-bg); }
+td.absent  { background: var(--absent-bg); }
+.statgrid { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+.stat { border: 1px solid var(--border); border-radius: 6px; padding: .55rem .9rem; min-width: 8.5rem; }
+.stat b { display: block; font-size: 1.25rem; color: var(--heading-fg); }
+.stat span { font-size: .78rem; color: var(--fg-muted); }
+details { margin: .6rem 0; border: 1px solid var(--border); border-radius: 4px; padding: .4rem .8rem; }
+summary { cursor: pointer; font-weight: 600; color: var(--heading-fg); }
+nav.toc { max-width: 960px; margin: 0 auto 1.5rem; font-size: .9rem; }
+nav.toc a { margin-right: 1rem; white-space: nowrap; }
+footer { max-width: 960px; margin: 3rem auto 0; border-top: 1px solid var(--border); padding-top: 1rem; font-size: .85rem; color: var(--fg-muted); }
+@media (max-width: 720px) {
+  body { padding: 1rem .75rem 3rem; }
+  table { display: block; overflow-x: auto; }
+  .statgrid { gap: .5rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Everyday Solidity: what production EVM contracts actually do</h1>
+  <p class="meta">Deep research report · 2026-07-13 · prepared for <strong>evm-sui chapter 2</strong> — "how to do X from Solidity on Sui" · adversarially verified (claims needed 2/3 refute votes to be killed)</p>
+  <div class="statgrid">
+    <div class="stat"><b>22</b><span>sources fetched</span></div>
+    <div class="stat"><b>108</b><span>claims extracted</span></div>
+    <div class="stat"><b>25</b><span>claims verified</span></div>
+    <div class="stat"><b>23 / 2</b><span>confirmed / refuted</span></div>
+    <div class="stat"><b>104</b><span>research agents</span></div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#tldr">TL;DR</a>
+  <a href="#ranking">Pattern ranking</a>
+  <a href="#findings">Key findings</a>
+  <a href="#security">Security canon</a>
+  <a href="#sui-coverage">Sui docs coverage audit</a>
+  <a href="#oz-sui">OZ for Sui</a>
+  <a href="#chapter2">Chapter 2 candidates</a>
+  <a href="#caveats">Caveats</a>
+  <a href="#sources">Sources</a>
+</nav>
+
+<main>
+
+<section id="tldr">
+  <h2>TL;DR</h2>
+  <aside class="success">
+    <p><strong>Production EVM development converges on a small canon.</strong> Tokens + access control dominate by every measured proxy; factory/clone deployment is the dominant operational pattern (&gt;90% of deployments); proxies are everywhere but almost never actually upgraded (98.24% of upgradeable proxies never upgraded once). The security pattern canon is stable: checks-effects-interactions, pull-payments, reentrancy guards, authorization checks.</p>
+    <p><strong>The official <a href="https://docs.sui.io/concepts/sui-for-ethereum">sui-for-ethereum</a> page already maps the top three</strong> (access control → capabilities, token standards → Currency Standard, proxy upgrades → package upgrades). The mid-tier use cases — <em>staking/vesting, escrow, payment splitting, multisig, merkle airdrops, permit/meta-transactions, flash loans</em> — are entirely absent from it. That is chapter 2's opportunity space.</p>
+  </aside>
+</section>
+
+<section id="ranking">
+  <h2>The canonical set, ranked by prevalence</h2>
+  <p>Prevalence evidence quality varies by tier. Tier 1 is directly measured; Tier 2 is canonized in every best-practices source but not deployment-counted; Tier 3's <em>relative</em> ordering is inferred (the only hard number is OpenZeppelin Governance at 1k+ deployments).</p>
+  <table>
+    <thead><tr><th>Tier</th><th>Pattern / use case</th><th>Prevalence evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge t1">TIER 1</span></td><td><strong>Fungible tokens (ERC-20)</strong> and <strong>NFTs (ERC-721/1155)</strong></td><td>OZ Tokens library: 150k+ verified deployments (top category). 63.6% of top verified factory contracts cluster in "Finance &amp; token".</td></tr>
+      <tr><td><span class="badge t1">TIER 1</span></td><td><strong>Access control</strong> — <code>Ownable</code>, <code>AccessControl</code> roles</td><td>OZ Access Control: 115k+ deployments, #3 category. Named "widely used" by the Sui docs themselves.</td></tr>
+      <tr><td><span class="badge t1">TIER 1</span></td><td><strong>Factory + clone deployment</strong> (ERC-1167 minimal proxy)</td><td>Factories minted &gt;90% of all contracts on Ethereum/Polygon since 2020. ERC-1167 alone = 29.4% of all proxies.</td></tr>
+      <tr><td><span class="badge t1">TIER 1</span></td><td><strong>Proxies / upgradeability</strong> (EIP-1967, UUPS, Transparent, Diamond, Beacon)</td><td>3.25%–14.2% of all Ethereum contracts (methodology-dependent). OZ Proxies: 75k+ deployments. But 98.24% of upgradeable proxies never upgraded.</td></tr>
+      <tr><td><span class="badge t2">TIER 2</span></td><td><strong>Security canon</strong> — checks-effects-interactions, pull-payments, reentrancy guard, authorization, SafeMath, guard checks, emergency stop</td><td>Canonized by Consensys guide + 2025 SLR of 36 security patterns; reentrancy is the flagship vulnerability class. Near-universal in audited code, not deployment-counted.</td></tr>
+      <tr><td><span class="badge t2">TIER 2</span></td><td><strong>Micro-patterns</strong> — storage packing, delegation, interface implementation, external libraries</td><td>99% of 23,258 verified contracts implement ≥1 of 18 micro-patterns (avg 2.76); storage packing at 84.62%.</td></tr>
+      <tr><td><span class="badge t3">TIER 3</span></td><td><strong>Mid-tier use cases</strong> — governance/voting, multisig (Safe), staking, vesting, escrow, payment splitting, oracles (Chainlink), merkle airdrops, permit/EIP-2612, meta-transactions, flash loans</td><td>Ubiquitous in DeFi practice but the research produced no verified per-pattern deployment counts. OZ Governance: 1k+ (only hard number). Relative ranking is an open question.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="findings">
+  <h2>Key findings (all confirmed 2-1 or better)</h2>
+
+  <h3>1. Tokens and access control are the two pillars <span class="badge conf">HIGH</span></h3>
+  <p>OpenZeppelin Contracts accounts for <strong>155,000+ verified deployments</strong> across Ethereum and major L2s. Its per-library ranking is a direct prevalence signal: Tokens 150k+, Utilities 150k+, Access Control 115k+, Proxies &amp; Upgradability 75k+, Governance 1k+. Independent factory-clustering research (ACM TOSEM, Jan 2026) corroborates: 63.6% of the top 3,000 verified factory contracts are "Finance &amp; token", vs 15.4% "Proxy &amp; upgrade" and only 2.6% "NFT &amp; creator". <small>Caveat: OZ figures are self-reported and library counts overlap.</small></p>
+
+  <h3>2. Proxies are pervasive — but for cloning, not upgrading <span class="badge conf">HIGH</span></h3>
+  <p>Two peer-reviewed studies put proxy prevalence between <strong>3.25%</strong> (bytecode detection, 2M of 62.6M contracts, ICSE 2025) and <strong>14.2%</strong> (delegatecall-trace analysis, EMSE 2024) of all Ethereum contracts. The killer detail: <strong>80.46% of proxies are upgradeable in capability, but 98.24% of those have never been upgraded once</strong>. 67.8% of proxies act as plain interceptors/forwarders; 79% derive from known reference implementations; ERC-1167 minimal clones alone are 29.4%. Production Ethereum uses proxies mostly as a <em>cheap code-sharing mechanism</em>, not a live upgrade mechanism.</p>
+  <aside class="warning"><p><strong>Chapter 2 implication:</strong> don't frame the Sui counterpart as "upgrades" only. The honest mapping is twofold: (a) code-sharing/cloning → Sui needs no clones at all (one package, many objects); (b) upgrades → native, <code>UpgradeCap</code>-mediated, layout-compatible package upgrades — no delegatecall, no storage-collision hazard.</p></aside>
+
+  <h3>3. Factories mint &gt;90% of all contracts <span class="badge conf">HIGH</span></h3>
+  <p>Longitudinal measurement (434M contract runtimes disassembled): factory contracts have minted over <strong>90% of all contracts deployed on Ethereum and Polygon since 2020</strong>, concentrated among few deployers (top 11 deployers = 50% of live Ethereum contracts). Factory+clone is <em>the</em> mass-deployment idiom — think Uniswap pair factories, Safe proxy factories, NFT drop minters. <small>Caveat: measures raw deployment volume, not per-developer adoption.</small></p>
+
+  <h3>4. The upgradeability design space is standardized <span class="badge conf">HIGH</span></h3>
+  <p>The community converged on delegatecall proxies by ~end of 2020. Eleven named variants exist in production (Inherited Storage, Eternal Storage, EIP-1967 Unstructured Storage, UUPS/EIP-1822, Transparent, EIP-2535 Diamonds, Beacon, Registry, EIP-1167, EIP-897, EIP-1538-withdrawn), mostly documented via OZ blogs or EIPs. The canonical constraint — <em>"only append new variables to the storage"</em> — and its storage-collision hazard are exactly the pain points Sui's layout-compatibility check absorbs into the language.</p>
+
+  <h3>5. Micro-patterns are near-universal <span class="badge conf">HIGH</span></h3>
+  <p>Across 23,258 verified contracts on five chains, <strong>99% implement at least one of 18 micro-patterns</strong> (avg 2.76 per contract). Only five exceed 40% coverage: storage packing (84.62%), event-less code (54.75%), delegation (48.73%), interface implementation (46.33%), external library use (45.20%). In the literature, control patterns dominate (51%) over security (24%), performance (20%), maintainability (5%).</p>
+</section>
+
+<section id="security">
+  <h2>The security pattern canon</h2>
+  <p>Confirmed 3-0 against the Consensys best-practices guide (now archived at consensysdiligence.github.io, reaffirmed by successor scsfg.io) and a 2025 EMSE systematic review cataloging 36 unique security design patterns:</p>
+  <table>
+    <thead><tr><th>Solidity security pattern</th><th>Why it exists</th><th>Status in Move/Sui (preliminary — validate in planning phase)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Checks-effects-interactions</strong></td><td>Reentrancy via external-call control-flow hijack — the flagship vulnerability class since the DAO hack</td><td>Largely moot: no dynamic dispatch, no fallback functions, no re-entrant external calls</td></tr>
+      <tr><td><strong>Pull-payment / withdrawal</strong></td><td>Push transfers can fail or re-enter</td><td>Restructured: transfers are object operations, no receiver-side code execution</td></tr>
+      <tr><td><strong>Mutex / reentrancy guard</strong></td><td>Belt-and-braces reentrancy defense</td><td>Moot (same reason as CEI)</td></tr>
+      <tr><td><strong>Authorization / ownership checks</strong></td><td><code>msg.sender</code> identity checks guard privileged paths</td><td>Replaced by capability objects (type-system-enforced)</td></tr>
+      <tr><td><strong>SafeMath / overflow guards</strong></td><td>Pre-0.8 silent wraparound</td><td>Moot: Move aborts on overflow natively</td></tr>
+      <tr><td><strong>Guard check / require</strong></td><td>Input and invariant validation</td><td>Direct equivalent: <code>assert!</code> / abort codes</td></tr>
+      <tr><td><strong>Emergency stop / Pausable</strong></td><td>Circuit breaker for incidents</td><td>Needs an explicit pattern (e.g. versioned/pausable shared object) — good snippet candidate</td></tr>
+    </tbody>
+  </table>
+  <aside><p><strong>Documentation angle:</strong> "half of the Solidity security canon simply doesn't exist on Sui" is itself a compelling chapter-2 narrative — each moot pattern is a one-paragraph explainer of <em>why</em>, backed by the language model.</p></aside>
+</section>
+
+<section id="sui-coverage">
+  <h2>Coverage audit: docs.sui.io/concepts/sui-for-ethereum</h2>
+  <p>Fetched and audited section-by-section on 2026-07-13. (An earlier broad omission claim was <span class="badge ref">REFUTED 1-2</span> in verification, so this table is a direct re-audit of the live page, not an inherited claim.) The page's sections: Object model, Ownership, Access control, Mutating objects, Programmable transaction blocks, More comparison.</p>
+  <table>
+    <thead><tr><th>Pattern</th><th>Coverage on the page</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Access control (Ownable/AccessControl)</td><td class="covered">Covered</td><td>Mapped to capability objects (AdminCap example); capabilities explicitly recommended over identity checks</td></tr>
+      <tr><td>Token standards (ERC-20/721/1155)</td><td class="covered">Covered</td><td>Mapped to Currency Standard + Closed-Loop Token; assets as first-class objects vs mapping balances</td></tr>
+      <tr><td>Proxy upgrades</td><td class="covered">Covered</td><td>Native layout-compatible package upgrades; shared-object versioning noted</td></tr>
+      <tr><td>Composability / batching</td><td class="covered">Covered</td><td>PTBs, atomic multi-call, DeFi-aggregator swap-routing example</td></tr>
+      <tr><td>Oracles</td><td class="partial">Infra row only</td><td>Single comparison-table row ("Third party" on both chains) — no contract-pattern mapping</td></tr>
+      <tr><td>Governance / voting</td><td class="partial">Infra row only</td><td>Only <em>chain-level</em> governance (validators, EIPs) — nothing on app-level governor contracts</td></tr>
+      <tr><td>Staking / vesting</td><td class="absent">Absent</td><td>—</td></tr>
+      <tr><td>Escrow / payment splitting</td><td class="absent">Absent</td><td>—</td></tr>
+      <tr><td>Multisig</td><td class="absent">Absent</td><td>(Sui has protocol-level multisig keys — a great untold story)</td></tr>
+      <tr><td>Airdrops / merkle claims</td><td class="absent">Absent</td><td>—</td></tr>
+      <tr><td>Permit (EIP-2612) / meta-transactions</td><td class="absent">Absent</td><td>(Sponsored transactions are the natural Sui counterpart)</td></tr>
+      <tr><td>Reentrancy &amp; security patterns</td><td class="absent">Absent</td><td>Only a generic "language does some of the lifting" auditing row</td></tr>
+      <tr><td>Flash loans</td><td class="absent">Absent</td><td>(Hot-potato pattern is the canonical Sui answer)</td></tr>
+      <tr><td>Factory / clone deployment</td><td class="absent">Absent</td><td>Despite being the #1 operational pattern by volume</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="oz-sui">
+  <h2>OpenZeppelin Contracts for Sui — the familiarity bridge</h2>
+  <p>Design decision for chapter 2: <strong>use <a href="https://docs.openzeppelin.com/contracts-sui">OpenZeppelin Contracts for Sui</a> (v1.x, audited) wherever it applies</strong>, because Solidity developers already trust and recognize OZ APIs. Audited section-by-section on 2026-07-13. The library ships four packages:</p>
+  <table>
+    <thead><tr><th>Package</th><th>Modules</th><th>Solidity analog</th><th>Chapter 2 relevance</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Access</strong> (<code>openzeppelin_access</code>)</td><td><code>access_control</code> (RBAC: <code>AccessControl</code>, <code>Auth</code>), <code>two_step_transfer</code>, <code>delayed_transfer</code></td><td><code>AccessControl</code> roles; <code>Ownable2Step</code>; timelocked ownership transfer</td><td>Snippet #3 — role-based access control with OZ-familiar semantics, layered over Sui capability objects</td></tr>
+      <tr><td><strong>Integer Math</strong></td><td>Overflow-safe arithmetic with explicit rounding + decimal scaling helpers</td><td>SafeMath / <code>Math.mulDiv</code> / OZ Math utils</td><td>Any DeFi-math snippet (vesting schedules, fees); pairs with the "SafeMath is moot, but rounding still isn't" narrative</td></tr>
+      <tr><td><strong>Fixed-Point Math</strong></td><td>9-decimal fixed-point types <code>UD30x9</code>, <code>SD29x9</code></td><td>PRB-Math / WAD-style fixed point</td><td>Rates, prices, signed balance deltas — flash-loan fee and governance-weight snippets</td></tr>
+      <tr><td><strong>Utilities</strong></td><td>Embeddable rate limiters</td><td>Rate-limiting / circuit-breaker adjacent patterns</td><td>Emergency-stop/pausable snippet companion</td></tr>
+    </tbody>
+  </table>
+  <aside><p><strong>What OZ Sui deliberately does NOT ship is itself a teaching point:</strong> no ERC-20/721 modules (Sui's native <code>coin</code>/Currency Standard is the token layer), no proxy/upgrade modules (package upgrades are native), no reentrancy guard (moot in Move). OZ for Sui only fills the gaps the platform doesn't cover — the inverse of Ethereum, where OZ ships everything. Each snippet should say which side of that line it sits on.</p></aside>
+</section>
+
+<section id="chapter2">
+  <h2>Chapter 2 candidate snippet set (proposal)</h2>
+  <p>Ordered by (prevalence × how much the official docs leave unsaid). Each entry = one Solidity snippet + one idiomatic Sui Move snippet. <strong>Where OpenZeppelin Contracts for Sui applies, prefer it</strong> (marked OZ✓). Sui-side mappings below are preliminary — to be validated with sui-pilot during the planning/implementation phase.</p>
+  <table>
+    <thead><tr><th>#</th><th>Use case</th><th>Solidity side</th><th>Sui side (preliminary)</th><th>Why include</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Fungible token</td><td>ERC-20 (OZ)</td><td><code>coin::create_currency</code> / Currency Standard</td><td>#1 measured pattern; docs cover concept, not code</td></tr>
+      <tr><td>2</td><td>NFT</td><td>ERC-721 (OZ)</td><td>Object + <code>display::Display</code></td><td>Top-tier; repo already has ERC-721 showcases to reuse</td></tr>
+      <tr><td>3</td><td>Admin access control</td><td><code>Ownable</code> / <code>AccessControl</code></td><td>Capability objects (<code>AdminCap</code>) + OZ✓ <code>openzeppelin_access::access_control</code> for roles, <code>two_step_transfer</code> for Ownable2Step</td><td>#3 measured; the flagship mental-model shift, with an OZ-familiar landing spot</td></tr>
+      <tr><td>4</td><td>Upgrades</td><td>UUPS/Transparent proxy</td><td>Package upgrade + versioned shared object</td><td>Top-tier; Solidity side is genuinely painful → strong contrast</td></tr>
+      <tr><td>5</td><td>Factory / clones</td><td>Factory + ERC-1167 clone</td><td>Plain object instantiation (no factory needed)</td><td>&gt;90% of deployments; completely absent from official docs</td></tr>
+      <tr><td>6</td><td>Escrow / swap</td><td>Escrow contract</td><td>Shared-object escrow / hot potato</td><td>Absent from docs; showcases object ownership beautifully</td></tr>
+      <tr><td>7</td><td>Vesting / time lock</td><td>OZ <code>VestingWallet</code></td><td>Time-locked object + <code>Clock</code>; OZ✓ integer/fixed-point math for schedule arithmetic</td><td>Absent from docs; common real ask</td></tr>
+      <tr><td>8</td><td>Multisig</td><td>Safe-style contract multisig</td><td>Native protocol multisig keys</td><td>Sui answer needs no contract at all — striking</td></tr>
+      <tr><td>9</td><td>Airdrop / claims</td><td>Merkle distributor</td><td>Direct parallel transfers / claim objects</td><td>Absent from docs; parallelism story</td></tr>
+      <tr><td>10</td><td>Gasless UX</td><td>EIP-2612 permit / meta-tx</td><td>Sponsored transactions</td><td>Absent from docs; big UX differentiator</td></tr>
+      <tr><td>11</td><td>Flash loan</td><td>Aave-style callback loan</td><td>Hot-potato pattern; OZ✓ <code>UD30x9</code> fixed-point for fee math</td><td>Canonical Move pattern with no EVM equivalent mechanics</td></tr>
+      <tr><td>12</td><td>Security canon</td><td>CEI + reentrancy guard + SafeMath</td><td>"Why these don't exist here" explainer; OZ✓ integer math + rate limiter for what still matters (rounding, throttling)</td><td>Narrative piece anchoring the whole chapter</td></tr>
+      <tr><td>13</td><td>Governance</td><td>OZ Governor</td><td>Shared-object voting</td><td>Only 1k+ OZ deployments — lowest priority of the set</td></tr>
+    </tbody>
+  </table>
+  <aside class="warning"><p><strong>Before writing any Solidity:</strong> re-enable the 39 disabled <code>@trailofbits</code> plugin skills in <code>~/.claude/settings.json</code> (at minimum: building-secure-contracts, static-analysis, property-based-testing, mutation-testing, sharp-edges, insecure-defaults, entry-point-analyzer, differential-review). Use sui-pilot for all Move work. Both noted in project memory.</p></aside>
+</section>
+
+<section id="caveats">
+  <h2>Caveats, refuted claims &amp; open questions</h2>
+  <h3>Caveats on the data</h3>
+  <ul>
+    <li>Proxy statistics snapshot Sept 2022 (EMSE) and Sept 2023 (ICSE); micro-pattern data runs through Dec 2024; OZ impact figures are undated and self-reported ("OpenZeppelin's own reported figure").</li>
+    <li>Proxy prevalence is strongly methodology-dependent (3.25% bytecode lower bound vs 14.2% trace-based vs 54.2% of <em>active</em> contracts in a third study) — always report the range.</li>
+    <li>Factory "&gt;90%" measures raw automated deployment volume, not per-developer pattern adoption.</li>
+    <li>All verified-contract datasets share selection bias — unverified contracts are invisible to them.</li>
+    <li>DeFi TVL category breakdowns and Solmate/Solady prevalence were requested but did not survive verification — the "which building blocks dominate" answer rests on OZ data alone.</li>
+  </ul>
+  <h3>Refuted in verification (do not cite)</h3>
+  <ul>
+    <li><span class="badge ref">REFUTED</span> "The sui-for-ethereum page omits staking/vesting/escrow/multisig/oracles/governance/airdrops/permit" — refuted 1-2 because the page <em>does</em> carry infra-level rows for oracles/governance. Superseded by the direct section-by-section audit above.</li>
+    <li><span class="badge ref">REFUTED</span> OpenZeppelin's "$220B TVL / 88% market share" marketing figure — refuted 1-2, do not use.</li>
+  </ul>
+  <h3>Open questions</h3>
+  <ul>
+    <li>Relative prevalence <em>within</em> Tier 3 (Safe deployments vs vesting contracts vs merkle distributors vs Chainlink consumers) — no verified quantitative data emerged.</li>
+    <li>Solmate/Solady market share vs OpenZeppelin, and whether gas-optimized idioms shift what the snippets should mirror.</li>
+    <li>How DeFi TVL categories (DEX/AMM, lending, liquid staking) map onto contract-pattern prevalence.</li>
+  </ul>
+</section>
+
+<section id="sources">
+  <h2>Sources</h2>
+  <details open>
+    <summary>Primary (peer-reviewed / official)</summary>
+    <ul>
+      <li><a href="https://dl.acm.org/doi/10.1109/ICSE55347.2025.00083">ICSE 2025 — Zhang et al., proxy census (62.6M contracts)</a></li>
+      <li><a href="https://link.springer.com/article/10.1007/s10664-024-10485-1">EMSE 2024 — Ebrahimi et al., delegatecall-trace proxy study</a></li>
+      <li><a href="https://dl.acm.org/doi/pdf/10.1145/3787216">ACM TOSEM 2026 — factory contract study (434M runtimes)</a></li>
+      <li><a href="https://link.springer.com/article/10.1007/s10664-025-10646-w">EMSE 2025 — SLR, 144 design patterns / 36 security patterns</a></li>
+      <li><a href="https://arxiv.org/pdf/2505.01282">EASE 2025 — 18 micro-patterns across 23,258 contracts</a></li>
+      <li><a href="https://arxiv.org/pdf/2304.03405">arXiv 2304.03405 — upgradeability pattern survey (11 variants)</a></li>
+      <li><a href="https://consensys.github.io/smart-contract-best-practices/">Consensys smart-contract best practices (archived; successor scsfg.io)</a></li>
+      <li><a href="https://docs.openzeppelin.com/impact/contracts-impact">OpenZeppelin contracts impact stats (self-reported)</a></li>
+      <li><a href="https://docs.sui.io/concepts/sui-for-ethereum">docs.sui.io — Sui for Ethereum devs (audited live 2026-07-13)</a></li>
+      <li><a href="https://docs.openzeppelin.com/contracts-sui">OpenZeppelin Contracts for Sui v1.x (audited live 2026-07-13)</a></li>
+    </ul>
+  </details>
+  <details>
+    <summary>Secondary / blogs</summary>
+    <ul>
+      <li><a href="https://fravoll.github.io/solidity-patterns/">fravoll Solidity pattern catalog (14 patterns, 4 categories)</a></li>
+      <li><a href="https://blockchain.dei.uc.pt/patterns/">University of Coimbra pattern taxonomy</a></li>
+      <li><a href="https://www.openzeppelin.com/news/a-mental-model-for-evm-developers-building-on-sui">OpenZeppelin — mental model for EVM devs on Sui</a></li>
+      <li><a href="https://blog.sui.io/create-token-erc-20-versus-coin/">Sui blog — ERC-20 vs Coin</a></li>
+      <li><a href="https://yakitori.dev/blog/00-sui-move-for-solidity-devs/">yakitori.dev — Sui Move for Solidity devs</a></li>
+      <li><a href="https://read.cryptodatabytes.com/p/every-erc-explained-part-2-contract">cryptodatabytes — every ERC explained</a></li>
+    </ul>
+  </details>
+</section>
+
+</main>
+
+<footer>
+  <p>Generated 2026-07-13 by a 104-agent deep-research workflow (5 search angles → 22 sources → 108 claims → 25 adversarially verified, 3-vote panels). Claims marked REFUTED must not be asserted downstream. Next step: turn the chapter-2 candidate table into a concrete snippet plan.</p>
+</footer>
+</body>
+</html>

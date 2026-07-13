@@ -25,3 +25,9 @@ showcases/**/move/**/build/
 
 # macOS / editor noise
 .DS_Store
+
+# Chapter 2 pattern packages — vendored Foundry libs (re-fetch: see patterns/README.md)
+patterns/solidity/lib/
+patterns/solidity/out/
+patterns/solidity/cache/
+patterns/move/**/build/
