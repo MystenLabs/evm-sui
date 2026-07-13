@@ -12,7 +12,6 @@ import {OwnedVault, RoleGuardedVault} from "../src/03_AccessControl.sol";
 import {CounterV1, CounterV2} from "../src/04_UpgradeableCounter.sol";
 import {AccountFactory, UserAccount} from "../src/05_Factory.sol";
 import {NftEscrow} from "../src/06_Escrow.sol";
-import {NftEscrow as EscrowForNft} from "../src/06_Escrow.sol";
 import {TeamVesting} from "../src/07_Vesting.sol";
 import {MultisigWallet} from "../src/08_Multisig.sol";
 import {MerkleAirdrop} from "../src/09_MerkleAirdrop.sol";
