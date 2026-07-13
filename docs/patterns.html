@@ -1464,7 +1464,7 @@ fun test_cancel_returns_item() {
       <span class="section-num">Pattern 07</span>
       <h2>Vesting</h2>
     </div>
-    <p class="section-sub">OZ <code>VestingWallet</code> releases linearly over time. On Sui the wallet is an object the beneficiary owns, using OpenZeppelin Contracts for Sui's finance package and the on-chain <code>Clock</code>.</p>
+    <p class="section-sub">OZ <code>VestingWallet</code> releases linearly over time. On Sui the wallet is an object the beneficiary owns, releasing against the on-chain <code>Clock</code> — the same mental model OpenZeppelin Contracts for Sui's finance package packages for production.</p>
     
     <div class="pair">
       <div class="col col-sol"><div class="col-tag sol">Solidity · EVM</div><div class="codehead"><span class="fname">solidity/src/07_Vesting.sol</span><span class="lang">solidity</span></div><pre class="code solidity"><code>// SPDX-License-Identifier: MIT
@@ -1476,10 +1476,11 @@ import {VestingWallet} from &quot;@openzeppelin/contracts/finance/VestingWallet.
 /// @notice OZ&#x27;s `VestingWallet` holds ETH/ERC-20 and releases it linearly
 ///         between `start` and `start + duration`. The beneficiary calls
 ///         `release()` to pull whatever has vested so far.
-/// @dev Sui counterpart: `vesting.move` — uses OpenZeppelin Contracts for
-///      Sui&#x27;s `openzeppelin_finance::vesting_wallet_linear`, the same mental
-///      model ported to objects: the wallet IS an object the beneficiary
-///      owns, and time comes from the on-chain `Clock`.
+/// @dev Sui counterpart: `vesting.move` — the same mental model ported to
+///      objects: the wallet IS an object the beneficiary owns, and time comes
+///      from the on-chain `Clock`. The snippet releases linearly by hand;
+///      OpenZeppelin Contracts for Sui&#x27;s `openzeppelin_finance` package is the
+///      production-grade version to reach for.
 contract TeamVesting is VestingWallet {
     constructor(address beneficiary, uint64 startTimestamp, uint64 durationSeconds)
         VestingWallet(beneficiary, startTimestamp, durationSeconds)

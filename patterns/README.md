@@ -25,7 +25,7 @@ wherever it applies — Solidity developers already trust OZ APIs.
 | 04 | Upgradeability | `04_UpgradeableCounter.sol` | `versioned.move` | native package upgrade |
 | 05 | Factory / clones | `05_Factory.sol` | `no_factory.move` | native (pattern vanishes) |
 | 06 | Escrow | `06_Escrow.sol` | `escrow.move` | native shared object |
-| 07 | Vesting | `07_Vesting.sol` | `vesting.move` | ✓ `openzeppelin_finance` |
+| 07 | Vesting | `07_Vesting.sol` | `vesting.move` | native `Clock` (OZ finance for prod) |
 | 08 | Multisig | `08_Multisig.sol` | `patterns/native/multisig.sh` | native key scheme |
 | 09 | Merkle airdrop | `09_MerkleAirdrop.sol` | `airdrop.move` | native parallel transfers |
 | 10 | Gasless (permit) | `10_Permit.sol` | `patterns/native/sponsored-tx.ts` | native sponsored tx |

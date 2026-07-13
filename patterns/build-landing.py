@@ -24,7 +24,7 @@ PATTERNS = [
     ("04", "Upgradeability", "UUPS proxies <code>delegatecall</code> an implementation so code changes while storage stays — append-only forever. Sui upgrades packages natively; the chain enforces layout compatibility.", "04_UpgradeableCounter.sol", "versioned.move", MOVE / "versioned.move"),
     ("05", "Factory / clones", "Factories mint &gt;90% of EVM contracts via 45-byte ERC-1167 clones. On Sui the pattern vanishes: one package serves unlimited object instances.", "05_Factory.sol", "no_factory.move", MOVE / "no_factory.move"),
     ("06", "Escrow", "The EVM escrow takes custody and must hand assets back correctly on every path. On Sui the item is a shared object that can't be silently dropped.", "06_Escrow.sol", "escrow.move", MOVE / "escrow.move"),
-    ("07", "Vesting", "OZ <code>VestingWallet</code> releases linearly over time. On Sui the wallet is an object the beneficiary owns, using OpenZeppelin Contracts for Sui's finance package and the on-chain <code>Clock</code>.", "07_Vesting.sol", "vesting.move", MOVE / "vesting.move"),
+    ("07", "Vesting", "OZ <code>VestingWallet</code> releases linearly over time. On Sui the wallet is an object the beneficiary owns, releasing against the on-chain <code>Clock</code> — the same mental model OpenZeppelin Contracts for Sui's finance package packages for production.", "07_Vesting.sol", "vesting.move", MOVE / "vesting.move"),
     ("08", "Multisig", "Shared custody on EVM is a Safe contract with a confirmation transaction per co-signer. On Sui multisig is a <em>native key scheme</em> — signatures combine off-chain, no contract at all.", "08_Multisig.sol", "native/multisig.sh", NATIVE / "multisig.sh"),
     ("09", "Merkle airdrop", "Pushing to thousands of recipients is too costly, so EVM airdrops publish a merkle root and make claimers prove membership. Sui's parallelism makes direct distribution viable — no proofs.", "09_MerkleAirdrop.sol", "airdrop.move", MOVE / "airdrop.move"),
     ("10", "Gasless UX", "EIP-2612 <code>permit</code> replaces an <code>approve</code> tx with a signed message, per token. Sui makes gas sponsorship native to <em>every</em> transaction — no per-asset opt-in.", "10_Permit.sol", "native/sponsored-tx.ts", NATIVE / "sponsored-tx.ts"),
@@ -98,7 +98,7 @@ def nav_links():
 
 def toc_cards():
     cards = []
-    for num, title, blurb, *_ in PATTERNS:
+    for num, title, *_ in PATTERNS:
         cards.append(
             f'<a class="toc-card" href="#p{num}"><span class="toc-num">{num}</span>'
             f'<span class="toc-title">{html.escape(title)}</span></a>'
