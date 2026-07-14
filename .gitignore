@@ -31,3 +31,4 @@ patterns/solidity/lib/
 patterns/solidity/out/
 patterns/solidity/cache/
 patterns/move/**/build/
+__pycache__/
