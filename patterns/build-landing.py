@@ -89,7 +89,7 @@ def highlight(code, lang):
         # block comment opening on this line (no strings straddle it in our snippets)
         start = esc.find("/*") if lang != "bash" else -1
         tail = ""
-        if start != -1 and COMMENT[lang] == "//" and "//" not in esc[:start]:
+        if start != -1 and COMMENT[lang] == "//" and not (0 <= esc.find("//") <= start):
             body, rest = esc[:start], esc[start:]
             end = rest.find("*/")
             if end == -1:
@@ -127,7 +127,7 @@ def pane(path, source_hint, side):
         f'<div class="pane {side}" data-lang="{lang}">'
         f'<div class="codehead"><span class="fname">{html.escape(source_hint)}</span>'
         f'<span class="lang">{lang}</span></div>'
-        f'<pre class="code"><code>{body}</code></pre></div>'
+        f'<pre class="code" tabindex="0"><code>{body}</code></pre></div>'
     )
 
 
@@ -417,7 +417,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <footer class="docfoot">
   Pattern selection from a prevalence-ranked deep-research report. Two patterns (multisig, gasless) have no
   contract on Sui — the platform provides them — so their right pane is a shell/TS snippet, which is the lesson.
-  See <a href="https://github.com/MystenLabs/evm-sui/tree/main/patterns">patterns/README.md</a> to build and test both sides.
+  See <a href="https://github.com/MystenLabs/evm-sui/tree/main/patterns">patterns/README.md</a> to build both sides (the Solidity side ships Foundry tests).
 </footer>
 
 <div id="statusbar">
@@ -429,15 +429,15 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
   <span id="sb-keys">[j/k] pattern · [d]iff · [m] panes · [⌘k] jump · [?] help</span>
 </div>
 
-<div class="overlay" id="palette" role="dialog" aria-label="Jump to pattern">
+<div class="overlay" id="palette" role="dialog" aria-modal="true" aria-label="Jump to pattern">
   <div class="sheet">
     <input id="pinput" type="text" placeholder="jump to pattern…" autocomplete="off" spellcheck="false" />
     <ul id="plist"></ul>
   </div>
 </div>
 
-<div class="overlay" id="help" role="dialog" aria-label="Keyboard help">
-  <div class="sheet">
+<div class="overlay" id="help" role="dialog" aria-modal="true" aria-label="Keyboard help">
+  <div class="sheet" tabindex="-1">
     <h3>Keys</h3>
     <table>
       <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>next / previous pattern (also <kbd>←</kbd>/<kbd>→</kbd>)</td></tr>
@@ -465,7 +465,13 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
   var pinput = document.getElementById("pinput");
   var plist = document.getElementById("plist");
   var help = document.getElementById("help");
-  var idx = 0, psel = 0, pmatches = [];
+  var idx = 0, psel = 0, pmatches = [], lastFocus = null;
+
+  function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
 
   document.body.classList.remove("doc");
   document.body.classList.add("app");
@@ -494,7 +500,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     var solName = sec.querySelector(".pane.sol .fname").textContent;
     var moveName = sec.querySelector(".pane.move .fname").textContent;
     var h = ['<div class="unified"><div class="udh">unified diff · <b>' +
-             solName + " → " + moveName + "</b></div>", '<div class="uscroll">'];
+             solName + " → " + moveName + "</b></div>", '<div class="uscroll" tabindex="0">'];
     var i = 0;
     function push(cls, gut, content) {
       var d = Math.min(i++, 44);
@@ -512,7 +518,8 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
   function toggleDiff() {
     var sec = secs[idx];
     if (!sec.classList.contains("diff")) buildDiff(sec);
-    sec.classList.toggle("diff");
+    var on = sec.classList.toggle("diff");
+    sec.querySelector(".uniwrap").setAttribute("aria-hidden", on ? "false" : "true");
   }
 
   function cyclePanes() {
@@ -531,11 +538,31 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     psel = Math.min(psel, Math.max(0, pmatches.length - 1));
     plist.innerHTML = pmatches.map(function (e, k) {
       return '<li data-i="' + e.i + '" class="' + (k === psel ? "sel" : "") + '"><span class="tn">' +
-             e.t.n + "</span>" + e.t.t + '<span class="slug">' + e.t.slug + "</span></li>";
+             escHtml(e.t.n) + "</span>" + escHtml(e.t.t) + '<span class="slug">' + escHtml(e.t.slug) + "</span></li>";
     }).join("");
   }
-  function openPalette() { palette.classList.add("open"); pinput.value = ""; psel = 0; renderPalette(); pinput.focus(); }
-  function closeOverlays() { palette.classList.remove("open"); help.classList.remove("open"); }
+  function openPalette() {
+    lastFocus = document.activeElement;
+    palette.classList.add("open"); pinput.value = ""; psel = 0; renderPalette(); pinput.focus();
+  }
+  function openHelp() {
+    lastFocus = document.activeElement;
+    help.classList.add("open"); help.querySelector(".sheet").focus();
+  }
+  function closeOverlays() {
+    var wasOpen = palette.classList.contains("open") || help.classList.contains("open");
+    palette.classList.remove("open"); help.classList.remove("open");
+    if (wasOpen && lastFocus && lastFocus.focus) { lastFocus.focus(); lastFocus = null; }
+  }
+  function trapTab(e) {
+    var ov = palette.classList.contains("open") ? palette : (help.classList.contains("open") ? help : null);
+    if (!ov) return;
+    var f = ov.querySelectorAll('a[href], button, input, [tabindex]:not([tabindex="-1"])');
+    if (!f.length) { e.preventDefault(); return; }
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+    else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+  }
 
   pinput.addEventListener("input", function () { psel = 0; renderPalette(); });
   pinput.addEventListener("keydown", function (e) {
@@ -543,6 +570,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     else if (e.key === "ArrowUp") { psel = Math.max(psel - 1, 0); renderPalette(); e.preventDefault(); }
     else if (e.key === "Enter") { if (pmatches[psel]) { go(pmatches[psel].i); closeOverlays(); } e.preventDefault(); }
     else if (e.key === "Escape") { closeOverlays(); }
+    else if (e.key === "Tab") { e.preventDefault(); } // input is the palette's only focusable
     e.stopPropagation();
   });
   plist.addEventListener("click", function (e) {
@@ -561,15 +589,20 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 
   document.addEventListener("keydown", function (e) {
     if (e.defaultPrevented) return;
+    if (e.key === "Tab") { trapTab(e); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { openPalette(); e.preventDefault(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+    // A focused code pane owns the arrow keys (it scrolls); j/k/d/m stay live.
+    var inPane = e.target && e.target.closest ? e.target.closest("pre.code, .uscroll") : null;
     switch (e.key) {
-      case "j": case "ArrowRight": go(idx + 1); break;
-      case "k": case "ArrowLeft": go(idx - 1); break;
+      case "ArrowRight": if (inPane) return; go(idx + 1); break;
+      case "ArrowLeft": if (inPane) return; go(idx - 1); break;
+      case "j": go(idx + 1); break;
+      case "k": go(idx - 1); break;
       case "d": toggleDiff(); break;
       case "m": cyclePanes(); break;
-      case "?": help.classList.toggle("open"); break;
+      case "?": if (help.classList.contains("open")) closeOverlays(); else openHelp(); break;
       case "Escape": closeOverlays(); break;
       default: return;
     }

@@ -259,7 +259,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/01_FungibleToken.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/01_FungibleToken.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">ERC20</span>} from <span class="s">&quot;@openzeppelin/contracts/token/ERC20/ERC20.sol&quot;</span>;
@@ -285,7 +285,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
         _burn(msg.sender, amount);
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/fungible_token.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// ERC-20 equivalent.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/fungible_token.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// ERC-20 equivalent.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: an ERC-20 is one contract that owns a `mapping(address =&gt;</span>
 <span class="c">/// uint256) balances` and a `totalSupply`. Every transfer mutates that shared</span>
@@ -358,7 +358,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/02_Nft.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/02_Nft.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">ERC721URIStorage</span>, <span class="t">ERC721</span>} from <span class="s">&quot;@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol&quot;</span>;
@@ -382,7 +382,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
         _setTokenURI(id, uri);
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/nft.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// ERC-721 equivalent.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/nft.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// ERC-721 equivalent.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: an ERC-721 is one contract holding `mapping(uint256 =&gt;</span>
 <span class="c">/// address) owners` and `mapping(uint256 =&gt; string) tokenURIs`. A &quot;token&quot; is</span>
@@ -448,7 +448,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/03_AccessControl.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/03_AccessControl.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">Ownable2Step</span>, <span class="t">Ownable</span>} from <span class="s">&quot;@openzeppelin/contracts/access/Ownable2Step.sol&quot;</span>;
@@ -496,7 +496,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 
     receive() <span class="k">external</span> <span class="k">payable</span> {}
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/access_control.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// Ownable / AccessControl equivalent — shown two ways.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/access_control.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Ownable / AccessControl equivalent — shown two ways.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: `Ownable` stores an `owner` address and guards functions</span>
 <span class="c">/// with `onlyOwner`; `AccessControl` keeps `mapping(bytes32 =&gt; RoleData)` and</span>
@@ -570,7 +570,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/04_UpgradeableCounter.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/04_UpgradeableCounter.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">UUPSUpgradeable</span>} from <span class="s">&quot;@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol&quot;</span>;
@@ -631,7 +631,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
         <span class="k">require</span>(msg.sender == owner, <span class="s">&quot;not owner&quot;</span>);
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/versioned.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// Upgradeable-proxy equivalent.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/versioned.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Upgradeable-proxy equivalent.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: to upgrade you deploy a proxy that `delegatecall`s into a</span>
 <span class="c">/// logic contract, and you must hand-manage a storage layout that both versions</span>
@@ -704,7 +704,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/05_Factory.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/05_Factory.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">Clones</span>} from <span class="s">&quot;@openzeppelin/contracts/proxy/Clones.sol&quot;</span>;
@@ -757,7 +757,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
         <span class="k">emit</span> <span class="t">AccountCreated</span>(msg.sender, account);
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/no_factory.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// Factory / ERC-1167 minimal-proxy equivalent.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/no_factory.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Factory / ERC-1167 minimal-proxy equivalent.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: to give every user their own contract instance you deploy a</span>
 <span class="c">/// factory that `CREATE`s (or `CREATE2` clones via ERC-1167) a fresh contract</span>
@@ -794,7 +794,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/06_Escrow.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/06_Escrow.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">IERC721</span>} from <span class="s">&quot;@openzeppelin/contracts/token/ERC721/IERC721.sol&quot;</span>;
@@ -852,7 +852,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
         <span class="k">emit</span> <span class="t">Cancelled</span>(dealId);
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/escrow.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// Trustless swap escrow.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/escrow.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Trustless swap escrow.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: an escrow contract holds both sides&#x27; assets in its own</span>
 <span class="c">/// storage and tracks who deposited what in mappings, trusting its own logic to</span>
@@ -919,7 +919,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/07_Vesting.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/07_Vesting.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">VestingWallet</span>} from <span class="s">&quot;@openzeppelin/contracts/finance/VestingWallet.sol&quot;</span>;
@@ -938,7 +938,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
         <span class="t">VestingWallet</span>(beneficiary, startTimestamp, durationSeconds)
     {}
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/vesting.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// VestingWallet equivalent — linear vesting with a cliff-free straight line.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/vesting.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// VestingWallet equivalent — linear vesting with a cliff-free straight line.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: OpenZeppelin&#x27;s `VestingWallet` streams a balance to a</span>
 <span class="c">/// beneficiary as `block.timestamp` advances, tracking `released` in storage.</span>
@@ -1025,7 +1025,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/08_Multisig.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/08_Multisig.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="c">/// @title 08 — Multisig wallet (M-of-N approval)</span>
@@ -1099,7 +1099,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 
     receive() <span class="k">external</span> <span class="k">payable</span> {}
 }</code></pre></div>
-    <div class="pane move" data-lang="bash"><div class="codehead"><span class="fname">native/multisig.sh</span><span class="lang">bash</span></div><pre class="code"><code><span class="c">#!/usr/bin/env bash</span>
+    <div class="pane move" data-lang="bash"><div class="codehead"><span class="fname">native/multisig.sh</span><span class="lang">bash</span></div><pre class="code" tabindex="0"><code><span class="c">#!/usr/bin/env bash</span>
 <span class="c"># 08 — Multisig, the Sui way: NO CONTRACT.</span>
 <span class="c">#</span>
 <span class="c"># On EVM a multisig is a deployed contract (Safe): owners submit, co-owners</span>
@@ -1153,7 +1153,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/09_MerkleAirdrop.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/09_MerkleAirdrop.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">MerkleProof</span>} from <span class="s">&quot;@openzeppelin/contracts/utils/cryptography/MerkleProof.sol&quot;</span>;
@@ -1192,7 +1192,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
         <span class="k">emit</span> <span class="t">Claimed</span>(account, amount);
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/airdrop.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// Merkle-distributor equivalent.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/airdrop.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Merkle-distributor equivalent.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: airdropping to thousands of addresses on-chain is too</span>
 <span class="c">/// expensive, so you publish a Merkle root and make each recipient submit a</span>
@@ -1258,7 +1258,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/10_Permit.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/10_Permit.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">ERC20Permit</span>, <span class="t">ERC20</span>} from <span class="s">&quot;@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol&quot;</span>;
@@ -1302,7 +1302,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
         deposited[owner] += amount;
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="typescript"><div class="codehead"><span class="fname">native/sponsored-tx.ts</span><span class="lang">typescript</span></div><pre class="code"><code><span class="c">// 10 — Gasless UX, the Sui way: sponsored transactions.</span>
+    <div class="pane move" data-lang="typescript"><div class="codehead"><span class="fname">native/sponsored-tx.ts</span><span class="lang">typescript</span></div><pre class="code" tabindex="0"><code><span class="c">// 10 — Gasless UX, the Sui way: sponsored transactions.</span>
 <span class="c">//</span>
 <span class="c">// On EVM, letting a user act without holding ETH means EIP-2612 `permit`: the</span>
 <span class="c">// user signs an off-chain approval, a relayer submits it and pays gas, and the</span>
@@ -1373,7 +1373,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/11_FlashLoan.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/11_FlashLoan.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">ERC20FlashMint</span>, <span class="t">ERC20</span>} from <span class="s">&quot;@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol&quot;</span>;
@@ -1434,7 +1434,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
         lender.flashLoan(this, token, amount, <span class="s">&quot;&quot;</span>);
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/flash_loan.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// Flash loan via the hot-potato pattern.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/flash_loan.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Flash loan via the hot-potato pattern.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: a flash loan sends funds to the borrower, calls back into</span>
 <span class="c">/// their contract, then checks `balanceAfter &gt;= balanceBefore + fee` — trusting</span>
@@ -1504,7 +1504,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     <div class="warn-strip">⚠ <code>VulnerableVault</code> in the Solidity file is deliberately exploitable — a teaching artifact. Never deploy it.</div>
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/12_SecurityPatterns.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/12_SecurityPatterns.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">ReentrancyGuard</span>} from <span class="s">&quot;@openzeppelin/contracts/utils/ReentrancyGuard.sol&quot;</span>;
@@ -1566,7 +1566,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
         _unpause();
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/security.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// Why three Solidity security staples are largely moot in Move — and the one</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/security.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Why three Solidity security staples are largely moot in Move — and the one</span>
 <span class="c">/// that still matters (rounding).</span>
 <span class="c">///</span>
 <span class="c">/// 1. Reentrancy guards (`nonReentrant`). Reentrancy needs dynamic dispatch: an</span>
@@ -1623,7 +1623,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     
   </header>
   <div class="pair">
-    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/13_Governance.sol</span><span class="lang">solidity</span></div><pre class="code"><code><span class="c">// SPDX-License-Identifier: MIT</span>
+    <div class="pane sol" data-lang="solidity"><div class="codehead"><span class="fname">solidity/src/13_Governance.sol</span><span class="lang">solidity</span></div><pre class="code" tabindex="0"><code><span class="c">// SPDX-License-Identifier: MIT</span>
 <span class="k">pragma</span> <span class="k">solidity</span> ^<span class="n">0</span>.<span class="n">8</span>.<span class="n">28</span>;
 
 <span class="k">import</span> {<span class="t">IERC20</span>} from <span class="s">&quot;@openzeppelin/contracts/token/ERC20/IERC20.sol&quot;</span>;
@@ -1689,7 +1689,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
         <span class="k">emit</span> <span class="t">ExecutionApproved</span>(id);
     }
 }</code></pre></div>
-    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/governance.move</span><span class="lang">move</span></div><pre class="code"><code><span class="c">/// Minimal Governor equivalent.</span>
+    <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/governance.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Minimal Governor equivalent.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: a Governor contract stores proposals in mappings, tracks</span>
 <span class="c">/// `hasVoted[proposalId][voter]` to stop double-voting, and gates execution on</span>
@@ -1763,7 +1763,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
 <footer class="docfoot">
   Pattern selection from a prevalence-ranked deep-research report. Two patterns (multisig, gasless) have no
   contract on Sui — the platform provides them — so their right pane is a shell/TS snippet, which is the lesson.
-  See <a href="https://github.com/MystenLabs/evm-sui/tree/main/patterns">patterns/README.md</a> to build and test both sides.
+  See <a href="https://github.com/MystenLabs/evm-sui/tree/main/patterns">patterns/README.md</a> to build both sides (the Solidity side ships Foundry tests).
 </footer>
 
 <div id="statusbar">
@@ -1775,15 +1775,15 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
   <span id="sb-keys">[j/k] pattern · [d]iff · [m] panes · [⌘k] jump · [?] help</span>
 </div>
 
-<div class="overlay" id="palette" role="dialog" aria-label="Jump to pattern">
+<div class="overlay" id="palette" role="dialog" aria-modal="true" aria-label="Jump to pattern">
   <div class="sheet">
     <input id="pinput" type="text" placeholder="jump to pattern…" autocomplete="off" spellcheck="false" />
     <ul id="plist"></ul>
   </div>
 </div>
 
-<div class="overlay" id="help" role="dialog" aria-label="Keyboard help">
-  <div class="sheet">
+<div class="overlay" id="help" role="dialog" aria-modal="true" aria-label="Keyboard help">
+  <div class="sheet" tabindex="-1">
     <h3>Keys</h3>
     <table>
       <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>next / previous pattern (also <kbd>←</kbd>/<kbd>→</kbd>)</td></tr>
@@ -1811,7 +1811,13 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
   var pinput = document.getElementById("pinput");
   var plist = document.getElementById("plist");
   var help = document.getElementById("help");
-  var idx = 0, psel = 0, pmatches = [];
+  var idx = 0, psel = 0, pmatches = [], lastFocus = null;
+
+  function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
 
   document.body.classList.remove("doc");
   document.body.classList.add("app");
@@ -1840,7 +1846,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     var solName = sec.querySelector(".pane.sol .fname").textContent;
     var moveName = sec.querySelector(".pane.move .fname").textContent;
     var h = ['<div class="unified"><div class="udh">unified diff · <b>' +
-             solName + " → " + moveName + "</b></div>", '<div class="uscroll">'];
+             solName + " → " + moveName + "</b></div>", '<div class="uscroll" tabindex="0">'];
     var i = 0;
     function push(cls, gut, content) {
       var d = Math.min(i++, 44);
@@ -1858,7 +1864,8 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
   function toggleDiff() {
     var sec = secs[idx];
     if (!sec.classList.contains("diff")) buildDiff(sec);
-    sec.classList.toggle("diff");
+    var on = sec.classList.toggle("diff");
+    sec.querySelector(".uniwrap").setAttribute("aria-hidden", on ? "false" : "true");
   }
 
   function cyclePanes() {
@@ -1877,11 +1884,31 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     psel = Math.min(psel, Math.max(0, pmatches.length - 1));
     plist.innerHTML = pmatches.map(function (e, k) {
       return '<li data-i="' + e.i + '" class="' + (k === psel ? "sel" : "") + '"><span class="tn">' +
-             e.t.n + "</span>" + e.t.t + '<span class="slug">' + e.t.slug + "</span></li>";
+             escHtml(e.t.n) + "</span>" + escHtml(e.t.t) + '<span class="slug">' + escHtml(e.t.slug) + "</span></li>";
     }).join("");
   }
-  function openPalette() { palette.classList.add("open"); pinput.value = ""; psel = 0; renderPalette(); pinput.focus(); }
-  function closeOverlays() { palette.classList.remove("open"); help.classList.remove("open"); }
+  function openPalette() {
+    lastFocus = document.activeElement;
+    palette.classList.add("open"); pinput.value = ""; psel = 0; renderPalette(); pinput.focus();
+  }
+  function openHelp() {
+    lastFocus = document.activeElement;
+    help.classList.add("open"); help.querySelector(".sheet").focus();
+  }
+  function closeOverlays() {
+    var wasOpen = palette.classList.contains("open") || help.classList.contains("open");
+    palette.classList.remove("open"); help.classList.remove("open");
+    if (wasOpen && lastFocus && lastFocus.focus) { lastFocus.focus(); lastFocus = null; }
+  }
+  function trapTab(e) {
+    var ov = palette.classList.contains("open") ? palette : (help.classList.contains("open") ? help : null);
+    if (!ov) return;
+    var f = ov.querySelectorAll('a[href], button, input, [tabindex]:not([tabindex="-1"])');
+    if (!f.length) { e.preventDefault(); return; }
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+    else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+  }
 
   pinput.addEventListener("input", function () { psel = 0; renderPalette(); });
   pinput.addEventListener("keydown", function (e) {
@@ -1889,6 +1916,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     else if (e.key === "ArrowUp") { psel = Math.max(psel - 1, 0); renderPalette(); e.preventDefault(); }
     else if (e.key === "Enter") { if (pmatches[psel]) { go(pmatches[psel].i); closeOverlays(); } e.preventDefault(); }
     else if (e.key === "Escape") { closeOverlays(); }
+    else if (e.key === "Tab") { e.preventDefault(); } // input is the palette's only focusable
     e.stopPropagation();
   });
   plist.addEventListener("click", function (e) {
@@ -1907,15 +1935,20 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
 
   document.addEventListener("keydown", function (e) {
     if (e.defaultPrevented) return;
+    if (e.key === "Tab") { trapTab(e); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { openPalette(); e.preventDefault(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+    // A focused code pane owns the arrow keys (it scrolls); j/k/d/m stay live.
+    var inPane = e.target && e.target.closest ? e.target.closest("pre.code, .uscroll") : null;
     switch (e.key) {
-      case "j": case "ArrowRight": go(idx + 1); break;
-      case "k": case "ArrowLeft": go(idx - 1); break;
+      case "ArrowRight": if (inPane) return; go(idx + 1); break;
+      case "ArrowLeft": if (inPane) return; go(idx - 1); break;
+      case "j": go(idx + 1); break;
+      case "k": go(idx - 1); break;
       case "d": toggleDiff(); break;
       case "m": cyclePanes(); break;
-      case "?": help.classList.toggle("open"); break;
+      case "?": if (help.classList.contains("open")) closeOverlays(); else openHelp(); break;
       case "Escape": closeOverlays(); break;
       default: return;
     }
