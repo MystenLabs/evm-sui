@@ -806,6 +806,12 @@ contract PatternNFT is ERC721URIStorage, Ownable {
 /// object recorded by the runtime, not a row we maintain. `display::Display`
 /// tells wallets/explorers how to render every object of this type at once,
 /// replacing per-token `tokenURI` strings.
+///
+/// Mint authority follows the SAME capability rule as the fungible-token snippet:
+/// the Solidity pair gates `mint` with `onlyOwner`, and here that gate is
+/// possession of a `MinterCap` object — the NFT analogue of `TreasuryCap`. Sui
+/// removes the owner *mapping*, not the mint *authorization*; leaving `mint`
+/// open would let anyone inflate the collection.
 module patterns::nft;
 
 use std::string::{Self, String};
@@ -820,6 +826,12 @@ public struct Nft has key, store {
     image_url: String,
 }
 
+/// Mint authority. Holding this object is the entire authorization proof for
+/// `mint` — the capability equivalent of ERC-721&#x27;s `onlyOwner` gate, mirroring
+/// `TreasuryCap` in the fungible-token snippet. Transfer it to hand over minting
+/// rights; there is no owner address to compare.
+public struct MinterCap has key, store { id: UID }
+
 /// OTW so we can claim the `Publisher` needed to configure Display.
 public struct NFT has drop {}
 
@@ -833,15 +845,25 @@ fun init(otw: NFT, ctx: &amp;mut TxContext) {
     disp.add(string::utf8(b&quot;image_url&quot;), string::utf8(b&quot;{image_url}&quot;));
     disp.update_version();
 
+    // The publisher receives sole minting authority.
+    transfer::public_transfer(MinterCap { id: object::new(ctx) }, ctx.sender());
     transfer::public_transfer(publisher, ctx.sender());
     transfer::public_transfer(disp, ctx.sender());
 }
 
 /// Mint = allocate a fresh object and transfer it. No global counter, no
-/// `_mint` bookkeeping — the object&#x27;s `UID` is its unique id. Declared `entry`
-/// (not `public`) so it is PTB-callable but not composable from other packages —
-/// the idiomatic form for a leaf mint.
-entry fun mint(name: vector&lt;u8&gt;, image_url: vector&lt;u8&gt;, recipient: address, ctx: &amp;mut TxContext) {
+/// `_mint` bookkeeping — the object&#x27;s `UID` is its unique id. The `&amp;MinterCap`
+/// parameter is the guard: you cannot call this without holding the cap, and the
+/// compiler enforces it — no `require`, no sender check. Declared `entry` (not
+/// `public`) so it is PTB-callable but not composable from other packages — the
+/// idiomatic form for a leaf mint.
+entry fun mint(
+    _cap: &amp;MinterCap,
+    name: vector&lt;u8&gt;,
+    image_url: vector&lt;u8&gt;,
+    recipient: address,
+    ctx: &amp;mut TxContext,
+) {
     let nft = Nft {
         id: object::new(ctx),
         name: string::utf8(name),
@@ -861,12 +883,18 @@ fun test_mint() {
     use sui::test_scenario;
     let user = @0xB;
     let mut sc = test_scenario::begin(user);
-    mint(b&quot;Sword #1&quot;, b&quot;https://img/1.png&quot;, user, sc.ctx());
+    // Publishing mints the MinterCap to the publisher.
+    init(NFT {}, sc.ctx());
+
+    sc.next_tx(user);
+    let cap = sc.take_from_sender&lt;MinterCap&gt;();
+    mint(&amp;cap, b&quot;Sword #1&quot;, b&quot;https://img/1.png&quot;, user, sc.ctx());
 
     sc.next_tx(user);
     let nft = sc.take_from_sender&lt;Nft&gt;();
     assert!(nft.name == string::utf8(b&quot;Sword #1&quot;));
     burn(nft);
+    sc.return_to_sender(cap);
     sc.end();
 }
 </code></pre></div>
@@ -2257,6 +2285,14 @@ const EOverflow: vector&lt;u8&gt; = b&quot;mul_div result does not fit in u64&qu
 /// residue stays with the pool, never in the user&#x27;s favor. Overflow of the
 /// intermediate product is handled by OZ (widened internally); a result too big
 /// for `u64` returns `none`, which we turn into an explicit abort.
+///
+/// Teaching scope: this isolates rounding DIRECTION, which is necessary but not
+/// sufficient for a real ERC-4626 vault. A production vault must also handle the
+/// first deposit (`total_assets == 0` divides by zero and aborts here) and the
+/// inflation/donation attack — where the first depositor mints one share, then
+/// donates assets to skew the ratio so later depositors round to zero shares.
+/// Defenses (seeding initial shares, virtual shares/assets offsets) live outside
+/// this snippet.
 public fun shares_for_deposit(assets: u64, total_shares: u64, total_assets: u64): u64 {
     let result = oz_u64::mul_div(assets, total_shares, total_assets, rounding::down());
     assert!(result.is_some(), EOverflow);
@@ -2361,6 +2397,13 @@ contract MiniGovernor {
 /// `VecSet&lt;address&gt;` of voters held right in the object, and the deadline is
 /// read from the shared `Clock`. Execution simply checks the clock and tally —
 /// the same logic, minus the storage-slot bookkeeping.
+///
+/// Teaching caveat: this is one-address-one-vote with no stake weighting. The
+/// `VecSet` only stops the SAME address voting twice — it does nothing against
+/// sybils, so an attacker votes from many fresh addresses for free, and `voted`
+/// grows unbounded inside one object. Production governance weights votes by a
+/// token-balance snapshot (the Solidity pair&#x27;s `ERC20Votes` checkpoints) to make
+/// both sybil and flash-loan manipulation ineffective.
 module patterns::governance;
 
 use sui::clock::Clock;
