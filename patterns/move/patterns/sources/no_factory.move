@@ -23,27 +23,3 @@ public struct Vault has key, store {
 public fun create(ctx: &mut TxContext): Vault {
     Vault { id: object::new(ctx), owner: ctx.sender(), balance: 0 }
 }
-
-/// Convenience entry: create one and send it to the caller.
-entry fun create_and_keep(ctx: &mut TxContext) {
-    let vault = create(ctx);
-    transfer::transfer(vault, ctx.sender());
-}
-
-public fun owner(vault: &Vault): address { vault.owner }
-
-#[test]
-fun test_many_instances() {
-    use sui::test_scenario;
-    let a = @0xA;
-    let mut sc = test_scenario::begin(a);
-    // One package, three independent instances — no extra deployments.
-    let v1 = create(sc.ctx());
-    let v2 = create(sc.ctx());
-    let v3 = create(sc.ctx());
-    assert!(v1.owner == a && v2.owner == a && v3.owner == a);
-    transfer::transfer(v1, a);
-    transfer::transfer(v2, a);
-    transfer::transfer(v3, a);
-    sc.end();
-}

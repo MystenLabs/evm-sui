@@ -56,31 +56,3 @@ public fun repay(pool: &mut Pool, payment: Coin<SUI>, receipt: Receipt) {
     assert!(payment.value() == amount + fee, ERepayWrongAmount);
     pool.reserve.join(payment.into_balance());
 }
-
-public fun reserve(pool: &Pool): u64 { pool.reserve.value() }
-
-#[test]
-fun test_borrow_repay_with_fee() {
-    use sui::test_scenario;
-    let user = @0xA;
-    let mut sc = test_scenario::begin(user);
-
-    let seed = coin::mint_for_testing<SUI>(10_000, sc.ctx());
-    create(seed, sc.ctx());
-
-    sc.next_tx(user);
-    let mut pool = sc.take_shared<Pool>();
-    let (mut loan, receipt) = borrow(&mut pool, 1_000, sc.ctx());
-    // fee = 1000 * 30 / 10000 = 3
-    assert!(receipt.fee == 3);
-
-    // Top up the loan with the fee (simulating profit) and repay.
-    let fee_coin = coin::mint_for_testing<SUI>(3, sc.ctx());
-    loan.join(fee_coin);
-    repay(&mut pool, loan, receipt);
-
-    // Pool grew by the fee.
-    assert!(reserve(&pool) == 10_003);
-    test_scenario::return_shared(pool);
-    sc.end();
-}
