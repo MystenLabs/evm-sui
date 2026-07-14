@@ -345,28 +345,6 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="c">/// dance — you can only burn coins you own and pass in.</span>
 <span class="k">public</span> <span class="k">fun</span> burn(treasury: &amp;<span class="k">mut</span> <span class="t">TreasuryCap</span>&lt;<span class="t">FUNGIBLE_TOKEN</span>&gt;, coin: coin::<span class="t">Coin</span>&lt;<span class="t">FUNGIBLE_TOKEN</span>&gt;) {
     coin::burn(treasury, coin);
-}
-
-#[test]
-<span class="k">fun</span> test_mint_and_burn() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">let</span> admin = @<span class="n">0xA</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(admin);
-    <span class="c">// Simulate publish.</span>
-    init(<span class="t">FUNGIBLE_TOKEN</span> {}, sc.ctx());
-
-    sc.next_tx(admin);
-    <span class="k">let</span> <span class="k">mut</span> treasury = sc.take_from_sender&lt;<span class="t">TreasuryCap</span>&lt;<span class="t">FUNGIBLE_TOKEN</span>&gt;&gt;();
-    mint(&amp;<span class="k">mut</span> treasury, <span class="n">1000</span>, admin, sc.ctx());
-    <span class="k">assert!</span>(coin::total_supply(&amp;treasury) == <span class="n">1000</span>);
-
-    sc.next_tx(admin);
-    <span class="k">let</span> coin = sc.take_from_sender&lt;coin::<span class="t">Coin</span>&lt;<span class="t">FUNGIBLE_TOKEN</span>&gt;&gt;();
-    burn(&amp;<span class="k">mut</span> treasury, coin);
-    <span class="k">assert!</span>(coin::total_supply(&amp;treasury) == <span class="n">0</span>);
-
-    sc.return_to_sender(treasury);
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -457,26 +435,6 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
         image_url: string::utf8(image_url),
     };
     transfer::transfer(nft, recipient);
-}
-
-<span class="c">/// Burning is just deleting the object; its `UID` must be consumed explicitly.</span>
-<span class="k">public</span> <span class="k">fun</span> burn(nft: <span class="t">Nft</span>) {
-    <span class="k">let</span> <span class="t">Nft</span> { id, name: _, image_url: _ } = nft;
-    id.delete();
-}
-
-#[test]
-<span class="k">fun</span> test_mint() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">let</span> user = @<span class="n">0xB</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(user);
-    mint(b<span class="s">&quot;Sword #1&quot;</span>, b<span class="s">&quot;https://img/1.png&quot;</span>, user, sc.ctx());
-
-    sc.next_tx(user);
-    <span class="k">let</span> nft = sc.take_from_sender&lt;<span class="t">Nft</span>&gt;();
-    <span class="k">assert!</span>(nft.name == string::utf8(b<span class="s">&quot;Sword #1&quot;</span>));
-    burn(nft);
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -599,27 +557,6 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="c">/// by `new_auth` to an address that currently holds MinterRole.</span>
 <span class="k">public</span> <span class="k">fun</span> minter_only_action(_auth: &amp;<span class="t">Auth</span>&lt;<span class="t">MinterRole</span>&gt;): u64 {
     <span class="n">7</span>
-}
-
-#[test]
-<span class="k">fun</span> test_both_patterns() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">let</span> admin = @<span class="n">0xA</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(admin);
-    init(<span class="t">ACCESS_CONTROL</span> {}, sc.ctx());
-
-    sc.next_tx(admin);
-    <span class="c">// (a) native cap</span>
-    <span class="k">let</span> cap = sc.take_from_sender&lt;<span class="t">AdminCap</span>&gt;();
-    <span class="k">assert!</span>(admin_only_action(&amp;cap) == <span class="n">42</span>);
-    sc.return_to_sender(cap);
-
-    <span class="c">// (b) OZ role</span>
-    <span class="k">let</span> registry = sc.take_shared&lt;<span class="t">AccessControl</span>&lt;<span class="t">ACCESS_CONTROL</span>&gt;&gt;();
-    <span class="k">let</span> auth = registry.new_auth&lt;_, <span class="t">MinterRole</span>&gt;(sc.ctx());
-    <span class="k">assert!</span>(minter_only_action(&amp;auth) == <span class="n">7</span>);
-    test_scenario::return_shared(registry);
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -754,21 +691,6 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="k">public</span> <span class="k">fun</span> migrate(_cap: &amp;<span class="t">AdminCap</span>, config: &amp;<span class="k">mut</span> <span class="t">Config</span>) {
     <span class="k">assert!</span>(config.version &lt; <span class="t">VERSION</span>, <span class="t">EAlreadyMigrated</span>);
     config.version = <span class="t">VERSION</span>;
-}
-
-#[test]
-<span class="k">fun</span> test_version_gate() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">let</span> admin = @<span class="n">0xA</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(admin);
-    init(sc.ctx());
-
-    sc.next_tx(admin);
-    <span class="k">let</span> <span class="k">mut</span> config = sc.take_shared&lt;<span class="t">Config</span>&gt;();
-    set_value(&amp;<span class="k">mut</span> config, <span class="n">99</span>); <span class="c">// passes: versions match</span>
-    <span class="k">assert!</span>(config.value == <span class="n">99</span>);
-    test_scenario::return_shared(config);
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -859,30 +781,6 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="c">/// package call replaces an ERC-1167 clone factory.</span>
 <span class="k">public</span> <span class="k">fun</span> create(ctx: &amp;<span class="k">mut</span> <span class="t">TxContext</span>): <span class="t">Vault</span> {
     <span class="t">Vault</span> { id: object::new(ctx), owner: ctx.sender(), balance: <span class="n">0</span> }
-}
-
-<span class="c">/// Convenience entry: create one and send it to the caller.</span>
-<span class="k">entry</span> <span class="k">fun</span> create_and_keep(ctx: &amp;<span class="k">mut</span> <span class="t">TxContext</span>) {
-    <span class="k">let</span> vault = create(ctx);
-    transfer::transfer(vault, ctx.sender());
-}
-
-<span class="k">public</span> <span class="k">fun</span> owner(vault: &amp;<span class="t">Vault</span>): address { vault.owner }
-
-#[test]
-<span class="k">fun</span> test_many_instances() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">let</span> a = @<span class="n">0xA</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(a);
-    <span class="c">// One package, three independent instances — no extra deployments.</span>
-    <span class="k">let</span> v1 = create(sc.ctx());
-    <span class="k">let</span> v2 = create(sc.ctx());
-    <span class="k">let</span> v3 = create(sc.ctx());
-    <span class="k">assert!</span>(v1.owner == a &amp;&amp; v2.owner == a &amp;&amp; v3.owner == a);
-    transfer::transfer(v1, a);
-    transfer::transfer(v2, a);
-    transfer::transfer(v3, a);
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -1008,49 +906,6 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     <span class="k">assert!</span>(ctx.sender() == creator, <span class="t">ENotCreator</span>);
     id.delete();
     item
-}
-
-#[test_only]
-<span class="k">public</span> <span class="k">struct</span> <span class="t">Gizmo</span> <span class="k">has</span> <span class="k">key</span>, <span class="k">store</span> { id: <span class="t">UID</span> }
-
-#[test]
-<span class="k">fun</span> test_swap_happy_path() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">use</span> sui::coin;
-    <span class="k">let</span> seller = @<span class="n">0xA</span>;
-    <span class="k">let</span> buyer = @<span class="n">0xB</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(seller);
-
-    <span class="k">let</span> gizmo = <span class="t">Gizmo</span> { id: object::new(sc.ctx()) };
-    create(gizmo, <span class="n">500</span>, sc.ctx());
-
-    sc.next_tx(buyer);
-    <span class="k">let</span> escrow = sc.take_shared&lt;<span class="t">Escrow</span>&lt;<span class="t">Gizmo</span>&gt;&gt;();
-    <span class="k">let</span> payment = coin::mint_for_testing&lt;<span class="t">SUI</span>&gt;(<span class="n">500</span>, sc.ctx());
-    <span class="k">let</span> item = swap(escrow, payment);
-    transfer::public_transfer(item, buyer);
-
-    <span class="c">// Seller received the 500 MIST payment.</span>
-    sc.next_tx(seller);
-    <span class="k">let</span> paid = sc.take_from_sender&lt;coin::<span class="t">Coin</span>&lt;<span class="t">SUI</span>&gt;&gt;();
-    <span class="k">assert!</span>(paid.value() == <span class="n">500</span>);
-    sc.return_to_sender(paid);
-    sc.end();
-}
-
-#[test]
-<span class="k">fun</span> test_cancel_returns_item() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">let</span> seller = @<span class="n">0xA</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(seller);
-    <span class="k">let</span> gizmo = <span class="t">Gizmo</span> { id: object::new(sc.ctx()) };
-    create(gizmo, <span class="n">500</span>, sc.ctx());
-
-    sc.next_tx(seller);
-    <span class="k">let</span> escrow = sc.take_shared&lt;<span class="t">Escrow</span>&lt;<span class="t">Gizmo</span>&gt;&gt;();
-    <span class="k">let</span> item = cancel(escrow, sc.ctx());
-    transfer::public_transfer(item, seller);
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -1157,38 +1012,6 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     wallet.released = wallet.released + releasable;
     <span class="k">let</span> payout = coin::from_balance(wallet.locked.split(releasable), ctx);
     transfer::public_transfer(payout, wallet.beneficiary);
-}
-
-<span class="k">public</span> <span class="k">fun</span> released&lt;<span class="t">C</span>&gt;(wallet: &amp;<span class="t">VestingWallet</span>&lt;<span class="t">C</span>&gt;): u64 { wallet.released }
-
-#[test]
-<span class="k">fun</span> test_linear_claim_over_time() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">use</span> sui::clock;
-    <span class="k">use</span> sui::sui::<span class="t">SUI</span>;
-    <span class="k">let</span> beneficiary = @<span class="n">0xB</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(beneficiary);
-
-    <span class="k">let</span> <span class="k">mut</span> clk = clock::create_for_testing(sc.ctx());
-    <span class="c">// 1000 tokens vesting from t=0 over 100 ms.</span>
-    <span class="k">let</span> funds = coin::mint_for_testing&lt;<span class="t">SUI</span>&gt;(<span class="n">1000</span>, sc.ctx());
-    create(funds, beneficiary, <span class="n">0</span>, <span class="n">100</span>, sc.ctx());
-
-    <span class="c">// Halfway: 500 vested.</span>
-    sc.next_tx(beneficiary);
-    <span class="k">let</span> <span class="k">mut</span> wallet = sc.take_shared&lt;<span class="t">VestingWallet</span>&lt;<span class="t">SUI</span>&gt;&gt;();
-    clk.set_for_testing(<span class="n">50</span>);
-    claim(&amp;<span class="k">mut</span> wallet, &amp;clk, sc.ctx());
-    <span class="k">assert!</span>(wallet.released == <span class="n">500</span>);
-
-    <span class="c">// Fully vested and past the end: remaining 500 released.</span>
-    clk.set_for_testing(<span class="n">200</span>);
-    claim(&amp;<span class="k">mut</span> wallet, &amp;clk, sc.ctx());
-    <span class="k">assert!</span>(wallet.released == <span class="n">1000</span>);
-
-    test_scenario::return_shared(wallet);
-    clk.destroy_for_testing();
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -1422,31 +1245,6 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     <span class="k">let</span> <span class="t">Claim</span> { id, funds } = ticket;
     id.delete();
     coin::from_balance(funds, ctx)
-}
-
-<span class="c">/// Value still locked in a claim ticket.</span>
-<span class="k">public</span> <span class="k">fun</span> value&lt;<span class="t">C</span>&gt;(ticket: &amp;<span class="t">Claim</span>&lt;<span class="t">C</span>&gt;): u64 { ticket.funds.value() }
-
-#[test]
-<span class="k">fun</span> test_airdrop_and_claim() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">use</span> sui::sui::<span class="t">SUI</span>;
-    <span class="k">let</span> funder = @<span class="n">0xA</span>;
-    <span class="k">let</span> alice = @<span class="n">0xA1</span>;
-    <span class="k">let</span> bob = @<span class="n">0xB2</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(funder);
-
-    <span class="k">let</span> funds = coin::mint_for_testing&lt;<span class="t">SUI</span>&gt;(<span class="n">1000</span>, sc.ctx());
-    airdrop(funds, <span class="k">vector</span>[alice, bob], <span class="k">vector</span>[<span class="n">300</span>, <span class="n">700</span>], sc.ctx());
-
-    <span class="c">// Alice opens her claim and gets exactly 300.</span>
-    sc.next_tx(alice);
-    <span class="k">let</span> ticket = sc.take_from_sender&lt;<span class="t">Claim</span>&lt;<span class="t">SUI</span>&gt;&gt;();
-    <span class="k">assert!</span>(value(&amp;ticket) == <span class="n">300</span>);
-    <span class="k">let</span> coin = claim(ticket, sc.ctx());
-    <span class="k">assert!</span>(coin.value() == <span class="n">300</span>);
-    transfer::public_transfer(coin, alice);
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -1693,34 +1491,6 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     <span class="k">assert!</span>(pool_id == object::id(pool), <span class="t">EWrongPool</span>);
     <span class="k">assert!</span>(payment.value() == amount + fee, <span class="t">ERepayWrongAmount</span>);
     pool.reserve.join(payment.into_balance());
-}
-
-<span class="k">public</span> <span class="k">fun</span> reserve(pool: &amp;<span class="t">Pool</span>): u64 { pool.reserve.value() }
-
-#[test]
-<span class="k">fun</span> test_borrow_repay_with_fee() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">let</span> user = @<span class="n">0xA</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(user);
-
-    <span class="k">let</span> seed = coin::mint_for_testing&lt;<span class="t">SUI</span>&gt;(<span class="n">10_000</span>, sc.ctx());
-    create(seed, sc.ctx());
-
-    sc.next_tx(user);
-    <span class="k">let</span> <span class="k">mut</span> pool = sc.take_shared&lt;<span class="t">Pool</span>&gt;();
-    <span class="k">let</span> (<span class="k">mut</span> loan, receipt) = borrow(&amp;<span class="k">mut</span> pool, <span class="n">1_000</span>, sc.ctx());
-    <span class="c">// fee = 1000 * 30 / 10000 = 3</span>
-    <span class="k">assert!</span>(receipt.fee == <span class="n">3</span>);
-
-    <span class="c">// Top up the loan with the fee (simulating profit) and repay.</span>
-    <span class="k">let</span> fee_coin = coin::mint_for_testing&lt;<span class="t">SUI</span>&gt;(<span class="n">3</span>, sc.ctx());
-    loan.join(fee_coin);
-    repay(&amp;<span class="k">mut</span> pool, loan, receipt);
-
-    <span class="c">// Pool grew by the fee.</span>
-    <span class="k">assert!</span>(reserve(&amp;pool) == <span class="n">10_003</span>);
-    test_scenario::return_shared(pool);
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -1840,14 +1610,6 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     <span class="k">let</span> result = oz_u64::mul_div(assets, total_shares, total_assets, rounding::down());
     <span class="k">assert!</span>(result.is_some(), <span class="t">EOverflow</span>);
     result.destroy_some()
-}
-
-#[test]
-<span class="k">fun</span> test_rounds_down() {
-    <span class="c">// 10 assets * 3 shares / 7 assets = 4.28... -&gt; rounds down to 4.</span>
-    <span class="k">assert!</span>(shares_for_deposit(<span class="n">10</span>, <span class="n">3</span>, <span class="n">7</span>) == <span class="n">4</span>);
-    <span class="c">// Exact division is unaffected.</span>
-    <span class="k">assert!</span>(shares_for_deposit(<span class="n">100</span>, <span class="n">5</span>, <span class="n">10</span>) == <span class="n">50</span>);
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>
@@ -1991,38 +1753,6 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
     <span class="k">assert!</span>(!proposal.executed, <span class="t">EAlreadyExecuted</span>); <span class="c">// mirrors Solidity&#x27;s require(!p.executed)</span>
     proposal.executed = <span class="k">true</span>;
     <span class="k">true</span>
-}
-
-<span class="k">public</span> <span class="k">fun</span> tally(proposal: &amp;<span class="t">Proposal</span>): (u64, u64) { (proposal.yes, proposal.no) }
-
-#[test]
-<span class="k">fun</span> test_vote_and_execute() {
-    <span class="k">use</span> sui::test_scenario;
-    <span class="k">use</span> sui::clock;
-    <span class="k">let</span> a = @<span class="n">0xA</span>;
-    <span class="k">let</span> b = @<span class="n">0xB</span>;
-    <span class="k">let</span> <span class="k">mut</span> sc = test_scenario::begin(a);
-    <span class="k">let</span> <span class="k">mut</span> clk = clock::create_for_testing(sc.ctx());
-    clk.set_for_testing(<span class="n">0</span>);
-
-    create(<span class="n">100</span>, sc.ctx());
-
-    <span class="c">// Two distinct addresses vote yes.</span>
-    sc.next_tx(a);
-    <span class="k">let</span> <span class="k">mut</span> proposal = sc.take_shared&lt;<span class="t">Proposal</span>&gt;();
-    vote(&amp;<span class="k">mut</span> proposal, <span class="k">true</span>, &amp;clk, sc.ctx());
-    sc.next_tx(b);
-    vote(&amp;<span class="k">mut</span> proposal, <span class="k">true</span>, &amp;clk, sc.ctx());
-    <span class="k">let</span> (yes, no) = tally(&amp;proposal);
-    <span class="k">assert!</span>(yes == <span class="n">2</span> &amp;&amp; no == <span class="n">0</span>);
-
-    <span class="c">// After the deadline it executes.</span>
-    clk.set_for_testing(<span class="n">150</span>);
-    <span class="k">assert!</span>(execute(&amp;<span class="k">mut</span> proposal, &amp;clk));
-
-    test_scenario::return_shared(proposal);
-    clk.destroy_for_testing();
-    sc.end();
 }</code></pre></div>
   </div>
   <div class="uniwrap" aria-hidden="true"></div>

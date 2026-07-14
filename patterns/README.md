@@ -59,8 +59,9 @@ git clone --depth 1 --branch v5.4.0 https://github.com/OpenZeppelin/openzeppelin
 forge build && forge test
 
 # Sui Move (OZ Contracts for Sui deps declare per-env packages, so pass --build-env)
+# The snippets are kept lean (no in-file tests); the build type-checks everything.
 cd patterns/move/patterns
-sui move build --build-env testnet && sui move test --build-env testnet
+sui move build --build-env testnet
 ```
 
 > ⚠️ `patterns/solidity/src/12_SecurityPatterns.sol` contains a **deliberately

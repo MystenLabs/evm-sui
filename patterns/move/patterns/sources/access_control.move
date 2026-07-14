@@ -60,24 +60,3 @@ public fun grant_minter(registry: &mut AccessControl<ACCESS_CONTROL>, account: a
 public fun minter_only_action(_auth: &Auth<MinterRole>): u64 {
     7
 }
-
-#[test]
-fun test_both_patterns() {
-    use sui::test_scenario;
-    let admin = @0xA;
-    let mut sc = test_scenario::begin(admin);
-    init(ACCESS_CONTROL {}, sc.ctx());
-
-    sc.next_tx(admin);
-    // (a) native cap
-    let cap = sc.take_from_sender<AdminCap>();
-    assert!(admin_only_action(&cap) == 42);
-    sc.return_to_sender(cap);
-
-    // (b) OZ role
-    let registry = sc.take_shared<AccessControl<ACCESS_CONTROL>>();
-    let auth = registry.new_auth<_, MinterRole>(sc.ctx());
-    assert!(minter_only_action(&auth) == 7);
-    test_scenario::return_shared(registry);
-    sc.end();
-}

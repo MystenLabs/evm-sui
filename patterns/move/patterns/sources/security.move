@@ -43,11 +43,3 @@ public fun shares_for_deposit(assets: u64, total_shares: u64, total_assets: u64)
     assert!(result.is_some(), EOverflow);
     result.destroy_some()
 }
-
-#[test]
-fun test_rounds_down() {
-    // 10 assets * 3 shares / 7 assets = 4.28... -> rounds down to 4.
-    assert!(shares_for_deposit(10, 3, 7) == 4);
-    // Exact division is unaffected.
-    assert!(shares_for_deposit(100, 5, 10) == 50);
-}

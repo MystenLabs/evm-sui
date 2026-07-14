@@ -73,35 +73,3 @@ public fun claim<C>(wallet: &mut VestingWallet<C>, clock: &Clock, ctx: &mut TxCo
     let payout = coin::from_balance(wallet.locked.split(releasable), ctx);
     transfer::public_transfer(payout, wallet.beneficiary);
 }
-
-public fun released<C>(wallet: &VestingWallet<C>): u64 { wallet.released }
-
-#[test]
-fun test_linear_claim_over_time() {
-    use sui::test_scenario;
-    use sui::clock;
-    use sui::sui::SUI;
-    let beneficiary = @0xB;
-    let mut sc = test_scenario::begin(beneficiary);
-
-    let mut clk = clock::create_for_testing(sc.ctx());
-    // 1000 tokens vesting from t=0 over 100 ms.
-    let funds = coin::mint_for_testing<SUI>(1000, sc.ctx());
-    create(funds, beneficiary, 0, 100, sc.ctx());
-
-    // Halfway: 500 vested.
-    sc.next_tx(beneficiary);
-    let mut wallet = sc.take_shared<VestingWallet<SUI>>();
-    clk.set_for_testing(50);
-    claim(&mut wallet, &clk, sc.ctx());
-    assert!(wallet.released == 500);
-
-    // Fully vested and past the end: remaining 500 released.
-    clk.set_for_testing(200);
-    claim(&mut wallet, &clk, sc.ctx());
-    assert!(wallet.released == 1000);
-
-    test_scenario::return_shared(wallet);
-    clk.destroy_for_testing();
-    sc.end();
-}

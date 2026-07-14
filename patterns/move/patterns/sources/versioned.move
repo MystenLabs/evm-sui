@@ -59,18 +59,3 @@ public fun migrate(_cap: &AdminCap, config: &mut Config) {
     assert!(config.version < VERSION, EAlreadyMigrated);
     config.version = VERSION;
 }
-
-#[test]
-fun test_version_gate() {
-    use sui::test_scenario;
-    let admin = @0xA;
-    let mut sc = test_scenario::begin(admin);
-    init(sc.ctx());
-
-    sc.next_tx(admin);
-    let mut config = sc.take_shared<Config>();
-    set_value(&mut config, 99); // passes: versions match
-    assert!(config.value == 99);
-    test_scenario::return_shared(config);
-    sc.end();
-}

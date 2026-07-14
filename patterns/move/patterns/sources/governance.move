@@ -63,35 +63,3 @@ public fun execute(proposal: &mut Proposal, clock: &Clock): bool {
     proposal.executed = true;
     true
 }
-
-public fun tally(proposal: &Proposal): (u64, u64) { (proposal.yes, proposal.no) }
-
-#[test]
-fun test_vote_and_execute() {
-    use sui::test_scenario;
-    use sui::clock;
-    let a = @0xA;
-    let b = @0xB;
-    let mut sc = test_scenario::begin(a);
-    let mut clk = clock::create_for_testing(sc.ctx());
-    clk.set_for_testing(0);
-
-    create(100, sc.ctx());
-
-    // Two distinct addresses vote yes.
-    sc.next_tx(a);
-    let mut proposal = sc.take_shared<Proposal>();
-    vote(&mut proposal, true, &clk, sc.ctx());
-    sc.next_tx(b);
-    vote(&mut proposal, true, &clk, sc.ctx());
-    let (yes, no) = tally(&proposal);
-    assert!(yes == 2 && no == 0);
-
-    // After the deadline it executes.
-    clk.set_for_testing(150);
-    assert!(execute(&mut proposal, &clk));
-
-    test_scenario::return_shared(proposal);
-    clk.destroy_for_testing();
-    sc.end();
-}

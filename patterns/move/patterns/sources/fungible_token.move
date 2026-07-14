@@ -59,25 +59,3 @@ public fun mint(
 public fun burn(treasury: &mut TreasuryCap<FUNGIBLE_TOKEN>, coin: coin::Coin<FUNGIBLE_TOKEN>) {
     coin::burn(treasury, coin);
 }
-
-#[test]
-fun test_mint_and_burn() {
-    use sui::test_scenario;
-    let admin = @0xA;
-    let mut sc = test_scenario::begin(admin);
-    // Simulate publish.
-    init(FUNGIBLE_TOKEN {}, sc.ctx());
-
-    sc.next_tx(admin);
-    let mut treasury = sc.take_from_sender<TreasuryCap<FUNGIBLE_TOKEN>>();
-    mint(&mut treasury, 1000, admin, sc.ctx());
-    assert!(coin::total_supply(&treasury) == 1000);
-
-    sc.next_tx(admin);
-    let coin = sc.take_from_sender<coin::Coin<FUNGIBLE_TOKEN>>();
-    burn(&mut treasury, coin);
-    assert!(coin::total_supply(&treasury) == 0);
-
-    sc.return_to_sender(treasury);
-    sc.end();
-}

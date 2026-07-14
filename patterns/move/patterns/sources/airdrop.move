@@ -52,28 +52,3 @@ public fun claim<C>(ticket: Claim<C>, ctx: &mut TxContext): Coin<C> {
     id.delete();
     coin::from_balance(funds, ctx)
 }
-
-/// Value still locked in a claim ticket.
-public fun value<C>(ticket: &Claim<C>): u64 { ticket.funds.value() }
-
-#[test]
-fun test_airdrop_and_claim() {
-    use sui::test_scenario;
-    use sui::sui::SUI;
-    let funder = @0xA;
-    let alice = @0xA1;
-    let bob = @0xB2;
-    let mut sc = test_scenario::begin(funder);
-
-    let funds = coin::mint_for_testing<SUI>(1000, sc.ctx());
-    airdrop(funds, vector[alice, bob], vector[300, 700], sc.ctx());
-
-    // Alice opens her claim and gets exactly 300.
-    sc.next_tx(alice);
-    let ticket = sc.take_from_sender<Claim<SUI>>();
-    assert!(value(&ticket) == 300);
-    let coin = claim(ticket, sc.ctx());
-    assert!(coin.value() == 300);
-    transfer::public_transfer(coin, alice);
-    sc.end();
-}

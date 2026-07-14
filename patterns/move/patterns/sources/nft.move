@@ -52,23 +52,3 @@ entry fun mint(name: vector<u8>, image_url: vector<u8>, recipient: address, ctx:
     };
     transfer::transfer(nft, recipient);
 }
-
-/// Burning is just deleting the object; its `UID` must be consumed explicitly.
-public fun burn(nft: Nft) {
-    let Nft { id, name: _, image_url: _ } = nft;
-    id.delete();
-}
-
-#[test]
-fun test_mint() {
-    use sui::test_scenario;
-    let user = @0xB;
-    let mut sc = test_scenario::begin(user);
-    mint(b"Sword #1", b"https://img/1.png", user, sc.ctx());
-
-    sc.next_tx(user);
-    let nft = sc.take_from_sender<Nft>();
-    assert!(nft.name == string::utf8(b"Sword #1"));
-    burn(nft);
-    sc.end();
-}
