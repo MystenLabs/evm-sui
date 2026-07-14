@@ -43,7 +43,7 @@ LANG = {".sol": "solidity", ".move": "move", ".sh": "bash", ".ts": "typescript"}
 
 KEYWORDS = {
     "solidity": "pragma solidity contract interface library abstract is constructor function modifier event error struct enum mapping returns return emit revert require assert if else for while do break continue new delete import using memory storage calldata public external internal private view pure payable virtual override immutable constant indexed anonymous unchecked try catch address bool string bytes uint int uint8 uint16 uint32 uint64 uint128 uint256 int256 bytes4 bytes32 true false",
-    "move": "module use public entry fun native struct enum has key store copy drop const let mut if else while loop match return abort assert! vector as phantom friend macro fun spec true false",
+    "move": "module use public entry fun native struct enum has key store copy drop const let mut if else while loop match return abort vector as phantom friend macro spec true false",
     "bash": "if then elif else fi for in do done while case esac function echo export local return exit set read shift",
     "typescript": "import export from const let var function return async await new class interface type extends implements if else for while switch case break continue throw try catch finally typeof instanceof of in true false null undefined void this",
 }
@@ -81,6 +81,7 @@ def highlight(code, lang):
             if end == -1:
                 out_lines.append(f'<span class="c">{esc}</span>')
                 continue
+            in_block = False
             head, esc = esc[: end + 2], esc[end + 2:]
             prefix = f'<span class="c">{head}</span>'
         else:
