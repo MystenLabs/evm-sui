@@ -38,6 +38,14 @@ const EOverflow: vector<u8> = b"mul_div result does not fit in u64";
 /// residue stays with the pool, never in the user's favor. Overflow of the
 /// intermediate product is handled by OZ (widened internally); a result too big
 /// for `u64` returns `none`, which we turn into an explicit abort.
+///
+/// Teaching scope: this isolates rounding DIRECTION, which is necessary but not
+/// sufficient for a real ERC-4626 vault. A production vault must also handle the
+/// first deposit (`total_assets == 0` divides by zero and aborts here) and the
+/// inflation/donation attack — where the first depositor mints one share, then
+/// donates assets to skew the ratio so later depositors round to zero shares.
+/// Defenses (seeding initial shares, virtual shares/assets offsets) live outside
+/// this snippet.
 public fun shares_for_deposit(assets: u64, total_shares: u64, total_assets: u64): u64 {
     let result = oz_u64::mul_div(assets, total_shares, total_assets, rounding::down());
     assert!(result.is_some(), EOverflow);

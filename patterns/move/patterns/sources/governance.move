@@ -8,6 +8,13 @@
 /// `VecSet<address>` of voters held right in the object, and the deadline is
 /// read from the shared `Clock`. Execution simply checks the clock and tally —
 /// the same logic, minus the storage-slot bookkeeping.
+///
+/// Teaching caveat: this is one-address-one-vote with no stake weighting. The
+/// `VecSet` only stops the SAME address voting twice — it does nothing against
+/// sybils, so an attacker votes from many fresh addresses for free, and `voted`
+/// grows unbounded inside one object. Production governance weights votes by a
+/// token-balance snapshot (the Solidity pair's `ERC20Votes` checkpoints) to make
+/// both sybil and flash-loan manipulation ineffective.
 module patterns::governance;
 
 use sui::clock::Clock;

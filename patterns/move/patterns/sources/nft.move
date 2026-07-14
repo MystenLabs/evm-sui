@@ -9,6 +9,12 @@
 /// object recorded by the runtime, not a row we maintain. `display::Display`
 /// tells wallets/explorers how to render every object of this type at once,
 /// replacing per-token `tokenURI` strings.
+///
+/// Mint authority follows the SAME capability rule as the fungible-token snippet:
+/// the Solidity pair gates `mint` with `onlyOwner`, and here that gate is
+/// possession of a `MinterCap` object — the NFT analogue of `TreasuryCap`. Sui
+/// removes the owner *mapping*, not the mint *authorization*; leaving `mint`
+/// open would let anyone inflate the collection.
 module patterns::nft;
 
 use std::string::{Self, String};
@@ -23,6 +29,12 @@ public struct Nft has key, store {
     image_url: String,
 }
 
+/// Mint authority. Holding this object is the entire authorization proof for
+/// `mint` — the capability equivalent of ERC-721's `onlyOwner` gate, mirroring
+/// `TreasuryCap` in the fungible-token snippet. Transfer it to hand over minting
+/// rights; there is no owner address to compare.
+public struct MinterCap has key, store { id: UID }
+
 /// OTW so we can claim the `Publisher` needed to configure Display.
 public struct NFT has drop {}
 
@@ -36,15 +48,25 @@ fun init(otw: NFT, ctx: &mut TxContext) {
     disp.add(string::utf8(b"image_url"), string::utf8(b"{image_url}"));
     disp.update_version();
 
+    // The publisher receives sole minting authority.
+    transfer::public_transfer(MinterCap { id: object::new(ctx) }, ctx.sender());
     transfer::public_transfer(publisher, ctx.sender());
     transfer::public_transfer(disp, ctx.sender());
 }
 
 /// Mint = allocate a fresh object and transfer it. No global counter, no
-/// `_mint` bookkeeping — the object's `UID` is its unique id. Declared `entry`
-/// (not `public`) so it is PTB-callable but not composable from other packages —
-/// the idiomatic form for a leaf mint.
-entry fun mint(name: vector<u8>, image_url: vector<u8>, recipient: address, ctx: &mut TxContext) {
+/// `_mint` bookkeeping — the object's `UID` is its unique id. The `&MinterCap`
+/// parameter is the guard: you cannot call this without holding the cap, and the
+/// compiler enforces it — no `require`, no sender check. Declared `entry` (not
+/// `public`) so it is PTB-callable but not composable from other packages — the
+/// idiomatic form for a leaf mint.
+entry fun mint(
+    _cap: &MinterCap,
+    name: vector<u8>,
+    image_url: vector<u8>,
+    recipient: address,
+    ctx: &mut TxContext,
+) {
     let nft = Nft {
         id: object::new(ctx),
         name: string::utf8(name),
