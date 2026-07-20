@@ -43,7 +43,7 @@ fun init(otw: FUNGIBLE_TOKEN, ctx: &mut TxContext) {
     // One follow-up tx (anyone can send it) promotes the Currency<T> to its
     // permanent registry address:
     //   sui client ptb --move-call 0x2::coin_registry::finalize_registration \
-    //     "<@0xc>" "<Currency<T> id>" --type-args <pkg>::fungible_token::FUNGIBLE_TOKEN
+    //     "<PACKAGE_ID::fungible_token::FUNGIBLE_TOKEN>" @0xc @CURRENCY_OBJECT_ID
 }
 
 /// `mint` is gated by *ownership of the TreasuryCap*, not a role check. Whoever

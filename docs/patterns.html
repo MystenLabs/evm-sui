@@ -270,7 +270,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="c">///         150k+ verified deployments). All balances live in ONE contract as a</span>
 <span class="c">///         `mapping(address =&gt; uint256)`; holders never custody anything.</span>
 <span class="c">/// @dev Sui counterpart: `patterns/move/patterns/sources/fungible_token.move` —</span>
-<span class="c">///      `coin_registry::new_currency_with_otw` mints `Coin&lt;T&gt;` objects that holders own</span>
+<span class="c">///      `coin_registry::new_currency_with_otw` creates a currency whose `Coin&lt;T&gt;` objects holders own</span>
 <span class="c">///      directly; there is no balances mapping to read or corrupt.</span>
 <span class="k">contract</span> <span class="t">PatternToken</span> <span class="k">is</span> <span class="t">ERC20</span>, <span class="t">Ownable</span> {
     <span class="k">constructor</span>(<span class="k">address</span> admin) <span class="t">ERC20</span>(<span class="s">&quot;Pattern Token&quot;</span>, <span class="s">&quot;PTRN&quot;</span>) <span class="t">Ownable</span>(admin) {}
@@ -330,7 +330,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     <span class="c">// One follow-up tx (anyone can send it) promotes the Currency&lt;T&gt; to its</span>
     <span class="c">// permanent registry address:</span>
     <span class="c">//   sui client ptb --move-call 0x2::coin_registry::finalize_registration \</span>
-    <span class="c">//     "&lt;@0xc&gt;" "&lt;Currency&lt;T&gt; id&gt;" --type-args &lt;pkg&gt;::fungible_token::FUNGIBLE_TOKEN</span>
+    <span class="c">//     &quot;&lt;PACKAGE_ID::fungible_token::FUNGIBLE_TOKEN&gt;&quot; @0xc @CURRENCY_OBJECT_ID</span>
 }
 
 <span class="c">/// `mint` is gated by *ownership of the TreasuryCap*, not a role check. Whoever</span>
