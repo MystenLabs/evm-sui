@@ -270,7 +270,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="c">///         150k+ verified deployments). All balances live in ONE contract as a</span>
 <span class="c">///         `mapping(address =&gt; uint256)`; holders never custody anything.</span>
 <span class="c">/// @dev Sui counterpart: `patterns/move/patterns/sources/fungible_token.move` —</span>
-<span class="c">///      `coin::create_currency` mints `Coin&lt;T&gt;` objects that holders own</span>
+<span class="c">///      `coin_registry::new_currency_with_otw` mints `Coin&lt;T&gt;` objects that holders own</span>
 <span class="c">///      directly; there is no balances mapping to read or corrupt.</span>
 <span class="k">contract</span> <span class="t">PatternToken</span> <span class="k">is</span> <span class="t">ERC20</span>, <span class="t">Ownable</span> {
     <span class="k">constructor</span>(<span class="k">address</span> admin) <span class="t">ERC20</span>(<span class="s">&quot;Pattern Token&quot;</span>, <span class="s">&quot;PTRN&quot;</span>) <span class="t">Ownable</span>(admin) {}
@@ -299,34 +299,38 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="k">module</span> patterns::fungible_token;
 
 <span class="k">use</span> sui::coin::{<span class="t">Self</span>, <span class="t">TreasuryCap</span>};
+<span class="k">use</span> sui::coin_registry;
 
 <span class="c">/// The One-Time Witness: a struct named exactly like the module, uppercased.</span>
 <span class="c">/// The Sui VM instantiates exactly one value of this type at publish and hands</span>
 <span class="c">/// it to `init`, guaranteeing the currency is registered once and only once.</span>
 <span class="k">public</span> <span class="k">struct</span> <span class="t">FUNGIBLE_TOKEN</span> <span class="k">has</span> <span class="k">drop</span> {}
 
-<span class="c">/// Runs once at publish. `create_currency` consumes the OTW and returns the</span>
-<span class="c">/// mint/burn authority plus the immutable metadata object.</span>
-<span class="c">///</span>
-<span class="c">/// Note: the newer Currency Standard (`sui::coin_registry::new_currency_with_otw`)</span>
-<span class="c">/// supersedes `coin::create_currency`; we use the classic call here because it is</span>
-<span class="c">/// the one Solidity devs meet first. `#[allow(deprecated_usage)]` keeps the lesson</span>
-<span class="c">/// noise-free.</span>
-#[allow(deprecated_usage)]
-<span class="k">fun</span> init(witness: <span class="t">FUNGIBLE_TOKEN</span>, ctx: &amp;<span class="k">mut</span> <span class="t">TxContext</span>) {
-    <span class="k">let</span> (treasury, metadata) = coin::create_currency(
-        witness,
+<span class="c">/// Runs once at publish. The Currency Standard (`sui::coin_registry`) replaced</span>
+<span class="c">/// the deprecated `coin::create_currency`: instead of a frozen metadata object,</span>
+<span class="c">/// the currency lives in a system-wide registry (shared object `0xc`) and</span>
+<span class="c">/// metadata updates are gated by a `MetadataCap` — a capability, same rule as</span>
+<span class="c">/// minting.</span>
+<span class="k">fun</span> init(otw: <span class="t">FUNGIBLE_TOKEN</span>, ctx: &amp;<span class="k">mut</span> <span class="t">TxContext</span>) {
+    <span class="k">let</span> (initializer, treasury) = coin_registry::new_currency_with_otw(
+        otw,
         <span class="n">6</span>, <span class="c">// decimals</span>
-        b<span class="s">&quot;GOLD&quot;</span>,
-        b<span class="s">&quot;Gold Token&quot;</span>,
-        b<span class="s">&quot;An ERC-20-style fungible token on Sui&quot;</span>,
-        option::none(),
+        b<span class="s">&quot;GOLD&quot;</span>.to_string(),
+        b<span class="s">&quot;Gold Token&quot;</span>.to_string(),
+        b<span class="s">&quot;An ERC-20-style fungible token on Sui&quot;</span>.to_string(),
+        b<span class="s">&quot;https://example.com/gold.svg&quot;</span>.to_string(), <span class="c">// icon URL</span>
         ctx,
     );
-    <span class="c">// Metadata is frozen (read-only forever); the TreasuryCap goes to the</span>
-    <span class="c">// publisher, who now holds the sole right to mint and burn.</span>
-    transfer::public_freeze_object(metadata);
+    <span class="c">// `initializer` is a hot potato: `finalize` MUST consume it, yielding the</span>
+    <span class="c">// MetadataCap. Prefer immutable metadata (the old freeze behavior)? Call</span>
+    <span class="c">// `initializer.finalize_and_delete_metadata_cap(ctx)` instead.</span>
+    <span class="k">let</span> metadata_cap = initializer.finalize(ctx);
     transfer::public_transfer(treasury, ctx.sender());
+    transfer::public_transfer(metadata_cap, ctx.sender());
+    <span class="c">// One follow-up tx (anyone can send it) promotes the Currency&lt;T&gt; to its</span>
+    <span class="c">// permanent registry address:</span>
+    <span class="c">//   sui client ptb --move-call 0x2::coin_registry::finalize_registration \</span>
+    <span class="c">//     "&lt;@0xc&gt;" "&lt;Currency&lt;T&gt; id&gt;" --type-args &lt;pkg&gt;::fungible_token::FUNGIBLE_TOKEN</span>
 }
 
 <span class="c">/// `mint` is gated by *ownership of the TreasuryCap*, not a role check. Whoever</span>

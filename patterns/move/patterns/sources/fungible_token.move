@@ -12,34 +12,38 @@
 module patterns::fungible_token;
 
 use sui::coin::{Self, TreasuryCap};
+use sui::coin_registry;
 
 /// The One-Time Witness: a struct named exactly like the module, uppercased.
 /// The Sui VM instantiates exactly one value of this type at publish and hands
 /// it to `init`, guaranteeing the currency is registered once and only once.
 public struct FUNGIBLE_TOKEN has drop {}
 
-/// Runs once at publish. `create_currency` consumes the OTW and returns the
-/// mint/burn authority plus the immutable metadata object.
-///
-/// Note: the newer Currency Standard (`sui::coin_registry::new_currency_with_otw`)
-/// supersedes `coin::create_currency`; we use the classic call here because it is
-/// the one Solidity devs meet first. `#[allow(deprecated_usage)]` keeps the lesson
-/// noise-free.
-#[allow(deprecated_usage)]
-fun init(witness: FUNGIBLE_TOKEN, ctx: &mut TxContext) {
-    let (treasury, metadata) = coin::create_currency(
-        witness,
+/// Runs once at publish. The Currency Standard (`sui::coin_registry`) replaced
+/// the deprecated `coin::create_currency`: instead of a frozen metadata object,
+/// the currency lives in a system-wide registry (shared object `0xc`) and
+/// metadata updates are gated by a `MetadataCap` — a capability, same rule as
+/// minting.
+fun init(otw: FUNGIBLE_TOKEN, ctx: &mut TxContext) {
+    let (initializer, treasury) = coin_registry::new_currency_with_otw(
+        otw,
         6, // decimals
-        b"GOLD",
-        b"Gold Token",
-        b"An ERC-20-style fungible token on Sui",
-        option::none(),
+        b"GOLD".to_string(),
+        b"Gold Token".to_string(),
+        b"An ERC-20-style fungible token on Sui".to_string(),
+        b"https://example.com/gold.svg".to_string(), // icon URL
         ctx,
     );
-    // Metadata is frozen (read-only forever); the TreasuryCap goes to the
-    // publisher, who now holds the sole right to mint and burn.
-    transfer::public_freeze_object(metadata);
+    // `initializer` is a hot potato: `finalize` MUST consume it, yielding the
+    // MetadataCap. Prefer immutable metadata (the old freeze behavior)? Call
+    // `initializer.finalize_and_delete_metadata_cap(ctx)` instead.
+    let metadata_cap = initializer.finalize(ctx);
     transfer::public_transfer(treasury, ctx.sender());
+    transfer::public_transfer(metadata_cap, ctx.sender());
+    // One follow-up tx (anyone can send it) promotes the Currency<T> to its
+    // permanent registry address:
+    //   sui client ptb --move-call 0x2::coin_registry::finalize_registration \
+    //     "<@0xc>" "<Currency<T> id>" --type-args <pkg>::fungible_token::FUNGIBLE_TOKEN
 }
 
 /// `mint` is gated by *ownership of the TreasuryCap*, not a role check. Whoever
