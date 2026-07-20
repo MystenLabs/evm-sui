@@ -9,7 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 ///         150k+ verified deployments). All balances live in ONE contract as a
 ///         `mapping(address => uint256)`; holders never custody anything.
 /// @dev Sui counterpart: `patterns/move/patterns/sources/fungible_token.move` —
-///      `coin::create_currency` mints `Coin<T>` objects that holders own
+///      `coin_registry::new_currency_with_otw` creates a currency whose `Coin<T>` objects holders own
 ///      directly; there is no balances mapping to read or corrupt.
 contract PatternToken is ERC20, Ownable {
     constructor(address admin) ERC20("Pattern Token", "PTRN") Ownable(admin) {}

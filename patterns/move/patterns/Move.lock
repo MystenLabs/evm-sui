@@ -4,6 +4,36 @@
 [move]
 version = 4
 
+[pinned.mainnet.MoveStdlib]
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "85400e2bd37b490fcd057776e700d3fdca643396" }
+use_environment = "mainnet"
+manifest_digest = "C4FE4C91DE74CBF223B2E380AE40F592177D21870DC2D7EB6227D2D694E05363"
+deps = {}
+
+[pinned.mainnet.Sui]
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "85400e2bd37b490fcd057776e700d3fdca643396" }
+use_environment = "mainnet"
+manifest_digest = "CD547CB1ACCE0880C835DAED2D8FFCB91D56C833AE5240D3AA5B918398263195"
+deps = { MoveStdlib = "MoveStdlib" }
+
+[pinned.mainnet.openzeppelin_access]
+source = { git = "https://github.com/OpenZeppelin/contracts-sui.git", subdir = "contracts/access", rev = "d9da38c54b0b8cb0459358d6c566f139a8381f9e" }
+use_environment = "mainnet"
+manifest_digest = "E41BBD67BE8940D26C79D78B028477EF5B33BA217A1282C78ACB344CF8A5ECF6"
+deps = { std = "MoveStdlib", sui = "Sui" }
+
+[pinned.mainnet.openzeppelin_math]
+source = { git = "https://github.com/OpenZeppelin/contracts-sui.git", subdir = "math/core", rev = "d9da38c54b0b8cb0459358d6c566f139a8381f9e" }
+use_environment = "mainnet"
+manifest_digest = "E41BBD67BE8940D26C79D78B028477EF5B33BA217A1282C78ACB344CF8A5ECF6"
+deps = { std = "MoveStdlib", sui = "Sui" }
+
+[pinned.mainnet.patterns]
+source = { root = true }
+use_environment = "mainnet"
+manifest_digest = "1F1206B453B3BE3A38FDAB81A4974EDC412972E899656DB8E95220947ADBDFBF"
+deps = { openzeppelin_access = "openzeppelin_access", openzeppelin_math = "openzeppelin_math", std = "MoveStdlib", sui = "Sui" }
+
 [pinned.testnet.MoveStdlib]
 source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "85400e2bd37b490fcd057776e700d3fdca643396" }
 use_environment = "testnet"
