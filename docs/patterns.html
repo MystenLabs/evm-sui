@@ -266,8 +266,9 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="k">import</span> {<span class="t">Ownable</span>} from <span class="s">&quot;@openzeppelin/contracts/access/Ownable.sol&quot;</span>;
 
 <span class="c">/// @title 01 — Fungible token (ERC-20)</span>
-<span class="c">/// @notice The single most deployed pattern on EVM chains (OpenZeppelin Tokens:</span>
-<span class="c">///         150k+ verified deployments). All balances live in ONE contract as a</span>
+<span class="c">/// @notice One of the most deployed patterns on EVM chains — OpenZeppelin&#x27;s</span>
+<span class="c">///         ERC-20 is among the most widely reused contracts in the ecosystem.</span>
+<span class="c">///         All balances live in ONE contract as a</span>
 <span class="c">///         `mapping(address =&gt; uint256)`; holders never custody anything.</span>
 <span class="c">/// @dev Sui counterpart: `patterns/move/patterns/sources/fungible_token.move` —</span>
 <span class="c">///      `coin_registry::new_currency_with_otw` creates a currency whose `Coin&lt;T&gt;` objects holders own</span>
@@ -607,7 +608,8 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="c">///         `delegatecall`s an implementation, so code can change while state</span>
 <span class="c">///         stays put. The cost: constructors don&#x27;t run (initializers instead),</span>
 <span class="c">///         storage layout is append-only forever, and a storage collision</span>
-<span class="c">///         bricks the contract. 98.24% of upgradeable proxies never upgrade.</span>
+<span class="c">///         bricks the contract — and in practice the vast majority of</span>
+<span class="c">///         upgradeable proxies are never actually upgraded.</span>
 <span class="c">/// @dev Sui counterpart: `versioned.move` — package upgrades are NATIVE and</span>
 <span class="c">///      `UpgradeCap`-mediated; the chain enforces layout compatibility, no</span>
 <span class="c">///      delegatecall exists. Only shared-object versioning remains your job.</span>

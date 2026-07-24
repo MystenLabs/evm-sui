@@ -5,8 +5,9 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title 01 — Fungible token (ERC-20)
-/// @notice The single most deployed pattern on EVM chains (OpenZeppelin Tokens:
-///         150k+ verified deployments). All balances live in ONE contract as a
+/// @notice One of the most deployed patterns on EVM chains — OpenZeppelin's
+///         ERC-20 is among the most widely reused contracts in the ecosystem.
+///         All balances live in ONE contract as a
 ///         `mapping(address => uint256)`; holders never custody anything.
 /// @dev Sui counterpart: `patterns/move/patterns/sources/fungible_token.move` —
 ///      `coin_registry::new_currency_with_otw` creates a currency whose `Coin<T>` objects holders own

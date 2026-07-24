@@ -9,7 +9,8 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 ///         `delegatecall`s an implementation, so code can change while state
 ///         stays put. The cost: constructors don't run (initializers instead),
 ///         storage layout is append-only forever, and a storage collision
-///         bricks the contract. 98.24% of upgradeable proxies never upgrade.
+///         bricks the contract — and in practice the vast majority of
+///         upgradeable proxies are never actually upgraded.
 /// @dev Sui counterpart: `versioned.move` — package upgrades are NATIVE and
 ///      `UpgradeCap`-mediated; the chain enforces layout compatibility, no
 ///      delegatecall exists. Only shared-object versioning remains your job.
