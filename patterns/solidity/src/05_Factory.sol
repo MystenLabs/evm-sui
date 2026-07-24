@@ -5,11 +5,12 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /// @title 05 — Factory + minimal-proxy clones (ERC-1167)
-/// @notice The #1 operational pattern by volume: factories have minted >90% of
-///         all contracts on Ethereum and Polygon since 2020. Because deploying bytecode is
-///         expensive, factories stamp out 45-byte ERC-1167 clones that
-///         delegatecall one shared implementation (Uniswap pairs, Safe
-///         wallets, NFT drops all work this way).
+/// @notice One of the highest-volume deployment patterns on EVM: because paying
+///         full deployment cost per instance is expensive, a factory stamps out
+///         45-byte ERC-1167 clones that delegatecall one shared implementation
+///         (Safe wallets and many NFT drops work this way). The
+///         clone is deployed with CREATE — or CREATE2 when the address must be
+///         known in advance; ERC-1167 is just the proxy bytecode, opcode-agnostic.
 /// @dev Sui counterpart: `no_factory.move` — the entire pattern evaporates.
 ///      One published package serves unlimited instances; "deploying an
 ///      account" is just creating an object. No clones, no delegatecall.

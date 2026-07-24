@@ -1,8 +1,11 @@
 /// Factory / ERC-1167 minimal-proxy equivalent.
 ///
 /// Solidity habit: to give every user their own contract instance you deploy a
-/// factory that `CREATE`s (or `CREATE2` clones via ERC-1167) a fresh contract
-/// per instance. Each clone costs a deployment and lives at its own address.
+/// factory that `CREATE`s a fresh contract per instance — usually a 45-byte
+/// ERC-1167 minimal proxy that delegatecalls a shared implementation (switch to
+/// `CREATE2` when you want the address computable in advance). ERC-1167 is the
+/// proxy bytecode, not an opcode. Each clone still costs a deployment and lives
+/// at its own address.
 ///
 /// Sui idiom: there are no per-instance deployments. One published package is
 /// the code for *unlimited* instances; an "instance" is just an object you

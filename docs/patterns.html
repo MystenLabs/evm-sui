@@ -726,7 +726,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
   <header class="phead">
     <span class="pnum">pattern 05/13</span>
     <h2>Factory / clones</h2>
-    <p class="blurb">Factories mint &gt;90% of all EVM contracts (Ethereum + Polygon since 2020); the cheapest ones stamp out 45-byte ERC-1167 clones. On Sui the pattern vanishes: one package serves unlimited object instances.</p>
+    <p class="blurb">Factories are one of the highest-volume deployment patterns on EVM; the cheapest stamp out 45-byte ERC-1167 clones that delegatecall a shared implementation. On Sui the pattern vanishes: one package serves unlimited object instances.</p>
     
   </header>
   <div class="pair">
@@ -737,11 +737,12 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="k">import</span> {<span class="t">Initializable</span>} from <span class="s">&quot;@openzeppelin/contracts/proxy/utils/Initializable.sol&quot;</span>;
 
 <span class="c">/// @title 05 — Factory + minimal-proxy clones (ERC-1167)</span>
-<span class="c">/// @notice The #1 operational pattern by volume: factories have minted &gt;90% of</span>
-<span class="c">///         all contracts on Ethereum and Polygon since 2020. Because deploying bytecode is</span>
-<span class="c">///         expensive, factories stamp out 45-byte ERC-1167 clones that</span>
-<span class="c">///         delegatecall one shared implementation (Uniswap pairs, Safe</span>
-<span class="c">///         wallets, NFT drops all work this way).</span>
+<span class="c">/// @notice One of the highest-volume deployment patterns on EVM: because paying</span>
+<span class="c">///         full deployment cost per instance is expensive, a factory stamps out</span>
+<span class="c">///         45-byte ERC-1167 clones that delegatecall one shared implementation</span>
+<span class="c">///         (Safe wallets and many NFT drops work this way). The</span>
+<span class="c">///         clone is deployed with CREATE — or CREATE2 when the address must be</span>
+<span class="c">///         known in advance; ERC-1167 is just the proxy bytecode, opcode-agnostic.</span>
 <span class="c">/// @dev Sui counterpart: `no_factory.move` — the entire pattern evaporates.</span>
 <span class="c">///      One published package serves unlimited instances; &quot;deploying an</span>
 <span class="c">///      account&quot; is just creating an object. No clones, no delegatecall.</span>
@@ -786,8 +787,11 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
     <div class="pane move" data-lang="move"><div class="codehead"><span class="fname">move/patterns/sources/no_factory.move</span><span class="lang">move</span></div><pre class="code" tabindex="0"><code><span class="c">/// Factory / ERC-1167 minimal-proxy equivalent.</span>
 <span class="c">///</span>
 <span class="c">/// Solidity habit: to give every user their own contract instance you deploy a</span>
-<span class="c">/// factory that `CREATE`s (or `CREATE2` clones via ERC-1167) a fresh contract</span>
-<span class="c">/// per instance. Each clone costs a deployment and lives at its own address.</span>
+<span class="c">/// factory that `CREATE`s a fresh contract per instance — usually a 45-byte</span>
+<span class="c">/// ERC-1167 minimal proxy that delegatecalls a shared implementation (switch to</span>
+<span class="c">/// `CREATE2` when you want the address computable in advance). ERC-1167 is the</span>
+<span class="c">/// proxy bytecode, not an opcode. Each clone still costs a deployment and lives</span>
+<span class="c">/// at its own address.</span>
 <span class="c">///</span>
 <span class="c">/// Sui idiom: there are no per-instance deployments. One published package is</span>
 <span class="c">/// the code for *unlimited* instances; an &quot;instance&quot; is just an object you</span>
