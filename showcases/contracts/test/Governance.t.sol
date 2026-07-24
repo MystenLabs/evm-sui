@@ -7,13 +7,18 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20P
 import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+import {GovernorCountingSimple} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Governance} from "../src/Governance.sol";
 
 /// Minimal ERC20Votes token: snapshot-aware voting power, block.number clock.
 contract VoteToken is ERC20, ERC20Permit, ERC20Votes {
     constructor() ERC20("Vote", "VOTE") ERC20Permit("Vote") {}
 
-    function mint(address to, uint256 amount) external { _mint(to, amount); }
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
 
     function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
         super._update(from, to, value);
@@ -25,27 +30,38 @@ contract VoteToken is ERC20, ERC20Permit, ERC20Votes {
 }
 
 contract GovernanceTest is Test {
+    // Counting-module support values (GovernorCountingSimple.VoteType).
+    uint8 internal constant AGAINST = uint8(GovernorCountingSimple.VoteType.Against);
+    uint8 internal constant FOR = uint8(GovernorCountingSimple.VoteType.For);
+    uint8 internal constant ABSTAIN = uint8(GovernorCountingSimple.VoteType.Abstain);
+
     Governance internal gov;
     VoteToken internal token;
 
     address internal alice = address(0xA11CE);
     address internal bob = address(0xB0B);
     address internal carol = address(0xCA801);
+    address internal dave = address(0xDA7E); // sub-quorum holder
     address internal proposer = address(0xBEEF);
 
     bytes32 internal blob = bytes32(uint256(0xB10B));
+
+    // Mirror of Governance.ProposalBlob for vm.expectEmit matching.
+    event ProposalBlob(uint256 indexed proposalId, bytes32 blobId);
 
     function setUp() public {
         token = new VoteToken();
         gov = new Governance(IVotes(address(token)));
 
         // ERC20Votes only tracks voting power for delegated balances, so each
-        // holder mints then self-delegates.
+        // holder mints then self-delegates. Total supply = 360 ether → 4%
+        // quorum = 14.4 ether; dave (10) sits below it on his own.
         _fund(alice, 100 ether);
         _fund(bob, 200 ether);
         _fund(carol, 50 ether);
+        _fund(dave, 10 ether);
 
-        // Advance one block so the mint+delegate checkpoints are final and a
+        // Advance a block so the mint+delegate checkpoints are final and a
         // proposal created now snapshots a block in which everyone has weight.
         vm.roll(block.number + 1);
     }
@@ -58,170 +74,175 @@ contract GovernanceTest is Test {
         token.delegate(who);
     }
 
-    function test_propose_storesProposalAndEmits() public {
-        uint64 deadline = uint64(block.timestamp + 1 days);
-        vm.prank(proposer);
-        uint256 id = gov.propose(blob, deadline);
-        assertEq(id, 1);
-
-        (address p, bytes32 b, uint64 d, uint128 yes, uint128 no, uint48 startBlock) = gov.proposals(id);
-        assertEq(p, proposer);
-        assertEq(b, blob);
-        assertEq(d, deadline);
-        assertEq(yes, 0);
-        assertEq(no, 0);
-        assertEq(uint256(startBlock), block.number - 1);
+    function _expectedId(bytes32 blobId) internal view returns (uint256) {
+        string memory desc = string.concat("walrus:", Strings.toHexString(uint256(blobId), 32));
+        // Mirror the single no-op action proposeWithBlob builds.
+        address[] memory targets = new address[](1);
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory calldatas = new bytes[](1);
+        targets[0] = address(gov);
+        return gov.hashProposal(targets, values, calldatas, keccak256(bytes(desc)));
     }
 
-    function test_propose_secondCall_assignsSequentialIdAndIndependentStorage() public {
-        uint64 deadline = uint64(block.timestamp + 1 days);
+    /// Roll to the first block at which `id` is Active and cast `support` for `voter`.
+    function _voteWhenActive(uint256 id, address voter, uint8 support) internal {
+        if (gov.state(id) == IGovernor.ProposalState.Pending) {
+            vm.roll(gov.proposalSnapshot(id) + 1);
+        }
+        vm.prank(voter);
+        gov.castVote(id, support);
+    }
+
+    // ── proposeWithBlob ─────────────────────────────────────────────────────
+
+    function test_proposeWithBlob_storesPointerAndEmits() public {
+        uint256 expected = _expectedId(blob);
+
+        vm.expectEmit(true, false, false, true, address(gov));
+        emit ProposalBlob(expected, blob);
+
+        vm.prank(proposer);
+        uint256 id = gov.proposeWithBlob(blob);
+
+        assertEq(id, expected);
+        assertEq(gov.proposalBlob(id), blob);
+        assertEq(gov.proposalProposer(id), proposer);
+        assertEq(uint8(gov.state(id)), uint8(IGovernor.ProposalState.Pending));
+    }
+
+    function test_proposeWithBlob_distinctBlobs_areIndependent() public {
         bytes32 anotherBlob = bytes32(uint256(0xFADE));
 
         vm.prank(proposer);
-        uint256 id1 = gov.propose(blob, deadline);
+        uint256 id1 = gov.proposeWithBlob(blob);
         vm.prank(proposer);
-        uint256 id2 = gov.propose(anotherBlob, deadline);
+        uint256 id2 = gov.proposeWithBlob(anotherBlob);
 
-        assertEq(id1, 1);
-        assertEq(id2, 2);
-
-        (, bytes32 b1, , , , ) = gov.proposals(id1);
-        (, bytes32 b2, , , , ) = gov.proposals(id2);
-        assertEq(b1, blob);
-        assertEq(b2, anotherBlob);
-
-        // Voting on one proposal must not bleed into the other's tallies.
-        vm.prank(alice);
-        gov.vote(id1, true);
-        (, , , uint128 yes1, , ) = gov.proposals(id1);
-        (, , , uint128 yes2, , ) = gov.proposals(id2);
-        assertEq(uint256(yes1), 100 ether);
-        assertEq(uint256(yes2), 0);
+        assertTrue(id1 != id2);
+        assertEq(gov.proposalBlob(id1), blob);
+        assertEq(gov.proposalBlob(id2), anotherBlob);
     }
 
-    function test_propose_revertsOnPastDeadline() public {
-        vm.expectRevert(bytes("Governance: deadline in past"));
-        gov.propose(blob, uint64(block.timestamp));
+    function test_proposeWithBlob_revertsOnZeroBlob() public {
+        vm.expectRevert(Governance.ZeroBlobId.selector);
+        gov.proposeWithBlob(bytes32(0));
     }
 
-    function test_propose_revertsOnZeroBlob() public {
-        vm.expectRevert(bytes("Governance: zero blobId"));
-        gov.propose(bytes32(0), uint64(block.timestamp + 1 days));
+    function test_proposeWithBlob_duplicateBlob_reverts() public {
+        gov.proposeWithBlob(blob);
+        // Same blob → same description → same proposalId → Governor rejects the duplicate.
+        vm.expectPartialRevert(IGovernor.GovernorUnexpectedProposalState.selector);
+        gov.proposeWithBlob(blob);
     }
 
-    function test_vote_addsWeightedTally() public {
-        uint256 id = gov.propose(blob, uint64(block.timestamp + 1 days));
+    // ── voting ────────────────────────────────────────────────────────────
+
+    function test_vote_talliesWeightByVoteType() public {
+        uint256 id = gov.proposeWithBlob(blob);
+        vm.roll(gov.proposalSnapshot(id) + 1);
 
         vm.prank(alice);
-        gov.vote(id, true);
+        gov.castVote(id, FOR);
         vm.prank(bob);
-        gov.vote(id, false);
+        gov.castVote(id, AGAINST);
         vm.prank(carol);
-        gov.vote(id, true);
+        gov.castVote(id, FOR);
 
-        (, , , uint128 yes, uint128 no, ) = gov.proposals(id);
-        assertEq(uint256(yes), 150 ether);
-        assertEq(uint256(no), 200 ether);
+        (uint256 against, uint256 forVotes, uint256 abstain) = gov.proposalVotes(id);
+        assertEq(forVotes, 150 ether); // alice + carol
+        assertEq(against, 200 ether); // bob
+        assertEq(abstain, 0);
+        assertTrue(gov.hasVoted(id, alice));
     }
 
     function test_vote_revertsOnDoubleVote() public {
-        uint256 id = gov.propose(blob, uint64(block.timestamp + 1 days));
+        uint256 id = gov.proposeWithBlob(blob);
+        _voteWhenActive(id, alice, FOR);
+
         vm.prank(alice);
-        gov.vote(id, true);
+        vm.expectPartialRevert(IGovernor.GovernorAlreadyCastVote.selector);
+        gov.castVote(id, AGAINST);
+    }
+
+    function test_vote_revertsWhilePending() public {
+        uint256 id = gov.proposeWithBlob(blob); // snapshot in the future → Pending
         vm.prank(alice);
-        vm.expectRevert(bytes("Governance: already voted"));
-        gov.vote(id, false);
+        vm.expectPartialRevert(IGovernor.GovernorUnexpectedProposalState.selector);
+        gov.castVote(id, FOR);
     }
 
     function test_vote_revertsAfterDeadline() public {
-        uint64 deadline = uint64(block.timestamp + 1 hours);
-        uint256 id = gov.propose(blob, deadline);
-        vm.warp(deadline);
+        uint256 id = gov.proposeWithBlob(blob);
+        vm.roll(gov.proposalDeadline(id) + 1);
         vm.prank(alice);
-        vm.expectRevert(bytes("Governance: voting closed"));
-        gov.vote(id, true);
+        vm.expectPartialRevert(IGovernor.GovernorUnexpectedProposalState.selector);
+        gov.castVote(id, FOR);
     }
 
-    function test_vote_revertsOnZeroWeight() public {
-        uint256 id = gov.propose(blob, uint64(block.timestamp + 1 days));
-        address voterWithNoTokens = address(0xDEAD);
-        vm.prank(voterWithNoTokens);
-        vm.expectRevert(bytes("Governance: zero weight"));
-        gov.vote(id, true);
-    }
-
-    /// The snapshot defeats both flash-loan voting and vote-recycling: a
-    /// balance acquired *after* the proposal's snapshot block carries zero
-    /// weight, so transferring already-voted tokens to a fresh wallet cannot
-    /// vote them a second time.
+    /// The snapshot defeats flash-loan voting and vote-recycling: a balance
+    /// acquired *after* the proposal's snapshot block carries zero weight, so
+    /// moving already-counted tokens to a fresh wallet adds nothing.
     function test_vote_snapshotResistsTransferRecycling() public {
-        uint256 id = gov.propose(blob, uint64(block.timestamp + 1 days));
+        uint256 id = gov.proposeWithBlob(blob);
+        vm.roll(gov.proposalSnapshot(id) + 1);
 
         // Alice votes her snapshotted 100.
         vm.prank(alice);
-        gov.vote(id, true);
+        gov.castVote(id, FOR);
 
-        // Move the tokens to a fresh wallet and delegate — but only *now*,
-        // after the snapshot block.
+        // Move the tokens to a fresh wallet and delegate — but only now, after
+        // the snapshot block.
         address mule = address(0x1234);
         vm.prank(alice);
         token.transfer(mule, 100 ether);
         vm.prank(mule);
         token.delegate(mule);
 
-        // The mule holds tokens today but had zero voting power at the
-        // snapshot block, so the recycled vote is rejected.
+        // The mule holds tokens today but had zero voting power at the snapshot,
+        // so its vote is accepted but contributes zero weight.
         vm.prank(mule);
-        vm.expectRevert(bytes("Governance: zero weight"));
-        gov.vote(id, true);
+        gov.castVote(id, FOR);
 
-        (, , , uint128 yes, , ) = gov.proposals(id);
-        assertEq(uint256(yes), 100 ether); // not 200 — recycling blocked
+        (, uint256 forVotes, ) = gov.proposalVotes(id);
+        assertEq(forVotes, 100 ether); // not 200 — recycling blocked
     }
 
-    function test_tally_openProposal_isNotClosedNotPassed() public {
-        uint64 deadline = uint64(block.timestamp + 1 days);
-        uint256 id = gov.propose(blob, deadline);
+    // ── quorum + final state ────────────────────────────────────────────────
+
+    function test_quorum_isFourPercentOfPastSupply() public {
+        uint256 id = gov.proposeWithBlob(blob);
+        uint256 snapshot = gov.proposalSnapshot(id);
+        // quorum() reads getPastTotalSupply, so the snapshot must be in the past.
+        vm.roll(snapshot + 1);
+        // 360 ether total supply * 4% = 14.4 ether.
+        assertEq(gov.quorum(snapshot), 14.4 ether);
+    }
+
+    function test_state_succeeded_whenForExceedsAgainstAndQuorum() public {
+        uint256 id = gov.proposeWithBlob(blob);
+        _voteWhenActive(id, bob, FOR); // 200 >= quorum, no opposition
+
+        vm.roll(gov.proposalDeadline(id) + 1);
+        assertEq(uint8(gov.state(id)), uint8(IGovernor.ProposalState.Succeeded));
+    }
+
+    function test_state_defeated_whenAgainstWins() public {
+        uint256 id = gov.proposeWithBlob(blob);
+        vm.roll(gov.proposalSnapshot(id) + 1);
         vm.prank(alice);
-        gov.vote(id, true);
+        gov.castVote(id, FOR); // 100
         vm.prank(bob);
-        gov.vote(id, false);
+        gov.castVote(id, AGAINST); // 200
 
-        (uint128 y, uint128 n, bool passed, bool closed) = gov.tally(id);
-        assertEq(uint256(y), 100 ether);
-        assertEq(uint256(n), 200 ether);
-        assertFalse(closed);
-        assertFalse(passed);
+        vm.roll(gov.proposalDeadline(id) + 1);
+        assertEq(uint8(gov.state(id)), uint8(IGovernor.ProposalState.Defeated));
     }
 
-    function test_tally_closedAndFailed_whenNoExceedsYes() public {
-        uint64 deadline = uint64(block.timestamp + 1 days);
-        uint256 id = gov.propose(blob, deadline);
-        vm.prank(alice);
-        gov.vote(id, true);
-        vm.prank(bob);
-        gov.vote(id, false);
+    function test_state_defeated_whenQuorumNotReached() public {
+        uint256 id = gov.proposeWithBlob(blob);
+        _voteWhenActive(id, dave, FOR); // 10 ether < 14.4 quorum
 
-        vm.warp(deadline + 1);
-        (, , bool passed, bool closed) = gov.tally(id);
-        assertTrue(closed);
-        assertFalse(passed);
-    }
-
-    function test_tally_revertsOnUnknownProposal() public {
-        vm.expectRevert(bytes("Governance: unknown proposal"));
-        gov.tally(999);
-    }
-
-    function test_tally_closedAndPassed_whenYesExceedsNo() public {
-        uint64 deadline = uint64(block.timestamp + 1 days);
-        uint256 id = gov.propose(blob, deadline);
-        vm.prank(bob);
-        gov.vote(id, true);
-
-        vm.warp(deadline + 1);
-        (, , bool passed, bool closed) = gov.tally(id);
-        assertTrue(closed);
-        assertTrue(passed);
+        vm.roll(gov.proposalDeadline(id) + 1);
+        assertEq(uint8(gov.state(id)), uint8(IGovernor.ProposalState.Defeated));
     }
 }

@@ -720,37 +720,35 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
         <div class="showcase-prose">
           <h4>What it shows</h4>
           <p class="fix">
-            One contract storing <strong>proposalId → (proposer, blobId, deadline, yes, no)</strong>. Proposal body
-            uploaded to Walrus via the public publisher (so the proposer pays, not the DAO operator); contract
-            stores the 32-byte blobId. Two CLIs (<code>propose</code> + <code>tally</code>) drive the end-to-end
-            flow.
+            An <strong>OpenZeppelin <code>Governor</code></strong> whose only Walrus add-on is
+            <strong>proposalBlob[id] → blobId</strong>. Proposal body uploaded to Walrus via the public publisher
+            (so the proposer pays, not the DAO operator); the contract stores the 32-byte blobId pointer and
+            inherits snapshot voting, quorum, and state from OZ. Three CLIs (<code>propose</code> +
+            <code>vote</code> + <code>tally</code>) drive the end-to-end flow.
           </p>
           <div class="effort">
             <span class="pill good">straightforward</span>
-            <span class="pill">~100 LOC</span>
-            <span class="pill warn">showcase-only voting surface</span>
+            <span class="pill accent">real OZ Governor rails</span>
             <span class="pill accent">store blobId, not CID</span>
           </div>
         </div>
         <div class="showcase-code">
           <div class="caption">Shape · proposer-pays write + DAO-readable bytes</div>
-<pre class="code"><span class="c">// Governance.sol — body lives on Walrus, weight on-chain</span>
-<span class="k">struct</span> Proposal {
-  <span class="t">address</span> proposer;
-  <span class="t">bytes32</span> blobId;       <span class="c">// Walrus blob holding the proposal markdown</span>
-  <span class="t">uint64</span>  deadline;
-  <span class="t">uint128</span> yes;
-  <span class="t">uint128</span> no;
+<pre class="code"><span class="c">// Governance.sol — OZ Governor, body lives on Walrus</span>
+<span class="k">contract</span> Governance <span class="k">is</span> Governor, GovernorVotes, GovernorVotesQuorumFraction, ... {
+  <span class="k">mapping</span>(<span class="t">uint256</span> proposalId =&gt; <span class="t">bytes32</span> blobId) <span class="k">public</span> proposalBlob;
+
+  <span class="c">// signaling proposal whose body is a Walrus blob</span>
+  <span class="k">function</span> <span class="f">proposeWithBlob</span>(<span class="t">bytes32</span> blobId) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> id);
 }
-<span class="k">function</span> <span class="f">propose</span>(<span class="t">bytes32</span> blobId, <span class="t">uint64</span> deadline) <span class="k">external</span> <span class="k">returns</span> (<span class="t">uint256</span> id);
-<span class="k">function</span> <span class="f">vote</span>(<span class="t">uint256</span> id, <span class="t">bool</span> support) <span class="k">external</span>;</pre>
+<span class="c">// voting/quorum/state are inherited: castVote, proposalVotes, state</span></pre>
           <div class="flow">
             <div class="flow-row">
               <div class="box">proposer</div>
               <div class="arrow">→</div>
               <div class="box accent">walrus PUT</div>
               <div class="arrow">→</div>
-              <div class="box">propose(blobId)</div>
+              <div class="box">proposeWithBlob</div>
             </div>
           </div>
         </div>

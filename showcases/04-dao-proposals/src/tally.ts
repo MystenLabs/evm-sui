@@ -1,6 +1,7 @@
 /**
- * `tally` — read a proposal's tally from the EVM contract and fetch the
- * proposal body from the Walrus aggregator. Pure read-side; no signer needed.
+ * `tally` — read a proposal's state + vote tallies from the OpenZeppelin
+ * `Governor` contract and fetch the proposal body from the Walrus aggregator.
+ * Pure read-side; no signer needed.
  *
  * Required env:
  *   - EVM_RPC_URL         JSON-RPC for the chain holding Governance
@@ -18,6 +19,18 @@ import { env, resolveChain } from "./lib/evm.js";
 import { GOVERNANCE_ABI } from "./lib/governance-abi.js";
 import { fetchBlob, hexToBase64Url } from "./lib/walrus.js";
 
+// IGovernor.ProposalState
+const STATE_NAMES = [
+  "Pending",
+  "Active",
+  "Canceled",
+  "Defeated",
+  "Succeeded",
+  "Queued",
+  "Expired",
+  "Executed",
+] as const;
+
 async function main() {
   const [idStr] = process.argv.slice(2);
   if (!idStr) throw new Error("usage: tsx src/tally.ts <proposal-id>");
@@ -30,39 +43,43 @@ async function main() {
 
   const client = createPublicClient({ chain, transport: http(rpcUrl) });
 
-  // `proposals()` returns (proposer, blobId, deadline, yes, no, startBlock) —
-  // the canonical yes/no come from `tally()` below, so we skip them here.
-  const [proposer, blobIdHex, deadline] = await client.readContract({
+  // Governor returns snapshot 0 for an unknown proposal id.
+  const snapshot = await client.readContract({
     address: governance,
     abi: GOVERNANCE_ABI,
-    functionName: "proposals",
+    functionName: "proposalSnapshot",
     args: [id],
   });
-
-  if (deadline === 0n) {
+  if (snapshot === 0n) {
     throw new Error(`proposal ${id} not found at ${governance}`);
   }
 
-  const tally = await client.readContract({
-    address: governance,
-    abi: GOVERNANCE_ABI,
-    functionName: "tally",
-    args: [id],
-  });
+  const [blobIdHex, proposer, deadline, state, votes] = await Promise.all([
+    client.readContract({ address: governance, abi: GOVERNANCE_ABI, functionName: "proposalBlob", args: [id] }),
+    client.readContract({ address: governance, abi: GOVERNANCE_ABI, functionName: "proposalProposer", args: [id] }),
+    client.readContract({ address: governance, abi: GOVERNANCE_ABI, functionName: "proposalDeadline", args: [id] }),
+    client.readContract({ address: governance, abi: GOVERNANCE_ABI, functionName: "state", args: [id] }),
+    client.readContract({ address: governance, abi: GOVERNANCE_ABI, functionName: "proposalVotes", args: [id] }),
+  ]);
 
+  const [against, forVotes, abstain] = votes;
+  if (blobIdHex === `0x${"00".repeat(32)}`) {
+    throw new Error(
+      `proposal ${id} has no Walrus pointer (proposalBlob is unset) — it was not created via proposeWithBlob`,
+    );
+  }
   const blobIdB64Url = hexToBase64Url(blobIdHex);
   const body = await fetchBlob(aggregator, blobIdB64Url);
 
-  const deadlineDate = new Date(Number(deadline) * 1000).toISOString();
   console.log(`proposal #${id}`);
-  console.log(`  proposer:  ${proposer}`);
-  console.log(`  deadline:  ${deadline}  (${deadlineDate})`);
-  console.log(`  blobId:    ${blobIdHex}`);
+  console.log(`  proposer:   ${proposer}`);
+  console.log(`  state:      ${STATE_NAMES[state] ?? state}`);
+  console.log(`  voting:     blocks ${snapshot} → ${deadline}`);
+  console.log(`  blobId:     ${blobIdHex}`);
   console.log(`  aggregator: ${aggregator}/v1/blobs/${blobIdB64Url}`);
-  console.log(`  yes:       ${tally[0]}`);
-  console.log(`  no:        ${tally[1]}`);
-  console.log(`  closed:    ${tally[3]}`);
-  console.log(`  passed:    ${tally[2]}`);
+  console.log(`  for:        ${forVotes}`);
+  console.log(`  against:    ${against}`);
+  console.log(`  abstain:    ${abstain}`);
   console.log(`---- body (${body.length} bytes) ----`);
   process.stdout.write(body.toString("utf8"));
   if (body[body.length - 1] !== 0x0a) process.stdout.write("\n");
