@@ -22,8 +22,8 @@ OUT = ROOT.parent / "docs" / "patterns.html"
 
 # (num, title, blurb, solidity_file, right_label, right_file)
 PATTERNS = [
-    ("01", "Fungible token", "ERC-20 keeps every balance in one contract mapping; nobody holds anything. On Sui, <code>Coin&lt;T&gt;</code> objects <em>are</em> the balances and holders own them directly.", "01_FungibleToken.sol", "fungible_token.move", MOVE / "fungible_token.move"),
-    ("02", "NFT", "One contract per ERC-721 collection, metadata behind a URI. On Sui each NFT is a first-class object and <code>Display</code> renders metadata natively.", "02_Nft.sol", "nft.move", MOVE / "nft.move"),
+    ("01", "Token (ERC-20)", "ERC-20 keeps every balance in one contract mapping; nobody holds anything. On Sui, <code>Coin&lt;T&gt;</code> objects <em>are</em> the balances and holders own them directly.", "01_FungibleToken.sol", "fungible_token.move", MOVE / "fungible_token.move"),
+    ("02", "NFT (ERC-721)", "One contract per ERC-721 collection, metadata behind a URI. On Sui each NFT is a first-class object and <code>Display</code> renders metadata natively.", "02_Nft.sol", "nft.move", MOVE / "nft.move"),
     ("03", "Access control", "<code>Ownable</code>/<code>AccessControl</code> gate on \"is msg.sender on the list?\". Sui checks possession of a capability <em>object</em> — OpenZeppelin Contracts for Sui layers familiar roles on top.", "03_AccessControl.sol", "access_control.move", MOVE / "access_control.move"),
     ("04", "Upgradeability", "UUPS proxies <code>delegatecall</code> an implementation so code changes while storage stays — append-only forever. Sui upgrades packages natively; the chain enforces layout compatibility.", "04_UpgradeableCounter.sol", "versioned.move", MOVE / "versioned.move"),
     ("05", "Factory / clones", "Factories are one of the highest-volume deployment patterns on EVM; the cheapest stamp out 45-byte ERC-1167 clones that delegatecall a shared implementation. On Sui the pattern vanishes: one package serves unlimited object instances.", "05_Factory.sol", "no_factory.move", MOVE / "no_factory.move"),

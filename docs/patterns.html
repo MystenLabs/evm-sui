@@ -235,8 +235,8 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <div class="workbench">
   <aside id="tree" aria-label="Patterns">
     <span class="tlabel">patterns/ · 13 pairs</span>
-<a class="titem" href="#p01" data-i="0"><span class="tn">01</span><span class="tt">Fungible token</span><span class="tf">01_FungibleToken.sol · fungible_token.move</span></a>
-<a class="titem" href="#p02" data-i="1"><span class="tn">02</span><span class="tt">NFT</span><span class="tf">02_Nft.sol · nft.move</span></a>
+<a class="titem" href="#p01" data-i="0"><span class="tn">01</span><span class="tt">Token (ERC-20)</span><span class="tf">01_FungibleToken.sol · fungible_token.move</span></a>
+<a class="titem" href="#p02" data-i="1"><span class="tn">02</span><span class="tt">NFT (ERC-721)</span><span class="tf">02_Nft.sol · nft.move</span></a>
 <a class="titem" href="#p03" data-i="2"><span class="tn">03</span><span class="tt">Access control</span><span class="tf">03_AccessControl.sol · access_control.move</span></a>
 <a class="titem" href="#p04" data-i="3"><span class="tn">04</span><span class="tt">Upgradeability</span><span class="tf">04_UpgradeableCounter.sol · versioned.move</span></a>
 <a class="titem" href="#p05" data-i="4"><span class="tn">05</span><span class="tt">Factory / clones</span><span class="tf">05_Factory.sol · no_factory.move</span></a>
@@ -254,7 +254,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <section class="pattern" id="p01" data-n="01">
   <header class="phead">
     <span class="pnum">pattern 01/13</span>
-    <h2>Fungible token</h2>
+    <h2>Token (ERC-20)</h2>
     <p class="blurb">ERC-20 keeps every balance in one contract mapping; nobody holds anything. On Sui, <code>Coin&lt;T&gt;</code> objects <em>are</em> the balances and holders own them directly.</p>
     
   </header>
@@ -358,7 +358,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <section class="pattern" id="p02" data-n="02">
   <header class="phead">
     <span class="pnum">pattern 02/13</span>
-    <h2>NFT</h2>
+    <h2>NFT (ERC-721)</h2>
     <p class="blurb">One contract per ERC-721 collection, metadata behind a URI. On Sui each NFT is a first-class object and <code>Display</code> renders metadata natively.</p>
     
   </header>
@@ -1849,7 +1849,7 @@ sui client execute-signed-tx --tx-bytes <span class="s">&quot;$TX_BYTES&quot;</s
 <script>
 (function () {
   "use strict";
-  var TITLES = [{"n": "01", "t": "Fungible token", "slug": "fungible_token"}, {"n": "02", "t": "NFT", "slug": "nft"}, {"n": "03", "t": "Access control", "slug": "access_control"}, {"n": "04", "t": "Upgradeability", "slug": "versioned"}, {"n": "05", "t": "Factory / clones", "slug": "no_factory"}, {"n": "06", "t": "Escrow", "slug": "escrow"}, {"n": "07", "t": "Vesting", "slug": "vesting"}, {"n": "08", "t": "Multisig", "slug": "multisig"}, {"n": "09", "t": "Merkle airdrop", "slug": "airdrop"}, {"n": "10", "t": "Gasless UX", "slug": "sponsored-tx"}, {"n": "11", "t": "Flash loan", "slug": "flash_loan"}, {"n": "12", "t": "Security canon", "slug": "security"}, {"n": "13", "t": "Governance", "slug": "governance"}];
+  var TITLES = [{"n": "01", "t": "Token (ERC-20)", "slug": "fungible_token"}, {"n": "02", "t": "NFT (ERC-721)", "slug": "nft"}, {"n": "03", "t": "Access control", "slug": "access_control"}, {"n": "04", "t": "Upgradeability", "slug": "versioned"}, {"n": "05", "t": "Factory / clones", "slug": "no_factory"}, {"n": "06", "t": "Escrow", "slug": "escrow"}, {"n": "07", "t": "Vesting", "slug": "vesting"}, {"n": "08", "t": "Multisig", "slug": "multisig"}, {"n": "09", "t": "Merkle airdrop", "slug": "airdrop"}, {"n": "10", "t": "Gasless UX", "slug": "sponsored-tx"}, {"n": "11", "t": "Flash loan", "slug": "flash_loan"}, {"n": "12", "t": "Security canon", "slug": "security"}, {"n": "13", "t": "Governance", "slug": "governance"}];
   var secs = Array.prototype.slice.call(document.querySelectorAll("section.pattern"));
   var items = Array.prototype.slice.call(document.querySelectorAll(".titem"));
   var stage = document.getElementById("stage");
