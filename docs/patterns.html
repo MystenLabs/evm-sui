@@ -736,7 +736,7 @@ footer.docfoot a { text-decoration: underline; color: var(--green-soft); }
 <span class="c">/// @notice One of the highest-volume deployment patterns on EVM: because paying</span>
 <span class="c">///         full deployment cost per instance is expensive, a factory stamps out</span>
 <span class="c">///         45-byte ERC-1167 clones that delegatecall one shared implementation</span>
-<span class="c">///         (Uniswap pairs, Safe wallets, and NFT drops all work this way). The</span>
+<span class="c">///         (Safe wallets and many NFT drops work this way). The</span>
 <span class="c">///         clone is deployed with CREATE — or CREATE2 when the address must be</span>
 <span class="c">///         known in advance; ERC-1167 is just the proxy bytecode, opcode-agnostic.</span>
 <span class="c">/// @dev Sui counterpart: `no_factory.move` — the entire pattern evaporates.</span>

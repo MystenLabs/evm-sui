@@ -8,7 +8,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 /// @notice One of the highest-volume deployment patterns on EVM: because paying
 ///         full deployment cost per instance is expensive, a factory stamps out
 ///         45-byte ERC-1167 clones that delegatecall one shared implementation
-///         (Uniswap pairs, Safe wallets, and NFT drops all work this way). The
+///         (Safe wallets and many NFT drops work this way). The
 ///         clone is deployed with CREATE — or CREATE2 when the address must be
 ///         known in advance; ERC-1167 is just the proxy bytecode, opcode-agnostic.
 /// @dev Sui counterpart: `no_factory.move` — the entire pattern evaporates.
