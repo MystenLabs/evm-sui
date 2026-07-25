@@ -24,6 +24,14 @@ import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 /// token), and holders MUST delegate — self-delegation is fine — for their
 /// balance to count toward voting power. This is the standard OpenZeppelin
 /// Votes requirement, not specific to this contract.
+///
+/// This contract hand-rolls the proposal / vote / tally bookkeeping on purpose,
+/// to keep the Walrus integration shape — proposer-pays blob storage, an
+/// on-chain blobId pointer, deterministic resolution — front and centre. A
+/// production DAO would typically inherit OpenZeppelin's `Governor` (proposal
+/// lifecycle, quorum, timelock, pluggable voting strategies) rather than
+/// reimplement it; that machinery is orthogonal to the Walrus pieces this
+/// showcase exists to demonstrate.
 contract Governance {
     struct Proposal {
         address proposer;

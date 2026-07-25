@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Showcase 05 — Verifiable token list / dApp manifest · EVM × Sui</title>
-<meta name="description" content="Resolve a token list / dApp manifest via WalrusResolver + a Walrus aggregator. One eth_call replaces the IPNS lottery; the manifest body is content-addressed." />
+<meta name="description" content="Resolve a token list / dApp manifest via WalrusResolver + the @mysten/walrus SDK. One eth_call replaces the IPNS lottery; the body is read straight from the storage network and verified against its content-addressed blob id." />
 <meta property="og:title" content="Showcase 05 — Verifiable token list / dApp manifest" />
 <meta property="og:description" content="Token lists and dApp manifests resolved via ENS + WalrusResolver, no IPNS." />
 <meta property="og:type" content="article" />
@@ -551,15 +551,16 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     <span class="eyebrow">Showcase 05 · implemented</span>
     <h1>Token lists resolved via <em>one eth_call</em>, no IPNS lottery.</h1>
     <p class="lede">
-      An 80-line TypeScript client that resolves an ENS name (e.g. <code>tokens.uniswap.eth</code>) to a Walrus blob via
-      the <a href="03-walrus-resolver.html">WalrusResolver contract from showcase 03</a>, then fetches the manifest
-      body from any Walrus aggregator by its content-addressed blob id. The pointer lookup is deterministic; the
-      bytes are content-addressed; opt-in client-side hash verification is one Walrus SDK call away.
+      A small TypeScript client that resolves an ENS name (e.g. <code>tokens.uniswap.eth</code>) to a Walrus blob via
+      the <a href="03-walrus-resolver.html">WalrusResolver contract from showcase 03</a>, then reads the manifest
+      body straight from the Walrus storage network with the <code>@mysten/walrus</code> SDK. The pointer lookup is a
+      single deterministic <code>eth_call</code>; the bytes are reconstructed from the storage nodes and verified
+      against the content-addressed blob id — no aggregator in the trust path.
     </p>
     <div class="meta">
       <span><strong>Source:</strong> <a href="https://github.com/MystenLabs/evm-sui/tree/main/showcases/05-verifiable-manifest">05-verifiable-manifest/</a></span>
       <span><strong>Depends on:</strong> <a href="03-walrus-resolver.html">showcase 03 · WalrusResolver</a></span>
-      <span><strong>Stack:</strong> TypeScript · viem · Walrus aggregator</span>
+      <span><strong>Stack:</strong> TypeScript · viem · <code>@mysten/walrus</code> SDK</span>
     </div>
   </div>
 </header>
@@ -587,22 +588,24 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
   <div class="shell">
     <div class="section-head">
       <span class="section-num">02 · the shape</span>
-      <h2>Deterministic pointer + content-addressed body + optional verifier.</h2>
+      <h2>Deterministic pointer + content-addressed body, verified on read.</h2>
     </div>
     <div class="thesis-grid">
       <div>
         <p>
-          The trust boundary is the aggregator — same model as fetching by CID from an IPFS gateway. The leverage
-          over IPFS is that the <em>pointer</em> lookup is now an EVM read, not an IPNS lottery.
+          Both halves are trust-minimised. The <em>pointer</em> is one deterministic <code>eth_call</code> against
+          WalrusResolver — no IPNS lottery. The <em>bytes</em> are read with the <code>@mysten/walrus</code> SDK,
+          which pulls the blob's slivers from the storage nodes and reconstructs them, checking the result against
+          the on-chain blob id — a content commitment. There is no aggregator to trust.
         </p>
         <p>
           The client validates that the on-chain <code>contentType</code> shortcode starts with <code>app/json</code>
           before parsing, so non-JSON pointers fail loud instead of silently corrupting the schema.
         </p>
         <p class="callout">
-          For trustless retrieval, re-encode the returned bytes with <code>@mysten/walrus</code> and assert the hash
-          matches the on-chain blobId. The 80-line client doesn't do this by default — it's the showcase's job to
-          demonstrate the <em>pointer</em> swap; verification is one composition away.
+          The trade-off versus a single aggregator <code>GET</code>: an SDK read fans out to the storage nodes and
+          needs a Sui fullnode, so it is heavier than one HTTP call. For a small, high-value, read-rarely artifact
+          like a token list, paying that cost to take the gateway out of the trust path is <em>the whole point</em>.
         </p>
       </div>
       <div>
@@ -625,7 +628,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
           <div class="flow-row">
             <div class="box">pointer.call</div>
             <div class="arrow">→</div>
-            <div class="box accent">aggregator GET</div>
+            <div class="box accent">walrus.readBlob</div>
             <div class="arrow">→</div>
             <div class="box">JSON.parse</div>
           </div>
@@ -667,7 +670,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
             <tr><td>EVM_RPC_URL</td><td>yes</td><td>Mainnet (or wherever your WalrusResolver lives + the ENS registry it points at).</td></tr>
             <tr><td>RESOLVER_ADDRESS</td><td>yes</td><td>Deployed <code>WalrusResolver</code> address.</td></tr>
             <tr><td>ENS_NAME</td><td>default <code>tokens.uniswap.eth</code></td><td>The ENS name whose subdomain holds the manifest pointer.</td></tr>
-            <tr><td>AGGREGATOR</td><td>default testnet</td><td>Walrus aggregator URL (any will do — same blobId, same bytes).</td></tr>
+            <tr><td>WALRUS_NETWORK</td><td>default <code>testnet</code></td><td>Walrus network the pointer's blob lives on (<code>testnet</code> | <code>mainnet</code>).</td></tr>
+            <tr><td>SUI_RPC_URL</td><td>default public node</td><td>Sui gRPC fullnode the Walrus SDK reads through.</td></tr>
           </tbody>
         </table>
       </div>
@@ -689,7 +693,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
 <span class="k">const</span> { manifest, blobId, contentType } = <span class="k">await</span> <span class="f">resolveTokenList</span>(<span class="s">"tokens.uniswap.eth"</span>, {
   rpcUrl: <span class="n">EVM_RPC_URL</span>,
   resolverAddress: <span class="n">RESOLVER_ADDRESS</span>,
-  aggregator: <span class="s">"https://aggregator.walrus-testnet.walrus.space"</span>,
+  network: <span class="s">"testnet"</span>, <span class="c">// reads via the @mysten/walrus SDK; no aggregator</span>
 });</pre>
       </div>
     </div>
@@ -697,8 +701,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     <div class="step">
       <span class="num">04</span>
       <div>
-        <h3>(Opt-in) trustless retrieval — recompute the hash</h3>
-        <p>If your threat model requires the bytes to be trustless against the aggregator, run the returned <code>manifest</code> through <code>@mysten/walrus</code>'s Reed-Solomon encoder and assert the recomputed blob id matches the on-chain one. The 80-line client deliberately keeps this opt-in to stay minimal.</p>
+        <h3>What makes it "verifiable"</h3>
+        <p>Retrieval is trust-minimised by default — there's nothing extra to opt into. <code>walrus.readBlob</code> fetches the blob's slivers from the Walrus storage nodes and reconstructs the bytes, checking them against the blob id, which is a content commitment over the encoded data. A node serving the wrong bytes can't satisfy that commitment, so the read fails rather than returning forged content. Combined with the deterministic <code>eth_call</code> pointer, both the pointer and the bytes are verified without trusting any single gateway.</p>
       </div>
     </div>
   </div>
@@ -712,8 +716,8 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </div>
     <ul>
       <li>The first console line shows the <code>blobId</code> and content-type shortcode (e.g. <code>app/json</code>).</li>
-      <li>The token list count matches what an HTTP GET against the aggregator URL returns.</li>
-      <li>Switching to a different aggregator host (<code>AGGREGATOR=https://aggregator.walrus-testnet.walrus.space</code> → some other operator) returns the same JSON byte-for-byte.</li>
+      <li>The token list count matches what an HTTP GET against any aggregator's <code>/v1/blobs/&lt;blobId&gt;</code> returns — the SDK read and the gateway resolve the same content-addressed bytes, the SDK just doesn't trust the gateway to do it.</li>
+      <li>Pointing at a different Sui fullnode (<code>SUI_RPC_URL=…</code>) returns the same JSON byte-for-byte — the blob id, not the node, determines the bytes.</li>
       <li>If the pointer is unset, the client throws <code>manifest: pointer unset for &lt;ens&gt;</code> — no silent empty manifest.</li>
     </ul>
   </div>
@@ -727,7 +731,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
     </div>
     <div class="caveats">
       <ul>
-        <li><strong>Not a hash verifier.</strong> Trust in the aggregator's bytes equals trust in an IPFS gateway. The leverage over IPFS is the <em>pointer</em>, not the bytes — verification is composable on top via <code>@mysten/walrus</code>.</li>
+        <li><strong>Not the lightest possible read.</strong> An SDK read fans out to the storage nodes and needs a Sui fullnode, so it's heavier than one aggregator <code>GET</code>. That's the deliberate trade for taking the gateway out of the trust path; if you'd rather trade verification for a single fast HTTP call, an aggregator <code>GET</code> against the same <code>blobId</code> returns the same bytes.</li>
         <li><strong>Not a token-list authoring tool.</strong> You still need to author the JSON and upload it to Walrus yourself (any of the showcase 01 / 03 / 04 upload paths work).</li>
         <li><strong>Not multi-chain magic.</strong> The client takes a single <code>EVM_RPC_URL</code> — it doesn't proxy across chains. Run one resolver per chain you care about, or wrap with a thin multi-chain dispatcher.</li>
         <li><strong>Not extensible past <code>app/json</code>.</strong> The contentType shortcode is checked at the start. Other content types are out of grammar for this client — fork it if you want PNG-pointer or markdown-pointer manifests.</li>
@@ -743,7 +747,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
       <h2>Where to look in the repo.</h2>
     </div>
     <div class="sources">
-      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/05-verifiable-manifest/manifest.ts"><strong>05-verifiable-manifest/manifest.ts</strong>~130 lines: <code>resolveManifest&lt;T&gt;</code> generic, <code>resolveTokenList</code> Uniswap shape, hex↔base64url helpers.</a>
+      <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/05-verifiable-manifest/manifest.ts"><strong>05-verifiable-manifest/manifest.ts</strong>~150 lines: <code>resolveManifest&lt;T&gt;</code> generic, <code>resolveTokenList</code> Uniswap shape, <code>@mysten/walrus</code> SDK read, hex↔base64url helpers.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/05-verifiable-manifest/example-usage.ts"><strong>05-verifiable-manifest/example-usage.ts</strong>Minimal CLI demonstrating the import + first-five-tokens print.</a>
       <a href="https://github.com/MystenLabs/evm-sui/blob/main/showcases/contracts/src/WalrusResolver.sol"><strong>contracts/src/WalrusResolver.sol</strong>The on-chain pointer this client reads from (see <a href="03-walrus-resolver.html">showcase 03</a> for the walkthrough).</a>
     </div>

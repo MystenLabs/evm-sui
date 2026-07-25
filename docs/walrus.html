@@ -768,24 +768,24 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
         <div class="showcase-prose">
           <h4>What it shows</h4>
           <p class="fix">
-            An 80-line TS client that combines showcase 03's mutable pointer with a strict JSON schema. Resolves an
-            ENS name in one <code>eth_call</code>, fetches the manifest by content-addressed blob id, and returns
-            a typed object. Optional Reed-Solomon hash verification via <code>@mysten/walrus</code> for trustless
-            retrieval.
+            A small TS client that combines showcase 03's mutable pointer with a strict JSON schema. Resolves an
+            ENS name in one <code>eth_call</code>, then reads the manifest from the Walrus storage network with the
+            <code>@mysten/walrus</code> SDK — the bytes are reconstructed from the storage nodes and verified
+            against the content-addressed blob id, with no aggregator in the trust path.
           </p>
           <div class="effort">
             <span class="pill good">straightforward</span>
-            <span class="pill">~80 LOC</span>
             <span class="pill accent">swap CID lookup for blobId lookup</span>
+            <span class="pill accent">verified retrieval, no gateway</span>
           </div>
         </div>
         <div class="showcase-code">
-          <div class="caption">Shape · one fetch + one verification</div>
+          <div class="caption">Shape · one eth_call + one verified read</div>
 <pre class="code"><span class="c">// resolve "tokens.uniswap.eth" → current blobId → manifest JSON</span>
 <span class="k">const</span> { manifest, blobId, contentType } = <span class="k">await</span> <span class="f">resolveTokenList</span>(<span class="s">"tokens.uniswap.eth"</span>, {
   rpcUrl: <span class="n">EVM_RPC_URL</span>,
   resolverAddress: <span class="n">RESOLVER_ADDRESS</span>,
-  aggregator: <span class="s">"https://aggregator.walrus-testnet.walrus.space"</span>,
+  network: <span class="s">"testnet"</span>, <span class="c">// reads via the @mysten/walrus SDK; no aggregator</span>
 });
 
 <span class="c">// manifest is a typed Uniswap TokenList; blobId is the 32-byte source of truth.</span></pre>
@@ -793,7 +793,7 @@ footer code { font-size: 12px; color: var(--text-dim); background: transparent; 
             <div class="flow-row">
               <div class="box">pointer.call</div>
               <div class="arrow">→</div>
-              <div class="box accent">aggregator GET</div>
+              <div class="box accent">walrus.readBlob</div>
               <div class="arrow">→</div>
               <div class="box">JSON.parse</div>
             </div>
